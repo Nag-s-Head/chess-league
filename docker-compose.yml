@@ -1,0 +1,31 @@
+name: "Nag's Knights Chess League Test Server"
+services:
+  database:
+    image: 'postgres:latest'
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: magnus
+      POSTGRES_PASSWORD: bong-cloud
+      POSTGRES_DB: chess-league
+    networks:
+      - net
+  app:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      POSTGRES_USER: magnus
+      POSTGRES_PASSWORD: bong-cloud
+      POSTGRES_DB: chess-league
+    networks:
+      - net
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          initial_sync: true
+networks:
+  net:
+    name: "Nag's Knights Network"
+    driver: bridge

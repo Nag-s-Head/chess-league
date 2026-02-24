@@ -1,16 +1,16 @@
-FROM golang:latest AS build
+FROM golang:latest AS initial
 
-RUN apt-get update
-RUN apt-get install ca-certificates make npm -y
-RUN apt-get upgrade -y
-RUN npm i -g pnpm
+FROM initial AS with_go_mod
+COPY ./go.mod .
+RUN go mod download
 
+FROM with_go_mod as build
 WORKDIR /build
 
 COPY . .
 RUN go build
 
-FROM build AS release
+FROM initial AS release
 
 RUN useradd -m app
 WORKDIR /home/app

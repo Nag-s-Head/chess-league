@@ -17,6 +17,10 @@ func main() {
 		io.WriteString(w, fmt.Sprintf("alive and well at %s", time.Now().UTC()))
 	})
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "Placeholder for Nag's Knight Chess League")
+	})
+
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		slog.Error("Could not start", "err", err, "addr", addr)
