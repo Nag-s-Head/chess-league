@@ -8,8 +8,10 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	database, err := db.Connect()
+	database, err := db.InternalConnect()
 	require.NoError(t, err)
+	defer database.Close()
+
 	require.NotNil(t, database)
 	require.NoError(t, database.Ping())
 }

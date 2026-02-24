@@ -17,7 +17,7 @@ func main() {
 	slog.Info("Starting...")
 	slog.Info("Connect to the database...")
 
-	database, err := db.Connect()
+	database, err := db.InternalConnect()
 	if err != nil {
 		slog.Error("Could not connect to database - aborting", "err", err)
 		os.Exit(1)

@@ -26,7 +26,7 @@ func connect() (*sqlx.DB, error) {
 	return conn, nil
 }
 
-func Connect() (*sqlx.DB, error) {
+func InternalConnect() (*sqlx.DB, error) {
 	var database *sqlx.DB
 	const (
 		maxTries = 10
