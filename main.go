@@ -17,13 +17,15 @@ func main() {
 	slog.Info("Starting...")
 	slog.Info("Connect to the database...")
 
-	database, err := db.InternalConnect()
+	database, err := db.New()
 	if err != nil {
 		slog.Error("Could not connect to database - aborting", "err", err)
 		os.Exit(1)
 	}
 
-	err = database.Ping()
+	defer database.Close()
+
+	err = database.GetSqlxDb().Ping()
 	if err != nil {
 		slog.Error("Could not ping database", "err", err)
 		os.Exit(1)

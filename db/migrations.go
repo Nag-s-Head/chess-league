@@ -11,6 +11,15 @@ type Db struct {
 	db *sqlx.DB
 }
 
+func New() (*Db, error) {
+	db, err := InternalConnect()
+	if err != nil {
+		return nil, err
+	}
+
+	return From(db) 
+}
+
 func From(in *sqlx.DB) (*Db, error) {
 	db := &Db{db: in}
 	migrator := migrations.New([]migrations.Migration{
