@@ -4,7 +4,7 @@ FROM initial AS with_go_mod
 COPY ./go.mod .
 RUN go mod download
 
-FROM with_go_mod as build
+FROM with_go_mod AS build
 WORKDIR /build
 
 COPY . .
