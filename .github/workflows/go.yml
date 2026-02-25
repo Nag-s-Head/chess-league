@@ -1,0 +1,43 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: magnus
+          POSTGRES_PASSWORD: bong-cloud
+          POSTGRES_DB: chess-league
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+        cache: true
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      env:
+        DATABASE_URL: "user=magnus password=bong-cloud dbname=chess-league host=localhost port=5432 sslmode=disable"
+      run: go test -v ./...
