@@ -22,7 +22,6 @@ services:
       watch:
         - action: rebuild
           path: .
-          initial_sync: true
 networks:
   net:
     name: "Nag's Knights Network"

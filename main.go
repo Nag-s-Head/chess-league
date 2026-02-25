@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/handlers"
 )
 
 const addr = "0.0.0.0:8080"
@@ -37,9 +38,7 @@ func main() {
 		io.WriteString(w, fmt.Sprintf("alive and well at %s", time.Now().UTC()))
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "Placeholder for Nag's Knight Chess League")
-	})
+	http.HandleFunc("/", handlers.Index)
 
 	err = http.ListenAndServe(addr, nil)
 	slog.Warn("Server has died (very sad)")
