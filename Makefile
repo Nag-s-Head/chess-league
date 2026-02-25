@@ -1,4 +1,6 @@
 include test.env
+DATABASE_URL := $(shell echo $(DATABASE_URL) | sed 's/"//g')
+export DATABASE_URL
 
 docker-images:
 	docker compose up -d --build
