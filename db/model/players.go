@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
@@ -36,7 +37,7 @@ func InsertPlayer(db *db.Db, player Player) error {
 			player)
 
 	if err != nil {
-		return errors.Join(errors.New("Cannot insert player"), err)
+		return errors.Join(fmt.Errorf("Cannot insert player %s", player.Name), err)
 	}
 	return nil
 }
@@ -53,4 +54,44 @@ func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
 	}
 
 	return player, nil
+}
+
+func SearchPlayerByName(db *db.Db, name string) ([]Player, error) {
+	rows, err := db.GetSqlxDb().Queryx(`SELECT * FROM players WHERE name_normalised LIKE $1 ORDER BY name_normalised ASC;`, "%"+normalisation.Normalise(name)+"%")
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot search players by rough name"), err)
+	}
+
+	players := make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		err = rows.StructScan(&player)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot struct scan player"), err)
+		}
+
+		players = append(players, player)
+	}
+
+	return players, nil
+}
+
+func GetPlayers(db *db.Db) ([]Player, error) {
+	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players ORDER BY name_normalised ASC;")
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get players"), err)
+	}
+
+	players := make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		err = rows.StructScan(&player)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot struct scan player"), err)
+		}
+
+		players = append(players, player)
+	}
+
+	return players, nil
 }
