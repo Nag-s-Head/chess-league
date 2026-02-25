@@ -16,8 +16,6 @@ github.com/charmbracelet/x/term v0.2.1 h1:AQeHeLZ1OqSXhrAWpYUtZyX1T3zVxfpZuEQMIQ
 github.com/charmbracelet/x/term v0.2.1/go.mod h1:oQ4enTYFV7QN4m0i9mzHrViD7TQKvNEEkHUMCmsxdUg=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/djpiper28/rpg-book v0.0.0-20260224181824-ebf6d1412145 h1:UcmFlbWS6f8PbPCbd9TLCUvMqVUJQiF1ZXmHNDO3jS8=
-github.com/djpiper28/rpg-book v0.0.0-20260224181824-ebf6d1412145/go.mod h1:4oRkqKGCf67dWrsEUBkpk5t9IgjtpsQrv7ZOsNOFIoM=
 github.com/djpiper28/rpg-book v0.0.1 h1:YKs8nCiAQJdm02GjuCq0YCLllFwjk/bbjfcu/gMD0+0=
 github.com/djpiper28/rpg-book v0.0.1/go.mod h1:4oRkqKGCf67dWrsEUBkpk5t9IgjtpsQrv7ZOsNOFIoM=
 github.com/go-logfmt/logfmt v0.6.0 h1:wGYYu3uicYdqXVgoYbvnkrPVXkuLM1p1ifugDMEdRi4=
