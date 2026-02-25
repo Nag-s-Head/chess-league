@@ -17,7 +17,7 @@ func New() (*Db, error) {
 		return nil, err
 	}
 
-	return From(db) 
+	return From(db)
 }
 
 func From(in *sqlx.DB) (*Db, error) {
@@ -46,6 +46,12 @@ CREATE TABLE games (
 	submit_ip TEXT,
 	submit_user_agent TEXT
 ); 
+			`,
+		},
+		{
+			Sql: `
+CREATE INDEX idx_players_name_norm ON players(name_normalised);
+CREATE INDEX idx_players_elo ON players(elo);
 			`,
 		},
 	})
