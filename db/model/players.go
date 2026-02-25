@@ -40,3 +40,17 @@ func InsertPlayer(db *db.Db, player Player) error {
 	}
 	return nil
 }
+
+func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
+	row := db.GetSqlxDb().QueryRowx(
+		"SELECT * FROM players WHERE id=$1;",
+		id)
+
+	var player Player
+	err := row.StructScan(&player)
+	if err != nil {
+		return Player{}, errors.Join(errors.New("Cannot get player"), err)
+	}
+
+	return player, nil
+}

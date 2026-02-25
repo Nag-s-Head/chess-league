@@ -40,3 +40,22 @@ func TestInsertLotsOfPlayers(t *testing.T) {
 		require.NoError(t, model.InsertPlayer(db, player))
 	}
 }
+
+func TestGetPlayer(t *testing.T) {
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	name := uuid.New().String()
+	player := model.NewPlayer(name)
+
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	player2, err := model.GetPlayer(db, player.Id)
+
+	require.InDelta(t, player.JoinTime.Unix(), player2.JoinTime.Unix(), 1)
+	// Little hack for the time zone
+	player2.JoinTime = player.JoinTime
+
+	require.NoError(t, err)
+	require.Equal(t, player, player2)
+}
