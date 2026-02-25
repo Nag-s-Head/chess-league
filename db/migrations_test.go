@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,15 +18,7 @@ func TestMigrations(t *testing.T) {
 	require.NotNil(t, migratedDb)
 }
 
-func getDb(t *testing.T) *db.Db {
-	t.Helper()
-
-	db, err := db.New()
-	require.NoError(t, err)
-	return db
-}
-
 func TestFrom(t *testing.T) {
-	d := getDb(t)
+	d := testutils.GetDb(t)
 	d.Close()
 }
