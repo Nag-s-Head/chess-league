@@ -1,12 +1,12 @@
 <h1 class="text-xl font-bold">Submit A Game</h1>
 <form class="flex flex-col gap-5 w-full">
-  <ol class="flex flex-col gap-5 list-disc p-2 lg:p-5 w-full">
+  <ol class="flex flex-col gap-5 list-disc p-2 lg:p-5">
     <li>
       <div class="flex flex-row gap-2 justify-between">
         <label for="player-name">
           I am
         </label>
-        <input class="rounded-lg bg-gray-300 p-1 px-2" name="player-name" type="text" required placeholder="John Smith">
+        <input class="rounded-lg bg-gray-300 p-1 px-2" name="player-name" type="text" required autocomplete="name" placeholder="John Smith">
         </input>
       </div>
     </li>
@@ -78,6 +78,6 @@
     </li>
   </ol>
 
-  <input type="submit" class="rounded-lg p-2 px-5 bg-green-800 text-white font-bold" value="Next">
+  <input type="submit" class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold" value="Next">
   </input>
 </form>
