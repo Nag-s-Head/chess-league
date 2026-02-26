@@ -36,7 +36,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Test render of player lookup", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&player-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
 
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
