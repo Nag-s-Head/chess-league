@@ -1,79 +1,89 @@
 <h1 class="text-xl font-bold">Submit A Game</h1>
-<form class="flex flex-col gap-5 w-full" hx-post="/submit-game/submit" hx-target="#response">
-  <ol class="flex flex-col gap-5 list-disc p-2 lg:p-5">
+<form
+  class="flex flex-col gap-5 w-full"
+  hx-post="/submit-game/submit"
+  hx-target="#response"
+>
+  <ol class="flex flex-col gap-5 p-2 lg:p-5">
     <li>
-      <div class="flex flex-row gap-2 justify-between">
-        <label for="player-name">
-          I am
-        </label>
-        <input class="rounded-lg bg-gray-300 p-1 px-2" name="player-name" type="text" required autocomplete="name" placeholder="John Smith" />
+      <div class="flex flex-row gap-2 justify-between items-center">
+        <label for="player-name" class="cursor-pointer"> I am </label>
+        <input
+          id="player-name"
+          class="rounded-lg bg-gray-300 p-1 px-2"
+          name="player-name"
+          type="text"
+          required
+          autocomplete="name"
+          placeholder="John Smith"
+        />
       </div>
     </li>
 
     <li>
       <fieldset>
-        <div class="flex flex-row justify-between">
-          <legend>
-            I played
-          </legend>
+        <div
+          class="flex flex-row justify-between p-3 border-2 border-gray-300 rounded-lg"
+        >
+          <legend class="px-2">I played</legend>
 
           <div class="flex flex-col gap-2">
-            <span class="flex-row justify-between">
-              <label for="played-as">
-                White
-              </label>
+            <label class="flex flex-row items-center gap-2 cursor-pointer">
+              White
               <input name="played-as" type="radio" value="white" required />
-            </span>
+            </label>
 
-            <span class="flex-row justify-between">
-              <label for="played-as">
-                Black
-              </label>
+            <label class="flex flex-row items-center gap-2 cursor-pointer">
+              Black
               <input name="played-as" type="radio" value="black" />
-            </span>
+            </label>
           </div>
         </div>
       </fieldset>
     </li>
 
     <li>
-      <div class="flex flex-row gap-2 justify-between">
-        <label for="other-player-name">
-          Against
-        </label>
-        <input class="rounded-lg bg-gray-300 p-1 px-2" name="other-player-name" type="text" required placeholder="Stephen King" />
+      <div class="flex flex-row gap-2 justify-between items-center">
+        <label for="other-player-name" class="cursor-pointer"> Against </label>
+        <input
+          id="other-player-name"
+          class="rounded-lg bg-gray-300 p-1 px-2"
+          name="other-player-name"
+          type="text"
+          required
+          placeholder="Stephen King"
+        />
       </div>
     </li>
 
     <li>
       <fieldset>
-        <div class="flex flex-row justify-between">
-          <legend>
-            The winner was
-          </legend>
+        <div
+          class="flex flex-row justify-between p-3 border-2 border-gray-300 rounded-lg"
+        >
+          <legend class="px-2">The winner was</legend>
 
           <div class="flex flex-col gap-2">
-            <span class="flex-row justify-between">
-              <label for="winner">
-                White
-              </label>
+            <label class="flex flex-row items-center gap-2 cursor-pointer">
+              White
               <input name="winner" type="radio" value="white" required />
-            </span>
+            </label>
 
-            <span class="flex-row justify-between">
-              <label for="winner">
-                Black
-              </label>
+            <label class="flex flex-row items-center gap-2 cursor-pointer">
+              Black
               <input name="winner" type="radio" value="black" />
-            </span>
+            </label>
           </div>
         </div>
       </fieldset>
     </li>
   </ol>
 
-  <input type="submit" class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold" value="Next" />
+  <input
+    type="submit"
+    class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    value="Next"
+  />
 </form>
 
-<div class="flex flex-col gap-5" id="response">
-</div>
+<div class="flex flex-col gap-5" id="response"></div>
