@@ -7,9 +7,9 @@
     .Players}}{{.Elo}}{{end}} ELO.
   </h3>
   {{else}}
-  <h3 class="text-xl font-bold">
-    Could not find {{.Name}} ({{if .IsWhite}}white{{else}}black{{end}} player)
-    from the provided name.
+  <h3 class="text-xl">
+    <span class="font-bold">Could not find {{.Name}}</span> ({{if
+    .IsWhite}}white{{else}}black{{end}} player) from the provided name.
   </h3>
   <fieldset>
     <legend>Did you mean?</legend>
