@@ -1,8 +1,9 @@
 {{range $result := .Results}}
 <div class="flex flex-col gap-5">
   {{if .ExactMatch}}
-  <h3 class="text-xl font-bold">
-    Found {{.Name}} ({{if .IsWhite}}white{{else}}black{{end}} player) {{range
+  <h3 class="text-xl">
+    <span class="font-bold">Found {{.Name}}</span> ({{if
+    .IsWhite}}white{{else}}black{{end}} player) {{range
     .Players}}{{.Elo}}{{end}} ELO.
   </h3>
   {{else}}

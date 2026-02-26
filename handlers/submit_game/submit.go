@@ -39,7 +39,7 @@ func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, 
 				Players:        players,
 				ExactMatch:     true,
 				IsWhite:        isWhite,
-				Name:           name,
+				Name:           players[0].Name,
 				NameNormalised: nameNormalised,
 			}, nil
 		}
