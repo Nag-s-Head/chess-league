@@ -1,4 +1,4 @@
-package privacypolicy_test 
+package privacypolicy_test
 
 import (
 	"testing"

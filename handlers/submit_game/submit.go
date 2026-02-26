@@ -1,4 +1,4 @@
-package submitgame 
+package submitgame
 
 import (
 	"bytes"

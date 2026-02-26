@@ -8,3 +8,7 @@ docker-images:
 test: docker-images
 	docker compose restart database # Makes sure the db is empty
 	go test ./...
+
+format:
+	find -name "*.html" | xargs astyle
+	gofmt -l -w .

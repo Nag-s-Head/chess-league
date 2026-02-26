@@ -1,70 +1,72 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nag's Knights</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
-  </head>
-  <body class="bg-gray-50">
-    <div class="flex flex-col min-h-screen">
-      <header
-        class="flex flex-row gap-5 w-full items-center p-5 bg-rose-300 border-b border-rose-300"
-      >
-        <div class="flex flex-row gap-2 w-full items-center">
-          <svg
-            xmlns:dc="http://purl.org/dc/elements/1.1/"
-            xmlns:cc="http://creativecommons.org/ns#"
-            xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-            xmlns:svg="http://www.w3.org/2000/svg"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-            xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-            viewBox="0 0 12.7 15.875"
-            version="1.1"
-            x="0px"
-            y="0px"
-            height="80"
-          >
-            <g transform="translate(0,-284.29998)">
-              <path
-                style=""
-                d="m 5.3133,286.32059 a 4.0915775,4.0915775 0 0 0 -2.4829,3.2639 8.6577146,8.6577146 0 0 0 0.9277,4.77439 H 2.8514 a 0.27711209,0.27711209 0 0 0 -0.277,0.27711 v 1.55749 a 0.27711209,0.27711209 0 0 0 0.277,0.27711 H 9.259 a 0.27711209,0.27711209 0 0 0 0.2771,-0.27711 v -1.55749 A 0.27711209,0.27711209 0 0 0 9.259,294.35888 H 8.4909 v -0.67878 a 0.55422429,0.55422429 0 0 0 -0.045,-0.21988 9.4437562,9.4437562 0 0 0 -2.1058,-3.04384 h 0.4677 l 0.5031,-0.24373 a 1.1084485,1.1084485 0 0 1 0.9697,0.002 l 0.6909,0.33744 a 0.80203069,0.80203069 0 0 0 1.0669,-1.08422 l -2.4608,-2.40942 a 3.0709507,3.0709507 0 0 0 -1.1636,-0.71448 8.3202992,8.3202992 0 0 1 -0.118,-1.4746 2.578302,2.578302 0 0 0 -0.9822,1.49168 z"
-                fill="#000000"
-                stroke="none"
-              />
-            </g>
-          </svg>
-          <a href="/"><h1 class="text-4xl font-bold">Nag&apos;s Knights</h1></a>
-        </div>
-      </header>
+           <head>
+           <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+                                    <title>Nag's Knights</title>
+                                    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+                                    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+                                    </head>
+                                    <body class="bg-gray-50">
+                                    <div class="flex flex-col min-h-screen">
+                                    <header
+                                    class="flex flex-row gap-5 w-full items-center p-5 bg-rose-300 border-b border-rose-300"
+                                    >
+                                    <div class="flex flex-row gap-2 w-full items-center">
+                                    <svg
+                                    xmlns:dc="http://purl.org/dc/elements/1.1/"
+                                    xmlns:cc="http://creativecommons.org/ns#"
+                                    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                                    xmlns:svg="http://www.w3.org/2000/svg"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                                    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                                    viewBox="0 0 12.7 15.875"
+                                    version="1.1"
+                                    x="0px"
+                                    y="0px"
+                                    height="80"
+                                    >
+                                    <g transform="translate(0,-284.29998)">
+                                    <path
+                                    style=""
+                                    d="m 5.3133,286.32059 a 4.0915775,4.0915775 0 0 0 -2.4829,3.2639 8.6577146,8.6577146 0 0 0 0.9277,4.77439 H 2.8514 a 0.27711209,0.27711209 0 0 0 -0.277,0.27711 v 1.55749 a 0.27711209,0.27711209 0 0 0 0.277,0.27711 H 9.259 a 0.27711209,0.27711209 0 0 0 0.2771,-0.27711 v -1.55749 A 0.27711209,0.27711209 0 0 0 9.259,294.35888 H 8.4909 v -0.67878 a 0.55422429,0.55422429 0 0 0 -0.045,-0.21988 9.4437562,9.4437562 0 0 0 -2.1058,-3.04384 h 0.4677 l 0.5031,-0.24373 a 1.1084485,1.1084485 0 0 1 0.9697,0.002 l 0.6909,0.33744 a 0.80203069,0.80203069 0 0 0 1.0669,-1.08422 l -2.4608,-2.40942 a 3.0709507,3.0709507 0 0 0 -1.1636,-0.71448 8.3202992,8.3202992 0 0 1 -0.118,-1.4746 2.578302,2.578302 0 0 0 -0.9822,1.49168 z"
+                                    fill="#000000"
+                                    stroke="none"
+                                    />
+                                    </g>
+                                    </svg>
+                                    <a href="/"><h1 class="text-4xl font-bold">Nag&apos;
+                                    s Knights</h1></a>
+                                    </div>
+                                    </header>
 
-      <main class="flex-grow flex flex-col gap-5 p-5">{{ .Body }}</main>
+                                    <main class="flex-grow flex flex-col gap-5 p-5"> {{ .Body }}</main>
 
-      <footer
-        class="flex flex-col gap-3 p-5 bg-gray-200 border-t border-gray-300"
-      >
-        <p>Copyright (c) 2026 Nag&apos;s Knights. Apache 2.0.</p>
-        <nav>
-          <ol class="flex flex-row gap-5">
-            <li>
-              <a
-                href="/privacy-policy"
-                class="text-blue-800 underline hover:text-blue-600"
-                >Privacy Policy</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/Nag-s-Head/chess-league"
-                class="text-blue-800 underline hover:text-blue-600"
-                >Source Code (Github)</a
-              >
-            </li>
-          </ol>
-        </nav>
-      </footer>
-    </div>
-  </body>
-</html>
+                                    <footer
+                                    class="flex flex-col gap-3 p-5 bg-gray-200 border-t border-gray-300"
+                                    >
+                                    <p>Copyright (c) 2026 Nag&apos;
+                                    s Knights. Apache 2.0.</p>
+                                    <nav>
+                                    <ol class="flex flex-row gap-5">
+                                    <li>
+                                    <a
+                                    href="/privacy-policy"
+                                    class="text-blue-800 underline hover:text-blue-600"
+                                    >Privacy Policy</a
+                                    >
+                                    </li>
+                                    <li>
+                                    <a
+                                    href="https://github.com/Nag-s-Head/chess-league"
+                                    class="text-blue-800 underline hover:text-blue-600"
+                                    >Source Code (Github)</a
+                                    >
+                                    </li>
+                                    </ol>
+                                    </nav>
+                                    </footer>
+                                    </div>
+                                    </body>
+                                    </html>
