@@ -32,7 +32,7 @@ func main() {
 	slog.Info("Database connected successfully")
 	slog.Info("Starting Nag's Knights chess league server", "addr", addr)
 
-	err = http.ListenAndServe(addr, handlers.NewHandler())
+	err = http.ListenAndServe(addr, handlers.NewHandler(database))
 	slog.Warn("Server has died (very sad)")
 	if err != nil {
 		slog.Error("Could not start", "err", err, "addr", addr)

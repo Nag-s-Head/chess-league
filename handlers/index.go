@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Nag-s-Head/chess-league/db"
 	privacypolicy "github.com/Nag-s-Head/chess-league/handlers/privacy_policy"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
@@ -74,13 +75,15 @@ func Test(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHandler returns a router that handles all site routes.
-func NewHandler() http.Handler {
+func NewHandler(db *db.Db) http.Handler {
 	mux := http.NewServeMux()
 	// {$} matches exactly "/"
 	mux.HandleFunc("GET /{$}", Index)
-	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
-	mux.HandleFunc("GET /submit-game", SubmitGame)
-
 	mux.HandleFunc("GET /test", Test)
+	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
+
+	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame)
+	submitgame.Register(mux, db)
+
 	return mux
 }
