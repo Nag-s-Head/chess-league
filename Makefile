@@ -10,5 +10,4 @@ test: docker-images
 	go test ./...
 
 format:
-	find -name "*.html" | xargs astyle
 	gofmt -l -w .

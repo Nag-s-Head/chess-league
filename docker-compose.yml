@@ -1,7 +1,7 @@
 name: "Nag's Knights Chess League Test Server"
 services:
   database:
-    image: 'postgres:latest'
+    image: "postgres:latest"
     ports:
       - 5432:5432
     environment:
