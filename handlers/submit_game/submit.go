@@ -19,35 +19,37 @@ type PlayerConsolidationModel struct {
 }
 
 type PlayerLookupResult struct {
-	Players    []model.Player
-	ExactMatch bool
-	IsWhite    bool
-	Name       string
+	Players        []model.Player
+	ExactMatch     bool
+	IsWhite        bool
+	Name           string
+	NameNormalised string
 }
 
 func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, error) {
-	name = normalisation.Normalise(name)
-
-	players, err := model.SearchPlayerByName(db, name)
+	nameNormalised := normalisation.Normalise(name)
+	players, err := model.SearchPlayerByName(db, nameNormalised)
 	if err != nil {
 		return PlayerLookupResult{}, errors.Join(errors.New("Cannot find player 1 by name"), err)
 	}
 
 	if len(players) == 1 {
-		if name == players[0].NameNormalised {
+		if nameNormalised == players[0].NameNormalised {
 			return PlayerLookupResult{
-				Players:    players,
-				ExactMatch: true,
-				IsWhite:    isWhite,
-				Name:       name,
+				Players:        players,
+				ExactMatch:     true,
+				IsWhite:        isWhite,
+				Name:           name,
+				NameNormalised: nameNormalised,
 			}, nil
 		}
 	}
 
 	return PlayerLookupResult{
-		Players: players,
-		IsWhite: isWhite,
-		Name:    name,
+		Players:        players,
+		IsWhite:        isWhite,
+		Name:           name,
+		NameNormalised: nameNormalised,
 	}, nil
 }
 

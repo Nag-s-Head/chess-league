@@ -1,24 +1,47 @@
 {{range $result := .Results}}
 <div class="flex flex-col gap-5">
-  <h3 class="text-xl font-bold">
-    Could not find {{.Name}} ({{if .IsWhite}} white {{else}} black {{end}} player) from the
-    provided name
-  </h3>
   {{if .ExactMatch}}
-  <p>Exact match!</p>
+  <h3 class="text-xl font-bold">
+    Found {{.Name}} ({{if .IsWhite}}white{{else}}black{{end}} player) {{range
+    .Players}}{{.Elo}}{{end}} ELO.
+  </h3>
   {{else}}
+  <h3 class="text-xl font-bold">
+    Could not find {{.Name}} ({{if .IsWhite}}white{{else}}black{{end}} player)
+    from the provided name.
+  </h3>
   <fieldset>
     <legend>Did you mean?</legend>
     <div class="flex flex-col gap-5 py-2">
       {{range .Players}}
-      <label class="flex flex-row items-center gap-3 p-3 border-2 border-gray-300 rounded-lg cursor-pointer">
-        <input type="radio" name="{{if $result.IsWhite}}white{{else}}black{{end}}-player-name" value="{{.NameNormalised}}" required>
+      <label
+        class="flex flex-row items-center gap-3 p-3 border-2 border-gray-300 rounded-lg cursor-pointer"
+      >
+        <input
+          type="radio"
+          name="{{if $result.IsWhite}}white{{else}}black{{end}}-player-name"
+          value="{{.NameNormalised}}"
+          required
+        />
         <div class="flex flex-row justify-between w-full">
           <h4 class="text-lg font-bold">{{.Name}}</h4>
           <p>{{.Elo}} ELO</p>
         </div>
       </label>
       {{end}}
+      <label
+        class="flex flex-row items-center gap-3 p-3 border-2 border-green-800 rounded-lg cursor-pointer"
+      >
+        <input
+          type="radio"
+          name="{{if $result.IsWhite}}white{{else}}black{{end}}-player-name"
+          value="{{.NameNormalised}}"
+          required
+        />
+        <h4 class="text-lg">
+          <span class="font-bold">{{.Name}}</span> is a new user
+        </h4>
+      </label>
     </div>
   </fieldset>
   {{end}}
