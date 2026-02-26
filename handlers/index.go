@@ -10,6 +10,7 @@ import (
 	"time"
 
 	privacypolicy "github.com/Nag-s-Head/chess-league/handlers/privacy_policy"
+	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
 )
 
@@ -56,6 +57,17 @@ func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
 	Render(w, body)
 }
 
+func SubmitGame(w http.ResponseWriter, r *http.Request) {
+	body, err := submitgame.Render()
+	if err != nil {
+		slog.Error("Cannot render submit game", "err", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	Render(w, body)
+}
+
 func Test(w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf("alive and well at %s", time.Now().UTC())
 	Render(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
@@ -67,6 +79,8 @@ func NewHandler() http.Handler {
 	// {$} matches exactly "/"
 	mux.HandleFunc("GET /{$}", Index)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
+	mux.HandleFunc("GET /submit-game", SubmitGame)
+
 	mux.HandleFunc("GET /test", Test)
 	return mux
 }

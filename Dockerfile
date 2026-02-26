@@ -8,7 +8,8 @@ FROM with_go_mod AS build
 WORKDIR /build
 
 COPY . .
-RUN go build
+ENV GOCACHE=/root/.cache/go-build
+RUN --mount=type=cache,target="/root/.cache/go-build" go build
 
 FROM initial AS release
 
