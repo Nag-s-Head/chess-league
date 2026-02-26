@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/handlers"
@@ -34,13 +31,8 @@ func main() {
 
 	slog.Info("Database connected successfully")
 	slog.Info("Starting Nag's Knights chess league server", "addr", addr)
-	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, fmt.Sprintf("alive and well at %s", time.Now().UTC()))
-	})
 
-	http.HandleFunc("/", handlers.Index)
-
-	err = http.ListenAndServe(addr, nil)
+	err = http.ListenAndServe(addr, handlers.NewHandler())
 	slog.Warn("Server has died (very sad)")
 	if err != nil {
 		slog.Error("Could not start", "err", err, "addr", addr)
