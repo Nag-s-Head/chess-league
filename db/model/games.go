@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -85,7 +86,13 @@ func CreateGame(db *db.Db, player1, player2 *Player, isWhite bool, ikey int64, s
 		game.EloTaken = eloA
 	}
 
-	_, err := db.GetSqlxDb().NamedExec(`
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return Game{}, errors.Join(errors.New("Could not start tx"), err)
+	}
+	defer tx.Rollback()
+
+	_, err = tx.NamedExec(`
 INSERT INTO games (player_white, player_black, score, submitter, played, deleted, elo_given, elo_taken, submit_ip, submit_user_agent, ikey)
 VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :elo_given, :elo_taken, :submit_ip, :submit_user_agent, :ikey);
   	`, game)
@@ -94,5 +101,19 @@ VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :el
 		return Game{}, errors.Join(errors.New("Cannot insert game"), err)
 	}
 
+	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, player1)
+	if err != nil {
+		return Game{}, errors.Join(errors.New("Cannot set elo of player 1"), err)
+	}
+
+	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, player2)
+	if err != nil {
+		return Game{}, errors.Join(errors.New("Cannot set elo of player 2"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return Game{}, errors.Join(errors.New("Could not commit tx"), err)
+	}
 	return game, nil
 }

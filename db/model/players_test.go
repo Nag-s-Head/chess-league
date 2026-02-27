@@ -77,6 +77,10 @@ func TestGetPlayers(t *testing.T) {
 	players, err := model.GetPlayers(db)
 	require.NoError(t, err)
 	require.Greater(t, len(players), 1)
+
+	players, err = model.GetPlayersByElo(db)
+	require.NoError(t, err)
+	require.Greater(t, len(players), 1)
 }
 
 func TestNormalise(t *testing.T) {

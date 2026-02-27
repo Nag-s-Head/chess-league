@@ -56,6 +56,14 @@ func TestCreateGameP1White(t *testing.T) {
 	require.Equal(t, false, game.Deleted)
 
 	require.Equal(t, ikey, game.IKey)
+
+	p1New, err := model.GetPlayer(db, p1.Id)
+	require.NoError(t, err)
+	require.Equal(t, p1.Elo, p1New.Elo)
+
+	p2New, err := model.GetPlayer(db, p2.Id)
+	require.NoError(t, err)
+	require.Equal(t, p2.Elo, p2New.Elo)
 }
 
 func TestCreateGameP1Black(t *testing.T) {
@@ -89,6 +97,14 @@ func TestCreateGameP1Black(t *testing.T) {
 	require.Equal(t, false, game.Deleted)
 
 	require.Equal(t, ikey, game.IKey)
+
+	p1New, err := model.GetPlayer(db, p1.Id)
+	require.NoError(t, err)
+	require.Equal(t, p1.Elo, p1New.Elo)
+
+	p2New, err := model.GetPlayer(db, p2.Id)
+	require.NoError(t, err)
+	require.Equal(t, p2.Elo, p2New.Elo)
 }
 
 func TestCreateGameSameIkeyFails(t *testing.T) {

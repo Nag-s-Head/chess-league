@@ -95,3 +95,23 @@ func GetPlayers(db *db.Db) ([]Player, error) {
 
 	return players, nil
 }
+
+func GetPlayersByElo(db *db.Db) ([]Player, error) {
+	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players ORDER BY elo DESC;")
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get players"), err)
+	}
+
+	players := make([]Player, 0)
+	for rows.Next() {
+		var player Player
+		err = rows.StructScan(&player)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot struct scan player"), err)
+		}
+
+		players = append(players, player)
+	}
+
+	return players, nil
+}

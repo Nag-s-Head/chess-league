@@ -38,16 +38,23 @@ func Render(w http.ResponseWriter, body template.HTML) {
 	}
 }
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	var buf bytes.Buffer
-	err := indexTmpl.Execute(&buf, nil)
-	if err != nil {
-		slog.Error("Cannot execute index template", "err", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		players, err := model.GetPlayersByElo(db)
+		if err != nil {
+			slog.Warn("Could not get leaderboard", "err", err)
+		}
 
-	Render(w, template.HTML(buf.String()))
+		var buf bytes.Buffer
+		err = indexTmpl.Execute(&buf, players)
+		if err != nil {
+			slog.Error("Cannot execute index template", "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		Render(w, template.HTML(buf.String()))
+	}
 }
 
 func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +144,7 @@ func Test(w http.ResponseWriter, r *http.Request) {
 func NewHandler(db *db.Db) http.Handler {
 	mux := http.NewServeMux()
 	// {$} matches exactly "/"
-	mux.HandleFunc("GET /{$}", Index)
+	mux.HandleFunc("GET /{$}", Index(db))
 	mux.HandleFunc("GET /test", Test)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
 

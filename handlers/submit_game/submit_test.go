@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -28,8 +29,19 @@ func TestSubmit(t *testing.T) {
 	err := model.InsertPlayer(db, model.NewPlayer(name))
 	require.NoError(t, err)
 
+	t.Run("No magic number should error", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
+	})
+
 	t.Run("No form data should error", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
 		require.Error(t, err)
@@ -37,9 +49,21 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("Test render of player lookup", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
 
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
 		require.NoError(t, err)
+	})
+
+	t.Run("Test render of player lookup, no magic number", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
 	})
 }
