@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
@@ -125,7 +126,37 @@ func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error
 }
 
 func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
-	return errors.New("TODO: implement this")
+	white := r.FormValue(whitePlayerName)
+	black := r.FormValue(blackPlayerName)
+
+	ikeyCookie, err := r.Cookie(IKeyCookie)
+	if err != nil {
+		return errors.Join(errors.New("Could not find ikey cookie"), err)
+	}
+
+	ikey, err := strconv.ParseInt(ikeyCookie.Value, 10, 64)
+	if err != nil {
+		return errors.Join(errors.New("Could not read ikey cookie"), err)
+	}
+
+	var score model.Score
+	winner := r.FormValue(winner)
+	if winner == "white" {
+		score = model.Score_Win
+	} else if winner == "black" {
+		score = model.Score_Loss
+	} else if winner == "draw" {
+		score = model.Score_Draw
+	} else {
+		return errors.New("Invalid winner")
+	}
+
+	game, player1, player2, err := model.SubmitGame(db, white, black, true, ikey, score, r)
+	if err != nil {
+		return errors.Join(errors.New("Could not submit game"), err)
+	}
+
+	return fmt.Errorf("YOUR GAME WAS SUBMITTED!! This part is not finished though, %#v %#v %#v", game, player1, player2)
 }
 
 func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {

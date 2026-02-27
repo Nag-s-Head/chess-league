@@ -1,6 +1,8 @@
 package model
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -8,6 +10,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/djpiper28/rpg-book/common/normalisation"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 const StartingElo = 1000
@@ -30,14 +33,33 @@ func NewPlayer(name string) Player {
 	}
 }
 
-func InsertPlayer(db *db.Db, player Player) error {
-	_, err := db.GetSqlxDb().
+func InsertPlayerTx(tx *sqlx.Tx, player Player) error {
+	_, err := tx.
 		NamedExec(
 			"INSERT INTO players (id, name, name_normalised, elo, join_time) VALUES (:id, :name, :name_normalised, :elo, :join_time);",
 			player)
 
 	if err != nil {
 		return errors.Join(fmt.Errorf("Cannot insert player %s", player.Name), err)
+	}
+	return nil
+}
+
+func InsertPlayer(db *db.Db, player Player) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Could not start transaction"), err)
+	}
+	defer tx.Rollback()
+
+	err = InsertPlayerTx(tx, player)
+	if err != nil {
+		return errors.Join(fmt.Errorf("Cannot insert player %s", player.Name), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Could not commit transaction"), err)
 	}
 	return nil
 }
@@ -114,4 +136,22 @@ func GetPlayersByElo(db *db.Db) ([]Player, error) {
 	}
 
 	return players, nil
+}
+
+func getOrCreatePlayer(tx *sqlx.Tx, name string) (Player, error) {
+	var player Player
+	row := tx.QueryRowx("SELECT * FROM players WHERE name_normalised=$1;", normalisation.Normalise(name))
+
+	err := row.StructScan(&player)
+	if errors.Is(sql.ErrNoRows, err) {
+		player = NewPlayer(name)
+		err := InsertPlayerTx(tx, player)
+		if err != nil {
+			return Player{}, errors.Join(errors.New("Could not create player 1"), err)
+		}
+	} else if err != nil {
+		return Player{}, errors.Join(errors.New("Could not scan player"), err)
+	}
+
+	return player, nil
 }

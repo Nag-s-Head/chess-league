@@ -8,6 +8,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 type Score string
@@ -43,7 +44,7 @@ func NextIKey(db *db.Db) (int64, error) {
 	return ikey, nil
 }
 
-func CreateGame(db *db.Db, player1, player2 *Player, isWhite bool, ikey int64, score Score, r *http.Request) (Game, error) {
+func CreateGame(tx *sqlx.Tx, player1, player2 *Player, isWhite bool, ikey int64, score Score, r *http.Request) (Game, error) {
 	if player1.Id == player2.Id {
 		return Game{}, errors.New("Both players are the same")
 	}
@@ -86,13 +87,7 @@ func CreateGame(db *db.Db, player1, player2 *Player, isWhite bool, ikey int64, s
 		game.EloTaken = eloA
 	}
 
-	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
-	if err != nil {
-		return Game{}, errors.Join(errors.New("Could not start tx"), err)
-	}
-	defer tx.Rollback()
-
-	_, err = tx.NamedExec(`
+	_, err := tx.NamedExec(`
 INSERT INTO games (player_white, player_black, score, submitter, played, deleted, elo_given, elo_taken, submit_ip, submit_user_agent, ikey)
 VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :elo_given, :elo_taken, :submit_ip, :submit_user_agent, :ikey);
   	`, game)
@@ -111,9 +106,35 @@ VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :el
 		return Game{}, errors.Join(errors.New("Cannot set elo of player 2"), err)
 	}
 
+	return game, nil
+}
+
+func SubmitGame(db *db.Db, p1Name, p2Name string, isWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, error) {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return nil, nil, nil, errors.Join(errors.New("Could not start transaction"), err)
+	}
+	defer tx.Rollback()
+
+	player1, err := getOrCreatePlayer(tx, p1Name)
+	if err != nil {
+		return nil, nil, nil, errors.Join(errors.New("Could not get or create player 1"), err)
+	}
+
+	player2, err := getOrCreatePlayer(tx, p2Name)
+	if err != nil {
+		return nil, nil, nil, errors.Join(errors.New("Could not get or create player 2"), err)
+	}
+
+	game, err := CreateGame(tx, &player1, &player2, isWhite, ikey, score, r)
+	if err != nil {
+		return nil, nil, nil, errors.Join(errors.New("Could not create game"), err)
+	}
+
 	err = tx.Commit()
 	if err != nil {
-		return Game{}, errors.Join(errors.New("Could not commit tx"), err)
+		return nil, nil, nil, errors.Join(errors.New("Could not commit transaction"), err)
 	}
-	return game, nil
+
+	return &game, &player1, &player2, nil
 }
