@@ -61,8 +61,32 @@ func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
 	Render(w, body)
 }
 
+var magicNumber string = os.Getenv(submitgame.MagicNumberEnvVar)
+
+// probably long enough to submit a game
+const maxAge = 3 * 60 * 60
+
 func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		magic := ""
+		cookie, err := r.Cookie(submitgame.MagicNumberCookie)
+		if err != nil {
+			magic = r.URL.Query().Get(submitgame.MagicNumberParam)
+			http.SetCookie(w, &http.Cookie{
+				Name:   submitgame.MagicNumberCookie,
+				Value:  magic,
+				MaxAge: maxAge,
+			})
+		} else {
+			magic = cookie.Value
+		}
+
+		if magic != magicNumber {
+			slog.Warn("An attempt to access the submit form without the magic number was made")
+			w.Write([]byte("This page can only be accessed from the QR code in the pub"))
+			return
+		}
+
 		assignNewIkey := false
 		ikeyCookie, err := r.Cookie(submitgame.IKeyCookie)
 		if err != nil {
@@ -87,7 +111,7 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, &http.Cookie{
 				Name:     submitgame.IKeyCookie,
 				Value:    fmt.Sprintf("%d", ikey),
-				MaxAge:   60 * 60 * 3, // probably long enough to submit a game
+				MaxAge:   maxAge,
 				HttpOnly: true,
 				Secure:   true,
 			})
@@ -120,7 +144,7 @@ func NewHandler(db *db.Db) http.Handler {
 	slog.Info(fmt.Sprintf("To submit a game use http://0.0.0.0:8080/%s?%s=%s",
 		submitgame.BasePath,
 		submitgame.MagicNumberParam,
-		os.Getenv(submitgame.MagicNumberEnvVar)))
+		magicNumber))
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
 	submitgame.Register(mux, db)
 

@@ -16,6 +16,7 @@ const (
 	BasePath          = "/submit-game"
 	IKeyCookie        = "ikey"
 	MagicNumberParam  = "magic"
+	MagicNumberCookie = "magic"
 	MagicNumberEnvVar = "MAGIC_NUMBER"
 )
 
