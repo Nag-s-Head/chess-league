@@ -2,6 +2,9 @@ include test.env
 DATABASE_URL := $(shell echo $(DATABASE_URL) | sed 's/"//g')
 export DATABASE_URL
 
+MAGIC_NUMBER := $(shell echo $(MAGIC_NUMBER) | sed 's/"//g')
+export MAGIC_NUMBER
+
 docker-images:
 	docker compose up -d --build
 

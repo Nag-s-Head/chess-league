@@ -12,8 +12,12 @@ import (
 	"github.com/djpiper28/rpg-book/common/normalisation"
 )
 
-const BasePath = "/submit-game"
-const IKeyCookie = "ikey"
+const (
+	BasePath          = "/submit-game"
+	IKeyCookie        = "ikey"
+	MagicNumberParam  = "magic"
+	MagicNumberEnvVar = "MAGIC_NUMBER"
+)
 
 type PlayerConsolidationModel struct {
 	Results []PlayerLookupResult

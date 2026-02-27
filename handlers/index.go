@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -116,6 +117,10 @@ func NewHandler(db *db.Db) http.Handler {
 	mux.HandleFunc("GET /test", Test)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
 
+	slog.Info(fmt.Sprintf("To submit a game use http://0.0.0.0:8080/%s?%s=%s",
+		submitgame.BasePath,
+		submitgame.MagicNumberParam,
+		os.Getenv(submitgame.MagicNumberEnvVar)))
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
 	submitgame.Register(mux, db)
 

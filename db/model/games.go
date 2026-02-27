@@ -43,6 +43,10 @@ func NextIKey(db *db.Db) (int64, error) {
 }
 
 func CreateGame(db *db.Db, player1, player2 *Player, isWhite bool, ikey int64, score Score, r *http.Request) (Game, error) {
+	if player1.Id == player2.Id {
+		return Game{}, errors.New("Both players are the same")
+	}
+
 	game := Game{
 		Score:           score,
 		Submitter:       player1.Id,
