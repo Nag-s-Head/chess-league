@@ -13,6 +13,7 @@ import (
 )
 
 const BasePath = "/submit-game"
+const IKeyCookie = "ikey"
 
 type PlayerConsolidationModel struct {
 	Results []PlayerLookupResult

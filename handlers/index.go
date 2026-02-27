@@ -7,9 +7,11 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/model"
 	privacypolicy "github.com/Nag-s-Head/chess-league/handlers/privacy_policy"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
@@ -58,15 +60,47 @@ func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
 	Render(w, body)
 }
 
-func SubmitGame(w http.ResponseWriter, r *http.Request) {
-	body, err := submitgame.Render()
-	if err != nil {
-		slog.Error("Cannot render submit game", "err", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assignNewIkey := false
+		ikeyCookie, err := r.Cookie(submitgame.IKeyCookie)
+		if err != nil {
+			slog.Info("No ikey for user trying to submit game")
+			assignNewIkey = true
+		} else {
+			ikey, err := strconv.ParseInt(ikeyCookie.Value, 10, 64)
+			if err != nil || ikey < 0 {
+				slog.Warn("Invalid ikey detected", "err", err, "key", ikeyCookie.Value)
+				assignNewIkey = true
+			}
+		}
 
-	Render(w, body)
+		if assignNewIkey {
+			ikey, err := model.NextIKey(db)
+			if err != nil {
+				slog.Warn("Could not assign new ikey", "err", err)
+				w.Write([]byte("Could not generate an idempotency - unable to report a game"))
+				return
+			}
+
+			http.SetCookie(w, &http.Cookie{
+				Name:     submitgame.IKeyCookie,
+				Value:    fmt.Sprintf("%d", ikey),
+				MaxAge:   60 * 60 * 3, // probably long enough to submit a game
+				HttpOnly: true,
+				Secure:   true,
+			})
+		}
+
+		body, err := submitgame.Render()
+		if err != nil {
+			slog.Error("Cannot render submit game", "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		Render(w, body)
+	}
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +116,7 @@ func NewHandler(db *db.Db) http.Handler {
 	mux.HandleFunc("GET /test", Test)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
 
-	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame)
+	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
 	submitgame.Register(mux, db)
 
 	return mux
