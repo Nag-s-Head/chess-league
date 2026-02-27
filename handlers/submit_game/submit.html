@@ -6,6 +6,14 @@
     .IsWhite}}white{{else}}black{{end}} player) {{range
     .Players}}{{.Elo}}{{end}} ELO.
   </h3>
+
+  <input
+    class="hidden"
+    type="radio"
+    name="{{if $result.IsWhite}}white{{else}}black{{end}}-player-name"
+    value="{{.NameNormalised}}"
+    checked
+  />
   {{else}}
   <h3 class="text-xl">
     <span class="font-bold">Could not find {{.Name}}</span> ({{if
@@ -48,3 +56,9 @@
   {{end}}
 </div>
 {{end}}
+
+<input
+  type="submit"
+  class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+  value="Submit Game"
+/>

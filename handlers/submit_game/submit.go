@@ -62,29 +62,17 @@ func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, 
 	}, nil
 }
 
-func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
-	cookie, err := r.Cookie(MagicNumberCookie)
-	if err != nil {
-		return errors.New("Cannot get magic number cookie")
-	}
+const (
+	playerName      = "player-name"
+	playedAs        = "played-as"
+	otherPlayerName = "other-player-name"
+	winner          = "winner"
 
-	if cookie.Value != magicNumber {
-		slog.Warn("An attempt to access submit the form without the magic number was made")
-		return errors.New("Magic number for submit is invalid")
-	}
+	whitePlayerName = "white-player-name"
+	blackPlayerName = "black-player-name"
+)
 
-	err = r.ParseForm()
-	if err != nil {
-		return errors.Join(errors.New("Could not parse form"), err)
-	}
-
-	const (
-		playerName      = "player-name"
-		playedAs        = "played-as"
-		otherPlayerName = "other-player-name"
-		winner          = "winner"
-	)
-
+func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	player1 := r.FormValue(playerName)
 	if player1 == "" {
 		return errors.New("Player 1 is not set")
@@ -134,6 +122,38 @@ func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return nil
+}
+
+func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
+	return errors.New("TODO: implement this")
+}
+
+func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
+	cookie, err := r.Cookie(MagicNumberCookie)
+	if err != nil {
+		return errors.New("Cannot get magic number cookie")
+	}
+
+	if cookie.Value != magicNumber {
+		slog.Warn("An attempt to access submit the form without the magic number was made")
+		return errors.New("Magic number for submit is invalid")
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		return errors.Join(errors.New("Could not parse form"), err)
+	}
+
+	whitePlayerName := r.FormValue(whitePlayerName)
+	blackPlayerName := r.FormValue(blackPlayerName)
+
+	if whitePlayerName != "" && blackPlayerName != "" {
+		slog.Info("Submitting a game", "form", r.Form)
+		return doFinalSubmit(db, w, r)
+	} else {
+		slog.Info("Doing user lookup", "form", r.Form)
+		return doUserLookupSubmit(db, w, r)
+	}
 }
 
 type Error struct {
