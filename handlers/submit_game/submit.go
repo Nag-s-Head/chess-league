@@ -110,17 +110,13 @@ func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error
 	}
 
 	// Check results and send to the UI
-	if allExact {
-		w.Write([]byte("TODO: all players were exact"))
-	} else {
-		var buf bytes.Buffer
-		err := resultsTpl.Execute(&buf, results)
-		if err != nil {
-			return errors.Join(errors.New("Cannot execute template"), err)
-		}
-
-		w.Write(buf.Bytes())
+	var buf bytes.Buffer
+	err = resultsTpl.Execute(&buf, results)
+	if err != nil {
+		return errors.Join(errors.New("Cannot execute template"), err)
 	}
+
+	w.Write(buf.Bytes())
 
 	return nil
 }
