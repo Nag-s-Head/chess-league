@@ -1,6 +1,7 @@
 package model_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -29,6 +30,10 @@ func TestCreateGameP1White(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()
 
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
 	p1 := model.NewPlayer(uuid.New().String())
 	require.NoError(t, model.InsertPlayer(db, p1))
 
@@ -39,7 +44,7 @@ func TestCreateGameP1White(t *testing.T) {
 	require.NoError(t, err)
 
 	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
-	game, err := model.CreateGame(db, &p1, &p2, true, ikey, model.Score_Win, r)
+	game, err := model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
 	require.NotEqual(t, model.StartingElo, p1.Elo)
@@ -56,6 +61,7 @@ func TestCreateGameP1White(t *testing.T) {
 	require.Equal(t, false, game.Deleted)
 
 	require.Equal(t, ikey, game.IKey)
+	require.NoError(t, tx.Commit())
 
 	p1New, err := model.GetPlayer(db, p1.Id)
 	require.NoError(t, err)
@@ -70,6 +76,10 @@ func TestCreateGameP1Black(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()
 
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
 	p1 := model.NewPlayer(uuid.New().String())
 	require.NoError(t, model.InsertPlayer(db, p1))
 
@@ -80,7 +90,7 @@ func TestCreateGameP1Black(t *testing.T) {
 	require.NoError(t, err)
 
 	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
-	game, err := model.CreateGame(db, &p1, &p2, false, ikey, model.Score_Win, r)
+	game, err := model.CreateGame(tx, &p1, &p2, false, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
 	require.NotEqual(t, model.StartingElo, p1.Elo)
@@ -97,6 +107,7 @@ func TestCreateGameP1Black(t *testing.T) {
 	require.Equal(t, false, game.Deleted)
 
 	require.Equal(t, ikey, game.IKey)
+	require.NoError(t, tx.Commit())
 
 	p1New, err := model.GetPlayer(db, p1.Id)
 	require.NoError(t, err)
@@ -111,6 +122,10 @@ func TestCreateGameSameIkeyFails(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()
 
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Commit()
+
 	p1 := model.NewPlayer(uuid.New().String())
 	require.NoError(t, model.InsertPlayer(db, p1))
 
@@ -121,9 +136,9 @@ func TestCreateGameSameIkeyFails(t *testing.T) {
 	require.NoError(t, err)
 
 	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
-	_, err = model.CreateGame(db, &p1, &p2, true, ikey, model.Score_Win, r)
+	_, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
-	_, err = model.CreateGame(db, &p1, &p2, true, ikey, model.Score_Win, r)
+	_, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.Error(t, err)
 }

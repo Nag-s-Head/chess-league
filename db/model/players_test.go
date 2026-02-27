@@ -92,7 +92,7 @@ func TestSearchPlayerByNameSimpleCase(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()
 
-	names := []string{"Danny Piper", "Tony Blair", "Gordon Brown", "David Cameron", "Theresa May", "Boris Johnson"}
+	names := []string{"John Major", "Tony Blair", "Gordon Brown", "David Cameron", "Theresa May", "Boris Johnson"}
 	for _, name := range names {
 		_, err := db.GetSqlxDb().Exec("DELETE FROM players WHERE name_normalised = $1", normalisation.Normalise(name))
 		require.NoError(t, err)
@@ -102,10 +102,10 @@ func TestSearchPlayerByNameSimpleCase(t *testing.T) {
 		require.NoError(t, model.InsertPlayer(db, model.NewPlayer(name)))
 	}
 
-	players, err := model.SearchPlayerByName(db, "DANNY")
+	players, err := model.SearchPlayerByName(db, "MAJO")
 	require.NoError(t, err)
 	require.Len(t, players, 1)
-	require.Equal(t, players[0].Name, "Danny Piper")
+	require.Equal(t, players[0].Name, "John Major")
 }
 
 func TestSearchPlayerByNameManyResults(t *testing.T) {
