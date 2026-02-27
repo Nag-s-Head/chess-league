@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
@@ -31,6 +32,8 @@ type PlayerLookupResult struct {
 	Name           string
 	NameNormalised string
 }
+
+var magicNumber string = os.Getenv(MagicNumberEnvVar)
 
 func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, error) {
 	nameNormalised := normalisation.Normalise(name)
@@ -60,7 +63,17 @@ func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, 
 }
 
 func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
-	err := r.ParseForm()
+	cookie, err := r.Cookie(MagicNumberCookie)
+	if err != nil {
+		return errors.New("Cannot get magic number cookie")
+	}
+
+	if cookie.Value != magicNumber {
+		slog.Warn("An attempt to access submit the form without the magic number was made")
+		return errors.New("Magic number for submit is invalid")
+	}
+
+	err = r.ParseForm()
 	if err != nil {
 		return errors.Join(errors.New("Could not parse form"), err)
 	}
@@ -123,11 +136,22 @@ func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type Error struct {
+	Error string
+}
+
 func Register(mux *http.ServeMux, db *db.Db) {
 	mux.HandleFunc(fmt.Sprintf("POST %s/submit", BasePath), func(w http.ResponseWriter, r *http.Request) {
 		err := DoSubmit(db, w, r)
 		if err != nil {
 			slog.Error("Could not submit a game", "err", err, "params", r.Form)
+
+			var buf bytes.Buffer
+			err := errorTpl.Execute(&buf, Error{Error: err.Error()})
+			if err != nil {
+				return
+			}
+			w.Write(buf.Bytes())
 		}
 	})
 }
