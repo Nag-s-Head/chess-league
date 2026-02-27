@@ -1,5 +1,8 @@
-<p>Work in progress</p>
-<h1 class="text-2xl font-bold">Leaderboard</h1>
+<h2 class="text-2xl text-green-800 font-bold">
+  Game submitted successfully, redirecting to leaderboard...
+</h2>
+
+<p>New Score</p>
 {{range $result := .}}
 <div
   class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer"
@@ -10,3 +13,9 @@
   </div>
 </div>
 {{end}}
+
+<script>
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 10000); // 10,000 milliseconds = 10 seconds
+</script>

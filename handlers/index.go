@@ -121,6 +121,7 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   maxAge,
 				HttpOnly: true,
 				Secure:   true,
+				Path:     submitgame.BasePath,
 			})
 		}
 

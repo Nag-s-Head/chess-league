@@ -152,7 +152,23 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 		return errors.Join(errors.New("Could not submit game"), err)
 	}
 
-	return fmt.Errorf("YOUR GAME WAS SUBMITTED!! This part is not finished though, %#v %#v %#v", game, player1, player2)
+	slog.Info("Submitted a game", "game", game, "player1", player1, "player2", player2)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   IKeyCookie,
+		Value:  "",
+		MaxAge: 0,
+		Path:   BasePath,
+	})
+
+	var buf bytes.Buffer
+	err = successTpl.Execute(&buf, []model.Player{*player1, *player2})
+	if err != nil {
+		return err
+	}
+
+	w.Write(buf.Bytes())
+	return nil
 }
 
 func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
