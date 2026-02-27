@@ -43,7 +43,9 @@
     </li>
 
     <li>
-      <div class="flex flex-row gap-2 justify-between items-center border-t-2 pt-3 border-gray-300">
+      <div
+        class="flex flex-row gap-2 justify-between items-center border-t-2 pt-3 border-gray-300"
+      >
         <label for="other-player-name" class="cursor-pointer"> Against </label>
         <input
           id="other-player-name"
@@ -61,16 +63,21 @@
         <div
           class="flex flex-row justify-between p-3 border-2 border-gray-300 rounded-lg"
         >
-          <legend class="px-2">The winner was</legend>
+          <legend class="px-2">The result was</legend>
 
           <div class="flex flex-col gap-2">
             <label class="flex flex-row items-center gap-2 cursor-pointer">
-              White
+              White won
               <input name="winner" type="radio" value="white" required />
             </label>
 
             <label class="flex flex-row items-center gap-2 cursor-pointer">
-              Black
+              Black won
+              <input name="winner" type="radio" value="black" />
+            </label>
+
+            <label class="flex flex-row items-center gap-2 cursor-pointer">
+              Draw
               <input name="winner" type="radio" value="black" />
             </label>
           </div>

@@ -54,6 +54,16 @@ CREATE INDEX idx_players_name_norm ON players(name_normalised);
 CREATE INDEX idx_players_elo ON players(elo);
 			`,
 		},
+		{
+			Sql: `
+CREATE SEQUENCE game_ikey_sequence AS BIGINT;
+			`,
+		},
+		{
+			Sql: `
+ALTER TABLE games ADD COLUMN ikey BIGINT NOT NULL UNIQUE;
+			`,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR

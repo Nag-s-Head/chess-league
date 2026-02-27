@@ -1,10 +1,9 @@
-package elo_test
+package model_test 
 
 import (
 	"testing"
 
 	"github.com/Nag-s-Head/chess-league/db/model"
-	"github.com/Nag-s-Head/chess-league/elo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,7 +11,7 @@ func TestEloWin(t *testing.T) {
 	a := model.NewPlayer("Dave")
 	b := model.NewPlayer("Bob")
 
-	deltaA, deltaB := elo.CalculateElo(&a, &b, elo.Outcome_Win)
+	deltaA, deltaB := model.CalculateElo(&a, &b, model.Outcome_Win)
 	require.Equal(t, model.StartingElo+deltaA, a.Elo)
 	require.Equal(t, model.StartingElo+deltaB, b.Elo)
 
@@ -24,7 +23,7 @@ func TestEloLoss(t *testing.T) {
 	a := model.NewPlayer("Dave")
 	b := model.NewPlayer("Bob")
 
-	deltaA, deltaB := elo.CalculateElo(&a, &b, elo.Outcome_Loss)
+	deltaA, deltaB := model.CalculateElo(&a, &b, model.Outcome_Loss)
 	require.Equal(t, model.StartingElo+deltaA, a.Elo)
 	require.Equal(t, model.StartingElo+deltaB, b.Elo)
 
@@ -36,7 +35,7 @@ func TestEloDraw(t *testing.T) {
 	a := model.NewPlayer("Dave")
 	b := model.NewPlayer("Bob")
 
-	deltaA, deltaB := elo.CalculateElo(&a, &b, elo.Outcome_Draw)
+	deltaA, deltaB := model.CalculateElo(&a, &b, model.Outcome_Draw)
 	require.Equal(t, model.StartingElo+deltaA, a.Elo)
 	require.Equal(t, model.StartingElo+deltaB, b.Elo)
 
