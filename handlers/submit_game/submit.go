@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
@@ -74,12 +75,12 @@ const (
 )
 
 func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
-	player1 := r.FormValue(playerName)
+	player1 := strings.TrimSpace(r.FormValue(playerName))
 	if player1 == "" {
 		return errors.New("Player 1 is not set")
 	}
 
-	player2 := r.FormValue(otherPlayerName)
+	player2 := strings.TrimSpace(r.FormValue(otherPlayerName))
 	if player2 == "" {
 		return errors.New("Player 2 is not set")
 	}
@@ -122,8 +123,8 @@ func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error
 }
 
 func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
-	white := r.FormValue(whitePlayerName)
-	black := r.FormValue(blackPlayerName)
+	white := strings.TrimSpace(r.FormValue(whitePlayerName))
+	black := strings.TrimSpace(r.FormValue(blackPlayerName))
 
 	ikeyCookie, err := r.Cookie(IKeyCookie)
 	if err != nil {
