@@ -1,12 +1,13 @@
 <p>Work in progress</p>
 <h1 class="text-2xl font-bold">Leaderboard</h1>
 {{range $result := .}}
-<div
-  class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer"
+<a
+  href="/player/{{.Id}}"
+  class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
 >
   <div class="flex flex-row justify-between w-full">
     <h4 class="text-lg font-bold">{{.Name}}</h4>
     <p>{{.Elo}} ELO</p>
   </div>
-</div>
+</a>
 {{end}}

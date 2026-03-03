@@ -120,6 +120,13 @@ ALTER TABLE players ADD COLUMN deleted BOOL NOT NULL DEFAULT false;
 				return nil
 			},
 		},
+		{
+			Sql: `
+CREATE INDEX idx_games_player_white ON games(player_white);
+CREATE INDEX idx_games_player_black ON games(player_black);
+CREATE INDEX idx_games_played ON games(played);
+			`,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR

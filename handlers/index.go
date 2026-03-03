@@ -13,9 +13,11 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	playerdetails "github.com/Nag-s-Head/chess-league/handlers/player_details"
 	privacypolicy "github.com/Nag-s-Head/chess-league/handlers/privacy_policy"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
+	"github.com/google/uuid"
 )
 
 //go:embed index.html layout.html
@@ -141,11 +143,33 @@ func Test(w http.ResponseWriter, r *http.Request) {
 	Render(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
 }
 
+func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			slog.Warn("Invalid player ID", "id", idStr)
+			http.Error(w, "Invalid player ID", http.StatusBadRequest)
+			return
+		}
+
+		body, err := playerdetails.Render(db, id)
+		if err != nil {
+			slog.Error("Cannot render player details", "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		Render(w, body)
+	}
+}
+
 // NewHandler returns a router that handles all site routes.
 func NewHandler(db *db.Db) http.Handler {
 	mux := http.NewServeMux()
 	// {$} matches exactly "/"
 	mux.HandleFunc("GET /{$}", Index(db))
+	mux.HandleFunc("GET /player/{id}", PlayerDetails(db))
 	mux.HandleFunc("GET /test", Test)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
 

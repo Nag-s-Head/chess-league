@@ -33,6 +33,12 @@ type Game struct {
 	IKey            int64     `db:"ikey"`
 }
 
+type GameWithPlayerNames struct {
+	Game
+	WhiteName string `db:"white_name"`
+	BlackName string `db:"black_name"`
+}
+
 func NextIKey(db *db.Db) (int64, error) {
 	var ikey int64
 	row := db.GetSqlxDb().QueryRow("SELECT nextval('game_ikey_sequence');")
@@ -137,4 +143,20 @@ func SubmitGame(db *db.Db, p1Name, p2Name string, isWhite bool, ikey int64, scor
 	}
 
 	return &game, &player1, &player2, nil
+}
+
+func GetGamesByPlayer(db *db.Db, playerId uuid.UUID) ([]GameWithPlayerNames, error) {
+	var games []GameWithPlayerNames
+	err := db.GetSqlxDb().Select(&games, `
+SELECT g.*, w.name as white_name, b.name as black_name
+FROM games g
+JOIN players w ON g.player_white = w.id
+JOIN players b ON g.player_black = b.id
+WHERE (g.player_white=$1 OR g.player_black=$1) AND g.deleted=false
+ORDER BY g.played DESC`, playerId)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get games by player"), err)
+	}
+
+	return games, nil
 }
