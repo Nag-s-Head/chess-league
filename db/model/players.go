@@ -21,6 +21,7 @@ type Player struct {
 	NameNormalised string    `db:"name_normalised"`
 	Elo            int       `db:"elo"`
 	JoinTime       time.Time `db:"join_time"`
+	Deleted        bool      `db:"deleted"`
 }
 
 func NewPlayer(name string) Player {
@@ -30,6 +31,7 @@ func NewPlayer(name string) Player {
 		NameNormalised: normalisation.Normalise(name),
 		Elo:            StartingElo,
 		JoinTime:       time.Now(),
+		Deleted:        false,
 	}
 }
 

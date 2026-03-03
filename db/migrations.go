@@ -2,8 +2,11 @@ package db
 
 import (
 	"errors"
+	"strings"
+	"unicode"
 
 	"github.com/djpiper28/rpg-book/common/database/migrations"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -18,6 +21,19 @@ func New() (*Db, error) {
 	}
 
 	return From(db)
+}
+
+func InternalFixPlayerNameCapitals(name string) string {
+	parts := strings.Split(name, " ")
+	for i, str := range parts {
+		strBytes := []byte(str)
+		if len(str) > 0 {
+			strBytes[0] = byte(unicode.ToUpper(rune(str[0])))
+		}
+		parts[i] = string(strBytes)
+	}
+
+	return strings.Join(parts, " ")
 }
 
 func From(in *sqlx.DB) (*Db, error) {
@@ -63,6 +79,46 @@ CREATE SEQUENCE game_ikey_sequence AS BIGINT;
 			Sql: `
 ALTER TABLE games ADD COLUMN ikey BIGINT NOT NULL UNIQUE;
 			`,
+		},
+		{
+			Sql: `
+ALTER TABLE players ADD COLUMN deleted BOOL NOT NULL DEFAULT false;
+			`,
+		},
+		{
+			PreProcess: func(tx *sqlx.Tx) error {
+				type Player struct {
+					Id   uuid.UUID `db:"id"`
+					Name string    `db:"name"`
+				}
+
+				rows, err := tx.Queryx("SELECT id, name FROM players;")
+				if err != nil {
+					return errors.Join(errors.New("Cannot get players"), err)
+				}
+
+				players := make([]Player, 0)
+				for rows.Next() {
+					var player Player
+					err := rows.StructScan(&player)
+					if err != nil {
+						return errors.Join(errors.New("Cannot scan player"), err)
+					}
+
+					players = append(players, player)
+				}
+
+				for _, player := range players {
+					player.Name = InternalFixPlayerNameCapitals(player.Name)
+
+					_, err := tx.NamedExec("UPDATE players SET name=:name WHERE id=:id;", player)
+					if err != nil {
+						return errors.Join(errors.New("Cannot update player name"), err)
+					}
+				}
+
+				return nil
+			},
 		},
 	})
 

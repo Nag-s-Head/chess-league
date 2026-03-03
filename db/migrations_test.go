@@ -22,3 +22,13 @@ func TestFrom(t *testing.T) {
 	d := testutils.GetDb(t)
 	d.Close()
 }
+
+func TestPlayerCapitilisationFix1(t *testing.T) {
+	name := "danny piper"
+	require.Equal(t, "Danny Piper", db.InternalFixPlayerNameCapitals(name))
+}
+
+func TestPlayerCapitilisationFix2(t *testing.T) {
+	name := "rhys"
+	require.Equal(t, "Rhys", db.InternalFixPlayerNameCapitals(name))
+}
