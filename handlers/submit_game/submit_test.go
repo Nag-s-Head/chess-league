@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -65,5 +66,130 @@ func TestSubmit(t *testing.T) {
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
 		require.Error(t, err)
+	})
+
+	t.Run("Test final submit success", func(t *testing.T) {
+		whiteName := uuid.New().String()
+		blackName := uuid.New().String()
+
+		form := url.Values{}
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", blackName)
+		form.Set("winner", "white")
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.IKeyCookie,
+			Value: "12345",
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.NoError(t, err)
+		require.Contains(t, w.Body.String(), "Game submitted successfully")
+	})
+
+	t.Run("Test final submit missing ikey", func(t *testing.T) {
+		whiteName := uuid.New().String()
+		blackName := uuid.New().String()
+
+		form := url.Values{}
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", blackName)
+		form.Set("winner", "white")
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Could not find ikey cookie")
+	})
+
+	t.Run("Test final submit invalid ikey", func(t *testing.T) {
+		whiteName := uuid.New().String()
+		blackName := uuid.New().String()
+
+		form := url.Values{}
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", blackName)
+		form.Set("winner", "white")
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.IKeyCookie,
+			Value: "not-a-number",
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Could not read ikey cookie")
+	})
+
+	t.Run("Test final submit invalid winner", func(t *testing.T) {
+		whiteName := uuid.New().String()
+		blackName := uuid.New().String()
+
+		form := url.Values{}
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", blackName)
+		form.Set("winner", "invalid")
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.IKeyCookie,
+			Value: "12345",
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Invalid winner")
+	})
+
+	t.Run("Test final submit same players", func(t *testing.T) {
+		whiteName := uuid.New().String()
+
+		form := url.Values{}
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", whiteName)
+		form.Set("winner", "white")
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.IKeyCookie,
+			Value: "12345",
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Both players are the same")
 	})
 }
