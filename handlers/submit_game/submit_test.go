@@ -76,6 +76,10 @@ func TestSubmit(t *testing.T) {
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
 		form.Set("winner", "white")
+		form.Set("submit-type", "final")
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -85,13 +89,44 @@ func TestSubmit(t *testing.T) {
 		})
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
-			Value: "12345",
+			Value: fmt.Sprintf("%d", ikey),
 		})
 
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
 		require.NoError(t, err)
 		require.Contains(t, w.Body.String(), "Game submitted successfully")
+	})
+
+	t.Run("Test final submit draw", func(t *testing.T) {
+		whiteName := uuid.New().String()
+		blackName := uuid.New().String()
+
+		form := url.Values{}
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", blackName)
+		form.Set("winner", "draw")
+		form.Set("submit-type", "final")
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.IKeyCookie,
+			Value: fmt.Sprintf("%d", ikey),
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.NoError(t, err)
+		require.Contains(t, w.Body.String(), "Game submitted successfully")
+		require.Contains(t, w.Body.String(), "+0")
 	})
 
 	t.Run("Test final submit missing ikey", func(t *testing.T) {
@@ -102,6 +137,7 @@ func TestSubmit(t *testing.T) {
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
 		form.Set("winner", "white")
+		form.Set("submit-type", "final")
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -124,6 +160,7 @@ func TestSubmit(t *testing.T) {
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
 		form.Set("winner", "white")
+		form.Set("submit-type", "final")
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -150,6 +187,10 @@ func TestSubmit(t *testing.T) {
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
 		form.Set("winner", "invalid")
+		form.Set("submit-type", "final")
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -159,7 +200,7 @@ func TestSubmit(t *testing.T) {
 		})
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
-			Value: "12345",
+			Value: fmt.Sprintf("%d", ikey),
 		})
 
 		w := httptest.NewRecorder()
@@ -175,6 +216,10 @@ func TestSubmit(t *testing.T) {
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", whiteName)
 		form.Set("winner", "white")
+		form.Set("submit-type", "final")
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -184,7 +229,7 @@ func TestSubmit(t *testing.T) {
 		})
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
-			Value: "12345",
+			Value: fmt.Sprintf("%d", ikey),
 		})
 
 		w := httptest.NewRecorder()

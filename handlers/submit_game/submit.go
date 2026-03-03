@@ -161,8 +161,32 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 		Path:   BasePath,
 	})
 
+	type FinalPlayer struct {
+		EloGiven int
+		model.Player
+	}
+
+	p1EloDelta := 0
+	p2EloDelta := 0
+	if winner == "white" {
+		p1EloDelta = game.EloGiven
+		p2EloDelta = game.EloTaken
+	} else if winner == "black" {
+		p1EloDelta = game.EloTaken
+		p2EloDelta = game.EloGiven
+	}
+
 	var buf bytes.Buffer
-	err = successTpl.Execute(&buf, []model.Player{*player1, *player2})
+	err = successTpl.Execute(&buf, []FinalPlayer{
+		{
+			EloGiven: p1EloDelta,
+			Player:   *player1,
+		},
+		{
+			EloGiven: p2EloDelta,
+			Player:   *player2,
+		},
+	})
 	if err != nil {
 		return err
 	}
@@ -187,10 +211,9 @@ func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 		return errors.Join(errors.New("Could not parse form"), err)
 	}
 
-	whitePlayerName := r.FormValue(whitePlayerName)
-	blackPlayerName := r.FormValue(blackPlayerName)
+	submitType := r.FormValue("submit-type")
 
-	if whitePlayerName != "" && blackPlayerName != "" {
+	if submitType == "final" {
 		slog.Info("Submitting a game", "form", r.Form)
 		return doFinalSubmit(db, w, r)
 	} else {

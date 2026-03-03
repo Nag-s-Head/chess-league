@@ -9,7 +9,14 @@
 >
   <div class="flex flex-row justify-between w-full">
     <h4 class="text-lg font-bold">{{.Name}}</h4>
-    <p>{{.Elo}} ELO</p>
+    <p>
+      {{.Elo}} ELO
+      <span
+        class="font-bold {{if gt .EloGiven 0}}text-green-800{{else if lt .EloGiven 0}}text-red-700{{else}}text-gray-500{{end}}"
+      >
+        {{if gt .EloGiven 0}}+{{end}}{{if lt .EloGiven 0}}{{else if eq .EloGiven 0}}+{{end}}{{.EloGiven}}
+      </span>
+    </p>
   </div>
 </div>
 {{end}}

@@ -21,8 +21,8 @@ func GetTemplate(f embed.FS, name string) *template.Template {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
 		caller := fmt.Sprintf("%s:%d", file, line)
-		slog.Error("Cannot parse template", "name", name, "caller", caller)
-		panic("Cannot parse template")
+		slog.Error("Cannot parse template", "name", name, "caller", caller, "err", err)
+		panic(fmt.Sprintf("Cannot parse template %s: %v", name, err))
 	}
 
 	return tpl
