@@ -31,7 +31,8 @@ func TestPlayerDetails(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()
 
-	player := model.NewPlayer("Test Player")
+	playerName := "Test Player " + uuid.New().String()
+	player := model.NewPlayer(playerName)
 	err := model.InsertPlayer(db, player)
 	require.NoError(t, err)
 
