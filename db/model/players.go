@@ -157,3 +157,13 @@ func getOrCreatePlayer(tx *sqlx.Tx, name string) (Player, error) {
 
 	return player, nil
 }
+
+func GetTotalPlayerCount(db *db.Db) (int, error) {
+	var count int
+	err := db.GetSqlxDb().Get(&count, "SELECT count(*) FROM players WHERE deleted=false")
+	if err != nil {
+		return 0, errors.Join(errors.New("Cannot get total player count"), err)
+	}
+
+	return count, nil
+}

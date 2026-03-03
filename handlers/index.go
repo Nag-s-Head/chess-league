@@ -29,6 +29,12 @@ type Layout struct {
 	Body template.HTML
 }
 
+type IndexData struct {
+	Players     []model.Player
+	TotalGames  int
+	TotalPlayers int
+}
+
 // Render wraps the provided body HTML in the global layout and writes it to w.
 func Render(w http.ResponseWriter, body template.HTML) {
 	err := layoutTmpl.Execute(w, Layout{
@@ -47,8 +53,24 @@ func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 			slog.Warn("Could not get leaderboard", "err", err)
 		}
 
+		gameCount, err := model.GetTotalGameCount(db)
+		if err != nil {
+			slog.Warn("Could not get game count", "err", err)
+		}
+
+		playerCount, err := model.GetTotalPlayerCount(db)
+		if err != nil {
+			slog.Warn("Could not get player count", "err", err)
+		}
+
+		data := IndexData{
+			Players:      players,
+			TotalGames:   gameCount,
+			TotalPlayers: playerCount,
+		}
+
 		var buf bytes.Buffer
-		err = indexTmpl.Execute(&buf, players)
+		err = indexTmpl.Execute(&buf, data)
 		if err != nil {
 			slog.Error("Cannot execute index template", "err", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

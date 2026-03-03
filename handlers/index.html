@@ -1,6 +1,13 @@
-<p>Work in progress</p>
-<h1 class="text-2xl font-bold">Leaderboard</h1>
-{{range $result := .}}
+<div class="p-5 border-2 border-gray-300 rounded-lg bg-gray-100">
+  <p class="text-lg">
+    Come play chess at the Nag's head, we have played
+    <span class="font-bold">{{.TotalGames}}</span> games with
+    <span class="font-bold">{{.TotalPlayers}}</span> players.
+  </p>
+</div>
+
+<h1 class="text-2xl font-bold mt-5">Leaderboard</h1>
+{{range $result := .Players}}
 <a
   href="/player/{{.Id}}"
   class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"

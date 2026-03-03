@@ -160,3 +160,13 @@ ORDER BY g.played DESC`, playerId)
 
 	return games, nil
 }
+
+func GetTotalGameCount(db *db.Db) (int, error) {
+	var count int
+	err := db.GetSqlxDb().Get(&count, "SELECT count(*) FROM games WHERE deleted=false")
+	if err != nil {
+		return 0, errors.Join(errors.New("Cannot get total game count"), err)
+	}
+
+	return count, nil
+}
