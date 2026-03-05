@@ -1,5 +1,9 @@
 # chess-league
 
+[Now live!](https://nagsknights.co.uk)
+
+[![Go CI](https://github.com/Nag-s-Head/chess-league/actions/workflows/go.yml/badge.svg)](https://github.com/Nag-s-Head/chess-league/actions/workflows/go.yml)
+
 Want to run a chess league? - use this.
 
 ## Environment Variables
