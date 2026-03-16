@@ -6,6 +6,7 @@ import (
 
 	privacypolicy "github.com/Nag-s-Head/chess-league/handlers/privacy_policy"
 	"github.com/Nag-s-Head/chess-league/handlers/rules"
+	"github.com/Nag-s-Head/chess-league/handlers/utils"
 )
 
 func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
@@ -17,6 +18,7 @@ func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Render(w, body)
+	utils.WithCacheControl(w)
 }
 
 func Rules(w http.ResponseWriter, r *http.Request) {
@@ -28,4 +30,5 @@ func Rules(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Render(w, body)
+	utils.WithCacheControl(w)
 }
