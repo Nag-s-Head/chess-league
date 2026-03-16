@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -46,7 +47,7 @@ func GetUser(login string) (User, error) {
 
 	err = json.Unmarshal(bytes, &user)
 	if err != nil {
-		return User{}, errors.Join(errors.New("Cannot read the response"), err)
+		return User{}, errors.Join(fmt.Errorf("Cannot read the response %s", string(bytes)), err)
 	}
 
 	return user, nil
@@ -73,7 +74,7 @@ func GerOrganisationMembers(orgName string) ([]User, error) {
 
 	err = json.Unmarshal(bytes, &members)
 	if err != nil {
-		return nil, errors.Join(errors.New("Cannot read the response"), err)
+		return nil, errors.Join(fmt.Errorf("Cannot read the response %s", string(bytes)), err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
