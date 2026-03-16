@@ -31,6 +31,18 @@
 </ol>
 
 <h2 class="text-lg font-bold">Our Admins</h2>
-<ol class="list-decimal px-5">
-  <li>TODO: Change this</li>
-</ol>
+<ul class="list-none">
+  {{range $result := .}}
+  <li>
+    <a
+      href="{{.HtmlUrl}}"
+      class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+    >
+      <div class="flex flex-row gap-5 w-full">
+        <img class="h-16" src="{{.AvatarUrl}}" />
+        <h4 class="text-xl font-bold">{{.Name}}</h4>
+      </div>
+    </a>
+  </li>
+  {{end}}
+</ul>
