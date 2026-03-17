@@ -17,7 +17,7 @@ var policy *template.Template = utils.GetTemplate(f, "rules.html")
 
 func Render() (template.HTML, error) {
 	var members []githubapi.User = []githubapi.User{}
-	members, err := githubapi.GerOrganisationMembers(os.Getenv("GITHUB_ORGANISATION"))
+	members, err := githubapi.GerOrganisationMembers(os.Getenv("GITHUB_ORGANISATION"), os.Getenv("GITHUB_API_KEY"))
 	if err != nil {
 		slog.Warn("Was not able to get organisation members", "err", err)
 	}

@@ -28,23 +28,34 @@ type User struct {
 	otherKeys map[string]any
 }
 
-func GetUser(login string) (User, error) {
+func GetUser(login string, apiKey string) (User, error) {
 	path, err := url.JoinPath("https://api.github.com/users/", login)
 	if err != nil {
 		return User{}, errors.Join(errors.New("Cannot create path"), err)
 	}
 
-	var user User
-	resp, err := http.Get(path)
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return User{}, errors.Join(errors.New("Cannot create the request"), err)
+	}
+
+	if apiKey != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return User{}, errors.Join(errors.New("Cannot execute the GET request"), err)
 	}
+	defer resp.Body.Close()
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return User{}, errors.Join(errors.New("Cannot read response"), err)
 	}
 
+	var user User
 	err = json.Unmarshal(bytes, &user)
 	if err != nil {
 		return User{}, errors.Join(fmt.Errorf("Cannot read the response %s", string(bytes)), err)
@@ -55,23 +66,34 @@ func GetUser(login string) (User, error) {
 
 const maxConcurrentRequests = 5
 
-func GerOrganisationMembers(orgName string) ([]User, error) {
+func GerOrganisationMembers(orgName string, apiKey string) ([]User, error) {
 	path, err := url.JoinPath("https://api.github.com/orgs/", orgName, "/members")
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot create path"), err)
 	}
 
-	var members []OrganisationMember
-	resp, err := http.Get(path)
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot create the request"), err)
+	}
+
+	if apiKey != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot execute the GET request"), err)
 	}
+	defer resp.Body.Close()
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot read response"), err)
 	}
 
+	var members []OrganisationMember
 	err = json.Unmarshal(bytes, &members)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("Cannot read the response %s", string(bytes)), err)
@@ -86,12 +108,12 @@ func GerOrganisationMembers(orgName string) ([]User, error) {
 	users := make([]User, len(members))
 	for i, member := range members {
 		wg.Add(1)
-		go func() {
+		go func(i int, member OrganisationMember) {
 			sem.Acquire(ctx, 1)
 			defer wg.Done()
 			defer sem.Release(1)
 
-			user, err := GetUser(member.Login)
+			user, err := GetUser(member.Login, apiKey)
 			if err != nil {
 				slog.Error("Could not read Github user - returning partial response", "err", err)
 				users[i] = User{
@@ -101,7 +123,7 @@ func GerOrganisationMembers(orgName string) ([]User, error) {
 			} else {
 				users[i] = user
 			}
-		}()
+		}(i, member)
 	}
 
 	wg.Wait()

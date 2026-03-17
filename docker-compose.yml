@@ -18,6 +18,7 @@ services:
       DATABASE_URL: "user=magnus password=bong-cloud dbname=chess-league host=database port=5432 sslmode=disable"
       MAGIC_NUMBER: "test123"
       GITHUB_ORGANISATION: Nag-s-Head
+      GITHUB_API_KEY: ""
     networks:
       - net
     develop:
