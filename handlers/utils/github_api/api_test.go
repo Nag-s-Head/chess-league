@@ -9,20 +9,20 @@ import (
 
 func TestGetOrganisation(t *testing.T) {
 	t.Run("Some members", func(t *testing.T) {
-		members, err := githubapi.GerOrganisationMembers("SquireTournamentServices")
+		members, err := githubapi.GerOrganisationMembers("SquireTournamentServices", "")
 		require.NoError(t, err)
 		require.NotEmpty(t, members)
 	})
 
 	t.Run("Our org", func(t *testing.T) {
-		members, err := githubapi.GerOrganisationMembers("Nag-s-Head")
+		members, err := githubapi.GerOrganisationMembers("Nag-s-Head", "")
 		require.NoError(t, err)
 		require.NotEmpty(t, members)
 	})
 }
 
 func TestGetUser(t *testing.T) {
-	user, err := githubapi.GetUser("djpiper28")
+	user, err := githubapi.GetUser("djpiper28", "")
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 }
