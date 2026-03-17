@@ -77,6 +77,7 @@ func NewHandler(db *db.Db) http.Handler {
 	mux.HandleFunc("GET /test", Test)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
 	mux.HandleFunc("GET /rules", Rules)
+	mux.HandleFunc("GET /rules/agree", RulesAgree)
 
 	slog.Info(fmt.Sprintf("To submit a game use http://0.0.0.0:8080/%s?%s=%s",
 		submitgame.BasePath,

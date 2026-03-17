@@ -12,6 +12,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	"github.com/djpiper28/rpg-book/common/normalisation"
 )
 
@@ -36,6 +37,14 @@ type PlayerLookupResult struct {
 }
 
 var magicNumber string = os.Getenv(MagicNumberEnvVar)
+
+func VerifyMagic(r *http.Request) bool {
+	cookie, err := r.Cookie(MagicNumberCookie)
+	if err == nil && cookie.Value != "" {
+		return cookie.Value == magicNumber
+	}
+	return r.URL.Query().Get(MagicNumberParam) == magicNumber
+}
 
 func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, error) {
 	nameNormalised := normalisation.Normalise(name)
@@ -197,17 +206,16 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 }
 
 func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
-	cookie, err := r.Cookie(MagicNumberCookie)
-	if err != nil {
-		return errors.New("Cannot get magic number cookie")
+	if !rules.HasAgreedToRules(r) {
+		return errors.New("You must agree to the rules before submitting a game")
 	}
 
-	if cookie.Value != magicNumber {
+	if !VerifyMagic(r) {
 		slog.Warn("An attempt to access submit the form without the magic number was made")
 		return errors.New("Magic number for submit is invalid")
 	}
 
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		return errors.Join(errors.New("Could not parse form"), err)
 	}

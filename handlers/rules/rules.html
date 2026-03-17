@@ -32,7 +32,7 @@
 
 <h2 class="text-lg font-bold">Our Admins</h2>
 <ul class="list-none">
-  {{range $result := .}}
+  {{range $result := .Members}}
   <li>
     <a
       href="{{.HtmlUrl}}"
@@ -46,3 +46,17 @@
   </li>
   {{end}}
 </ul>
+
+{{if .ShowAgreeButton}}
+<div class="flex flex-col gap-5 pt-5">
+  <p class="font-bold">
+    By clicking agree you confirm that you have read and understood the rules.
+  </p>
+  <a
+    href="/rules/agree"
+    class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold text-center"
+  >
+    Agree
+  </a>
+</div>
+{{end}}

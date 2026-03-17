@@ -9,6 +9,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 )
 
@@ -21,13 +22,15 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		magic := ""
 		cookie, err := r.Cookie(submitgame.MagicNumberCookie)
-		if err != nil {
+		if err != nil || cookie.Value == "" {
 			magic = r.URL.Query().Get(submitgame.MagicNumberParam)
-			http.SetCookie(w, &http.Cookie{
-				Name:   submitgame.MagicNumberCookie,
-				Value:  magic,
-				MaxAge: maxAge,
-			})
+			if magic != "" {
+				http.SetCookie(w, &http.Cookie{
+					Name:   submitgame.MagicNumberCookie,
+					Value:  magic,
+					MaxAge: maxAge,
+				})
+			}
 		} else {
 			magic = cookie.Value
 		}
@@ -35,6 +38,11 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 		if magic != magicNumber {
 			slog.Warn("An attempt to access the submit form without the magic number was made")
 			w.Write([]byte("This page can only be accessed from the QR code in the pub"))
+			return
+		}
+
+		if !rules.HasAgreedToRules(r) {
+			http.Redirect(w, r, "/rules?agree=true", http.StatusFound)
 			return
 		}
 

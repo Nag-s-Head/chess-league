@@ -22,7 +22,8 @@ func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
 }
 
 func Rules(w http.ResponseWriter, r *http.Request) {
-	body, err := rules.Render()
+	showAgreeButton := r.URL.Query().Get("agree") == "true"
+	body, err := rules.Render(showAgreeButton)
 	if err != nil {
 		slog.Error("Cannot render rules", "err", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -31,4 +32,17 @@ func Rules(w http.ResponseWriter, r *http.Request) {
 
 	utils.WithCacheControl(w)
 	Render(w, body)
+}
+
+func RulesAgree(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     rules.RulesVersionCookie,
+		Value:    rules.CurrentRulesVersion,
+		MaxAge:   365 * 24 * 60 * 60, // 1 year
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+	})
+
+	http.Redirect(w, r, "/submit-game", http.StatusFound)
 }

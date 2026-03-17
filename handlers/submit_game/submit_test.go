@@ -11,6 +11,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
+	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -37,11 +38,31 @@ func TestSubmit(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("No rules agreement should error", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "You must agree to the rules")
+	})
+
 	t.Run("No form data should error", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.MagicNumberCookie,
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
 		})
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
@@ -53,6 +74,14 @@ func TestSubmit(t *testing.T) {
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.MagicNumberCookie,
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
 		})
 
 		w := httptest.NewRecorder()
@@ -88,6 +117,14 @@ func TestSubmit(t *testing.T) {
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
 		})
 		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
 			Value: fmt.Sprintf("%d", ikey),
 		})
@@ -118,6 +155,14 @@ func TestSubmit(t *testing.T) {
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
 		})
 		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
 			Value: fmt.Sprintf("%d", ikey),
 		})
@@ -145,6 +190,10 @@ func TestSubmit(t *testing.T) {
 			Name:  submitgame.MagicNumberCookie,
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
 		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
 
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
@@ -167,6 +216,10 @@ func TestSubmit(t *testing.T) {
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.MagicNumberCookie,
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
 		})
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
@@ -199,6 +252,14 @@ func TestSubmit(t *testing.T) {
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
 		})
 		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
 			Value: fmt.Sprintf("%d", ikey),
 		})
@@ -228,6 +289,14 @@ func TestSubmit(t *testing.T) {
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
 		})
 		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
 			Name:  submitgame.IKeyCookie,
 			Value: fmt.Sprintf("%d", ikey),
 		})
@@ -236,5 +305,23 @@ func TestSubmit(t *testing.T) {
 		err = submitgame.DoSubmit(db, w, r)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "Both players are the same")
+	})
+
+	t.Run("Empty magic cookie but valid URL param should work", func(t *testing.T) {
+		url := fmt.Sprintf("/mocked-url?%s=%s&player-name=%s&played-as=white&other-player-name=not_found&winner=white",
+			submitgame.MagicNumberParam, os.Getenv(submitgame.MagicNumberEnvVar), name)
+		r := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: "",
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.NoError(t, err)
 	})
 }

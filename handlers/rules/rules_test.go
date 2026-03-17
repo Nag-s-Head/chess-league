@@ -8,7 +8,7 @@ import (
 )
 
 func TestPrivacy(t *testing.T) {
-	tpl, err := rules.Render()
+	tpl, err := rules.Render(false)
 	require.NoError(t, err)
 	require.NotNil(t, tpl)
 }
