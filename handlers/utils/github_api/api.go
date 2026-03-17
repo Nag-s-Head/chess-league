@@ -22,6 +22,7 @@ type OrganisationMember struct {
 }
 
 type User struct {
+	Login     string `json:"login"`
 	Name      string `json:"name"`
 	HtmlUrl   string `json:"html_url"`
 	AvatarUrl string `json:"avatar_url"`
@@ -117,10 +118,14 @@ func GerOrganisationMembers(orgName string, apiKey string) ([]User, error) {
 			if err != nil {
 				slog.Error("Could not read Github user - returning partial response", "err", err)
 				users[i] = User{
+					Login:   member.Login,
 					Name:    member.Login,
 					HtmlUrl: member.HtmlUrl,
 				}
 			} else {
+				if user.Name == "" {
+					user.Name = member.Login
+				}
 				users[i] = user
 			}
 		}(i, member)
