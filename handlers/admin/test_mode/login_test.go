@@ -1,4 +1,4 @@
-package testmode_test 
+package testmode_test
 
 import (
 	"testing"

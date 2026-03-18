@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/Nag-s-Head/chess-league/handlers"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
