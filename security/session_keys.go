@@ -1,7 +1,14 @@
 package security
 
-import "crypto/rand"
+import (
+	"crypto/rand"
+	"strings"
+)
 
 func NewSessionkey() string {
-	return rand.Text()
+	var sb strings.Builder
+	for range 5 {
+		sb.WriteString(rand.Text())
+	}
+	return sb.String()
 }
