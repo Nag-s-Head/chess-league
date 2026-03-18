@@ -57,5 +57,7 @@ func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWr
 	}
 
 	mux.HandleFunc(fmt.Sprintf("GET %s", BasePath), WithLayoutAndAuthentication(db, AdminIndex, LayoutRender))
+	mux.HandleFunc(fmt.Sprintf("GET %s/login", BasePath), auth.Login)
+	mux.HandleFunc(fmt.Sprintf("GET %s/auth/callback", BasePath), auth.Callback(db))
 	mux.HandleFunc(fmt.Sprintf("GET %s/logout", BasePath), auth.Logout(db))
 }

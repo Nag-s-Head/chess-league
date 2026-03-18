@@ -17,9 +17,10 @@ var isTestMode = os.Getenv("TEST_MODE") == "true"
 func CreateAuthCookie(sessionKey string) *http.Cookie {
 	cookie := &http.Cookie{
 		Name:     AuthCookie,
-		Secure:   true,
+		Secure:   !isTestMode,
 		HttpOnly: true,
 		MaxAge:   3600,
+		Path:     "/",
 		Value:    sessionKey,
 	}
 
@@ -35,7 +36,7 @@ func loginUrl() string {
 		return "/admin/test-mode"
 	}
 
-	return "https://github.com/CHANGE ME"
+	return "/admin/login"
 }
 
 func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Request, user *model.AdminUser)) func(w http.ResponseWriter, r *http.Request) {
