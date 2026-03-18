@@ -127,6 +127,20 @@ CREATE INDEX idx_games_player_black ON games(player_black);
 CREATE INDEX idx_games_played ON games(played);
 			`,
 		},
+		{
+			Sql: `
+CREATE TABLE admin_users (
+  id UUID PRIMARY KEY,
+	name TEXT NOT NULL,
+	oauth_id TEXT NOT NULL UNIQUE,
+	created TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	session_key TEXT,
+	last_login TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	last_ip TEXT,
+	last_user_agent TEXT
+);
+			`,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR
