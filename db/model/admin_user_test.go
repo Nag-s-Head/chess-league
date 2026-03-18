@@ -205,7 +205,7 @@ func TestGetAdminUsers(t *testing.T) {
 		require.NoError(t, err)
 		defer tx.Rollback()
 
-		require.NoError(t, model.AddAdminUser(tx, *user))
+		require.NoError(t, model.InsertAdminUser(tx, *user))
 		require.NoError(t, tx.Commit())
 	}
 
@@ -225,5 +225,40 @@ func TestGetAdminUsers(t *testing.T) {
 		require.NotEmpty(t, user.LastIp)
 		require.NotEmpty(t, user.LastLogin)
 		require.NotEmpty(t, user.LastUserAgent)
+	}
+}
+
+func TestGetAdminUser(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	const numberOfUsers = 10
+
+	for range numberOfUsers {
+		name := rand.Text()
+		oauthId := name + "-id"
+		user := model.NewAdminUser(name, oauthId, rand.Text(), rand.Text())
+
+		tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		require.NoError(t, model.InsertAdminUser(tx, *user))
+		require.NoError(t, tx.Commit())
+
+		user2, err := model.GetAdminUser(db, user.Id)
+		require.NoError(t, err)
+		require.NotEmpty(t, user)
+		require.Empty(t, user2.SessionKey)
+
+		require.Equal(t, user.Id, user2.Id)
+		require.Equal(t, user.Name, user2.Name)
+		require.Equal(t, user.OauthId, user2.OauthId)
+		require.NotEmpty(t, user2.Created)
+		require.NotEmpty(t, user2.LastIp)
+		require.NotEmpty(t, user2.LastLogin)
+		require.NotEmpty(t, user2.LastUserAgent)
 	}
 }

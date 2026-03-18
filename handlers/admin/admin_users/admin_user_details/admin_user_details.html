@@ -1,0 +1,33 @@
+<h1 class="text-xl font-bold">Details For Administrator {{.Name}}</h1>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Name</p>
+    <p class="text-xl font-bold">{{.Name}}</p>
+  </div>
+  <a href="https://github/{{.OauthId}}">
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <p class="text-sm text-gray-500">Github User Name</p>
+      <p class="text-xl font-bold">{{.OauthId}}</p>
+    </div>
+  </a>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Created</p>
+    <p class="text-xl font-bold">
+      {{.Created.Format "Jan 02, 2006, 15:04pm"}}
+    </p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Last Login</p>
+    <p class="text-xl font-bold">
+      {{.LastLogin.Format "Jan 02, 2006, 15:04pm"}}
+    </p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Last User Agent</p>
+    <p class="text-xl font-bold">{{.LastUserAgent}}</p>
+  </div>
+</div>
+
+<h2 class="text-lg font-bold">Audit Log</h2>
+<div clas="flex flex-col gap-5">TODO: This</div>

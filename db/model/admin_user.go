@@ -37,7 +37,7 @@ func NewAdminUser(name, oauthId, lastIp, LastUserAgent string) *AdminUser {
 	}
 }
 
-func AddAdminUser(tx *sqlx.Tx, user AdminUser) error {
+func InsertAdminUser(tx *sqlx.Tx, user AdminUser) error {
 	_, err := tx.NamedExec(`
 			INSERT INTO admin_users(id, name, oauth_id, created, session_key, last_login, last_ip, last_user_agent)
 			VALUES (:id, :name, :oauth_id, :created, :session_key, :last_login, :last_ip, :last_user_agent);
@@ -77,7 +77,7 @@ func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminU
 	} else if errors.Is(err, sql.ErrNoRows) {
 		userPtr := NewAdminUser(name, oauthId, lastIp, LastUserAgent)
 		user = *userPtr
-		err := AddAdminUser(tx, user)
+		err := InsertAdminUser(tx, user)
 		if err != nil {
 			return nil, errors.Join(errors.New("Could not create new admin user"), err)
 		}
@@ -147,4 +147,23 @@ func GetAdminUsers(db *db.Db) ([]AdminUser, error) {
 	}
 
 	return users, nil
+}
+
+func GetAdminUser(db *db.Db, id uuid.UUID) (*AdminUser, error) {
+	rows, err := db.GetSqlxDb().Queryx("SELECT id, name, oauth_id, created, last_login, last_ip, last_user_agent FROM admin_users WHERE id = $1;", id)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get admin users"), err)
+	}
+
+	if !rows.Next() {
+		return nil, errors.New("Could not find the user")
+	}
+
+	var user AdminUser
+	err = rows.StructScan(&user)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot scan admin user"), err)
+	}
+
+	return &user, nil
 }
