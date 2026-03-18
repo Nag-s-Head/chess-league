@@ -141,6 +141,40 @@ CREATE TABLE admin_users (
 );
 			`,
 		},
+		{
+			Sql: "CREATE INDEX idx_admin_users_session_key ON admin_users(session_key);",
+		},
+		{
+			Sql: `
+CREATE TABLE audit_logs (
+	id UUID PRIMARY KEY,
+	created TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	done_by UUID NOT NULL REFERENCES admin_users(id),
+	operation_name TEXT NOT NULL,
+	operation_description TEXT NOT NULL
+);
+
+CREATE TABLE audit_log_player_affected (
+	audit_log_id UUID NOT NULL REFERENCES audit_logs(id),
+	player_id TEXT NOT NULL REFERENCES players(id),
+	elo_change INT NOT NULL,
+	UNIQUE(audit_log_id, player_id)
+);
+
+CREATE INDEX idx_audit_log_player_affected_audit_log_id ON audit_log_player_affected(audit_log_id);
+CREATE INDEX idx_audit_log_player_affected_player_id ON audit_log_player_affected(player_id);
+
+
+CREATE TABLE audit_log_game_affected (
+	audit_log_id UUID NOT NULL REFERENCES audit_logs(id),
+	game_ikey BIGINT NOT NULL REFERENCES games(ikey),
+	UNIQUE(audit_log_id, game_ikey)
+);
+
+CREATE INDEX idx_audit_log_game_affected_audit_log_id ON audit_log_game_affected(audit_log_id);
+CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(game_ikey);
+			`,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR
