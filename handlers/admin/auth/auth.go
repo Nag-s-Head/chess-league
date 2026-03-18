@@ -30,19 +30,21 @@ func CreateAuthCookie(sessionKey string) *http.Cookie {
 	return cookie
 }
 
+func loginUrl() string {
+	if isTestMode {
+		return "/admin/test-mode"
+	}
+
+	return "https://github.com/CHANGE ME"
+}
+
 func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Request, user *model.AdminUser)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(AuthCookie)
 		if err != nil {
 			slog.Info("A user has tried to access the admin portal without being logged in, redirecting to authentication page")
 
-			url := "https://github.com/CHANGE ME"
-			if isTestMode {
-				url = "/admin/test-mode"
-			}
-
-			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-			w.Write([]byte("Invalid authentication"))
+			http.Redirect(w, r, loginUrl(), http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -51,8 +53,7 @@ func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Requ
 			slog.Warn("User with invalid authentication tried to access the page", "url", r.URL, "err", err)
 
 			http.SetCookie(w, CreateAuthCookie(""))
-			http.Redirect(w, r, "/admin", http.StatusTemporaryRedirect)
-			w.Write([]byte("Invalid authentication"))
+			http.Redirect(w, r, loginUrl(), http.StatusTemporaryRedirect)
 			return
 		}
 		next(w, r, user)

@@ -45,7 +45,7 @@ func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminU
 	defer tx.Rollback()
 
 	var user AdminUser
-	err = tx.Get(&user, "SELECT * FROM admin_users WHERE oauth_id = $1;", oauthId)
+	err = tx.Get(&user, "SELECT id, name, oauth_id, created, COALESCE(session_key, '') as session_key, last_login, last_ip, last_user_agent FROM admin_users WHERE oauth_id = $1;", oauthId)
 
 	if err == nil {
 		// Update with new session information
