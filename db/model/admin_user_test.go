@@ -1,6 +1,7 @@
 package model_test
 
 import (
+	"crypto/rand"
 	"testing"
 	"time"
 
@@ -184,4 +185,45 @@ func TestAdminLogoutNonExistentUser(t *testing.T) {
 	// Should not error even if user doesn't exist
 	err := model.AdminLogout(db, uuid.New())
 	require.NoError(t, err)
+}
+
+func TestGetAdminUsers(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	const numberOfUsers = 100
+
+	t.Log("Inserting lots of users")
+	for range numberOfUsers {
+		name := rand.Text()
+		oauthId := name + "-id"
+		user := model.NewAdminUser(name, oauthId, rand.Text(), rand.Text())
+
+		tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+		require.NoError(t, err)
+		defer tx.Rollback()
+
+		require.NoError(t, model.AddAdminUser(tx, *user))
+		require.NoError(t, tx.Commit())
+	}
+
+	t.Log("Actually doing the test")
+	users, err := model.GetAdminUsers(db)
+	require.NoError(t, err)
+	require.True(t, len(users) >= numberOfUsers)
+
+	for _, user := range users {
+		require.NotEmpty(t, user)
+		require.Empty(t, user.SessionKey)
+
+		require.NotEmpty(t, user.Id)
+		require.NotEmpty(t, user.Name)
+		require.NotEmpty(t, user.OauthId)
+		require.NotEmpty(t, user.Created)
+		require.NotEmpty(t, user.LastIp)
+		require.NotEmpty(t, user.LastLogin)
+		require.NotEmpty(t, user.LastUserAgent)
+	}
 }

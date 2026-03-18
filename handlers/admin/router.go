@@ -9,6 +9,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	adminusers "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users"
 	"github.com/Nag-s-Head/chess-league/handlers/admin/auth"
 	testmode "github.com/Nag-s-Head/chess-league/handlers/admin/test_mode"
 )
@@ -57,7 +58,12 @@ func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWr
 	}
 
 	mux.HandleFunc(fmt.Sprintf("GET %s", BasePath), WithLayoutAndAuthentication(db, AdminIndex, LayoutRender))
+
+	// Auth
 	mux.HandleFunc(fmt.Sprintf("GET %s/login", BasePath), auth.Login)
 	mux.HandleFunc(fmt.Sprintf("GET %s/auth/callback", BasePath), auth.Callback(db))
 	mux.HandleFunc(fmt.Sprintf("GET %s/logout", BasePath), auth.Logout(db))
+
+	// Pages
+	mux.HandleFunc(fmt.Sprintf("GET %s/admins", BasePath), WithLayoutAndAuthentication(db, adminusers.Render(db), LayoutRender))
 }

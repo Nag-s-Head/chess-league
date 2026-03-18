@@ -10,6 +10,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/security"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 type AdminUser struct {
@@ -34,6 +35,18 @@ func NewAdminUser(name, oauthId, lastIp, LastUserAgent string) *AdminUser {
 		Created:       time.Now(),
 		SessionKey:    security.NewSessionkey(),
 	}
+}
+
+func AddAdminUser(tx *sqlx.Tx, user AdminUser) error {
+	_, err := tx.NamedExec(`
+			INSERT INTO admin_users(id, name, oauth_id, created, session_key, last_login, last_ip, last_user_agent)
+			VALUES (:id, :name, :oauth_id, :created, :session_key, :last_login, :last_ip, :last_user_agent);
+			`, user)
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert User"), err)
+	}
+
+	return nil
 }
 
 func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminUser, error) {
@@ -64,10 +77,7 @@ func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminU
 	} else if errors.Is(err, sql.ErrNoRows) {
 		userPtr := NewAdminUser(name, oauthId, lastIp, LastUserAgent)
 		user = *userPtr
-		_, err := tx.NamedExec(`
-			INSERT INTO admin_users(id, name, oauth_id, created, session_key, last_login, last_ip, last_user_agent)
-			VALUES (:id, :name, :oauth_id, :created, :session_key, :last_login, :last_ip, :last_user_agent);
-			`, user)
+		err := AddAdminUser(tx, user)
 		if err != nil {
 			return nil, errors.Join(errors.New("Could not create new admin user"), err)
 		}
@@ -117,4 +127,24 @@ func AdminGetFromSessionKey(db *db.Db, key string) (*AdminUser, error) {
 	}
 
 	return &user, nil
+}
+
+func GetAdminUsers(db *db.Db) ([]AdminUser, error) {
+	rows, err := db.GetSqlxDb().Queryx("SELECT id, name, oauth_id, created, last_login, last_ip, last_user_agent FROM admin_users ORDER BY name ASC;")
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get admin users"), err)
+	}
+
+	users := make([]AdminUser, 0)
+	for rows.Next() {
+		var user AdminUser
+		err = rows.StructScan(&user)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot scan admin user"), err)
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
