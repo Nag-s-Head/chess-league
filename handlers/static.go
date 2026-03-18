@@ -18,7 +18,7 @@ func PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WithCacheControl(w)
-	Render(w, body)
+	WithLayout(w, body)
 }
 
 func Rules(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func Rules(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WithCacheControl(w)
-	Render(w, body)
+	WithLayout(w, body)
 }
 
 func RulesAgree(w http.ResponseWriter, r *http.Request) {

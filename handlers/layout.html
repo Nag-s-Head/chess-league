@@ -10,7 +10,7 @@
   <body class="bg-gray-50">
     <div class="flex flex-col min-h-screen">
       <header
-        class="flex flex-row gap-5 w-full items-center p-2 px-5 bg-rose-600 border-b border-rose-300"
+        class="flex flex-row gap-5 w-full items-center p-2 px-5 bg-rose-600 border-b-2 border-rose-300"
       >
         <div class="flex flex-row gap-2 w-full items-center">
           <svg
@@ -36,43 +36,68 @@
               />
             </g>
           </svg>
+          {{ if .IsAdmin }}
+          <a href="/admin"
+            ><h1 class="text-3xl xl:text-4xl text-white text-wrap">
+              <span class="font-bold"> Nag&apos;s Knights </span> - Admin Portal
+            </h1></a
+          >
+          {{ else }}
           <a href="/"
             ><h1 class="text-3xl xl:text-4xl font-bold text-white">
               Nag&apos;s Knights
             </h1></a
           >
+          {{ end}}
         </div>
       </header>
 
       <main class="flex-grow flex flex-col gap-5 p-5">{{ .Body }}</main>
 
       <footer
-        class="flex flex-col gap-3 p-5 bg-gray-200 border-t border-gray-300"
+        class="flex flex-col gap-3 p-5 bg-gray-200 border-t-2 border-gray-300"
       >
         <p>Copyright (c) 2026 Nag&apos; s Knights. Apache 2.0.</p>
         <nav>
-          <ol class="flex flex-row gap-5">
+          <ol class="flex flex-row gap-x-5 gap-y-2 flex-wrap">
             <li>
               <a
                 href="/rules"
-                class="text-blue-800 underline hover:text-blue-600"
+                class="text-blue-800 underline hover:text-blue-600 text-nowrap"
                 >Our Rules</a
               >
             </li>
             <li>
               <a
                 href="/privacy-policy"
-                class="text-blue-800 underline hover:text-blue-600"
+                class="text-blue-800 underline hover:text-blue-600 text-nowrap"
                 >Privacy Policy</a
               >
             </li>
             <li>
               <a
                 href="https://github.com/Nag-s-Head/chess-league"
-                class="text-blue-800 underline hover:text-blue-600"
-                >Source Code (Github)</a
+                class="text-blue-800 underline hover:text-blue-600 text-nowrap"
+                >Source Code</a
               >
             </li>
+            {{ if .IsAdmin }}
+            <li>
+              <a
+                href="/"
+                class="text-blue-800 underline hover:text-blue-600 text-nowrap"
+                >Normal Mode</a
+              >
+            </li>
+            {{ else }}
+            <li>
+              <a
+                href="/admin"
+                class="text-blue-800 underline hover:text-blue-600 text-nowrap"
+                >Admin Portal</a
+              >
+            </li>
+            {{ end }}
           </ol>
         </nav>
       </footer>

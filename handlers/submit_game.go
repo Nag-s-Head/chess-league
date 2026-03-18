@@ -84,6 +84,6 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		Render(w, body)
+		WithLayout(w, body)
 	}
 }

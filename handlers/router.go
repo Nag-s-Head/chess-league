@@ -10,6 +10,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	"github.com/Nag-s-Head/chess-league/handlers/admin"
 	playerdetails "github.com/Nag-s-Head/chess-league/handlers/player_details"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
@@ -22,7 +23,8 @@ var indexTmpl *template.Template = utils.GetTemplate(f, "index.html")
 var layoutTmpl *template.Template = utils.GetTemplate(f, "layout.html")
 
 type Layout struct {
-	Body template.HTML
+	Body    template.HTML
+	IsAdmin bool
 }
 
 type IndexData struct {
@@ -31,10 +33,11 @@ type IndexData struct {
 	TotalPlayers int
 }
 
-// Render wraps the provided body HTML in the global layout and writes it to w.
-func Render(w http.ResponseWriter, body template.HTML) {
+// WithLayout wraps the provided body HTML in the global layout and writes it to w.
+func withLayout(w http.ResponseWriter, body template.HTML, isAdmin bool) {
 	err := layoutTmpl.Execute(w, Layout{
-		Body: body,
+		Body:    body,
+		IsAdmin: isAdmin,
 	})
 	if err != nil {
 		slog.Error("Cannot execute layout template", "err", err)
@@ -42,9 +45,17 @@ func Render(w http.ResponseWriter, body template.HTML) {
 	}
 }
 
+func WithLayoutAdmin(w http.ResponseWriter, body template.HTML) {
+	withLayout(w, body, true)
+}
+
+func WithLayout(w http.ResponseWriter, body template.HTML) {
+	withLayout(w, body, false)
+}
+
 func Test(w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf("alive and well at %s", time.Now().UTC())
-	Render(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
+	WithLayout(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
 }
 
 func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +75,7 @@ func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		Render(w, body)
+		WithLayout(w, body)
 	}
 }
 
@@ -78,13 +89,14 @@ func NewHandler(db *db.Db) http.Handler {
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
 	mux.HandleFunc("GET /rules", Rules)
 	mux.HandleFunc("GET /rules/agree", RulesAgree)
+	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
+	submitgame.Register(mux, db)
+	admin.Register(mux, db, WithLayoutAdmin)
 
 	slog.Info(fmt.Sprintf("To submit a game use http://0.0.0.0:8080/%s?%s=%s",
 		submitgame.BasePath,
 		submitgame.MagicNumberParam,
 		magicNumber))
-	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
-	submitgame.Register(mux, db)
 
 	return mux
 }
