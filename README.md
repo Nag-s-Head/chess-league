@@ -17,5 +17,4 @@ Want to run a chess league? - use this.
 | OAUTH_CLIENT_ID     | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
 | OAUTH_CLIENT_SECRET | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
 | APP_BASE_URL        | The base URL of the application, used for OAuth redirects                     | `https://nagsknights.co.uk`                                                                   |
-| GITHUB_ORGANISATION | The Github organisation name                                                  | `Nag-s-Head`                                                                                  |
 | TEST_MODE           | When enabled this uses a mocked Oauth implementation                          | `true` or omit to disable                                                                     |
