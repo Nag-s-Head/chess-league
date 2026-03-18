@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
@@ -93,7 +94,8 @@ func NewHandler(db *db.Db) http.Handler {
 	submitgame.Register(mux, db)
 	admin.Register(mux, db, WithLayoutAdmin)
 
-	slog.Info(fmt.Sprintf("To submit a game use http://0.0.0.0:8080/%s?%s=%s",
+	slog.Info(fmt.Sprintf("To submit a game use %s/%s?%s=%s",
+		os.Getenv("APP_BASE_URL"),
 		submitgame.BasePath,
 		submitgame.MagicNumberParam,
 		magicNumber))

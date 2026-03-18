@@ -39,7 +39,7 @@ func loginUrl() string {
 	return "/admin/login"
 }
 
-func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Request, user *model.AdminUser)) func(w http.ResponseWriter, r *http.Request) {
+func WithAuthentication(db *db.Db, next func(*model.AdminUser) func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(AuthCookie)
 		if err != nil {
@@ -57,6 +57,6 @@ func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Requ
 			http.Redirect(w, r, loginUrl(), http.StatusTemporaryRedirect)
 			return
 		}
-		next(w, r, user)
+		next(user)(w, r)
 	}
 }

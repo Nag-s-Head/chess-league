@@ -19,4 +19,5 @@ USER app
 
 EXPOSE 8080
 COPY --from=build /build/chess-league .
+COPY ./knight.png .
 CMD ["./chess-league"]

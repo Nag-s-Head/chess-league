@@ -12,6 +12,7 @@ import (
 	adminusers "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users"
 	adminuserdetails "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users/admin_user_details"
 	"github.com/Nag-s-Head/chess-league/handlers/admin/auth"
+	qrcode "github.com/Nag-s-Head/chess-league/handlers/admin/qr_code"
 	testmode "github.com/Nag-s-Head/chess-league/handlers/admin/test_mode"
 )
 
@@ -37,15 +38,17 @@ func WithLayout(Render PageRenderer, LayoutRender LayoutRenderer) func(http.Resp
 }
 
 func WithLayoutAndAuthentication(db *db.Db, Render PageRendererWithAuth, LayoutRender LayoutRenderer) func(http.ResponseWriter, *http.Request) {
-	return auth.WithAuthentication(db, func(w http.ResponseWriter, r *http.Request, user *model.AdminUser) {
-		tpl, err := Render(w, r, user)
-		if err != nil {
-			w.Write(fmt.Appendf(nil, "Could not render page: %s", err))
-			slog.Error("Could not render admin portal page", "err", err, "url", r.URL)
-			return
-		}
+	return auth.WithAuthentication(db, func(user *model.AdminUser) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			tpl, err := Render(w, r, user)
+			if err != nil {
+				w.Write(fmt.Appendf(nil, "Could not render page: %s", err))
+				slog.Error("Could not render admin portal page", "err", err, "url", r.URL)
+				return
+			}
 
-		LayoutRender(w, tpl)
+			LayoutRender(w, tpl)
+		}
 	})
 }
 
@@ -66,6 +69,7 @@ func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWr
 	mux.HandleFunc(fmt.Sprintf("GET %s/logout", BasePath), auth.Logout(db))
 
 	// Pages
+	mux.HandleFunc(fmt.Sprintf("GET %s/qr-code", BasePath), auth.WithAuthentication(db, qrcode.Render))
 	mux.HandleFunc(fmt.Sprintf("GET %s/admins", BasePath), WithLayoutAndAuthentication(db, adminusers.Render(db), LayoutRender))
 	mux.HandleFunc(fmt.Sprintf("GET %s/admins/{id}", BasePath), WithLayoutAndAuthentication(db, adminuserdetails.Render(db), LayoutRender))
 }
