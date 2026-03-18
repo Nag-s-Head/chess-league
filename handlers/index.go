@@ -41,6 +41,6 @@ func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		Render(w, template.HTML(buf.String()))
+		WithLayout(w, template.HTML(buf.String()))
 	}
 }

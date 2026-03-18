@@ -134,3 +134,68 @@ func GerOrganisationMembers(orgName string, apiKey string) ([]User, error) {
 	wg.Wait()
 	return users, nil
 }
+
+func GetAuthenticatedUser(accessToken string) (User, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/user", nil)
+	if err != nil {
+		return User{}, errors.Join(errors.New("Cannot create the request"), err)
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return User{}, errors.Join(errors.New("Cannot execute the GET request"), err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return User{}, fmt.Errorf("Github API returned status %d", resp.StatusCode)
+	}
+
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return User{}, errors.Join(errors.New("Cannot read response"), err)
+	}
+
+	var user User
+	err = json.Unmarshal(bytes, &user)
+	if err != nil {
+		return User{}, errors.Join(fmt.Errorf("Cannot read the response %s", string(bytes)), err)
+	}
+
+	return user, nil
+}
+
+func IsMemberOfOrg(orgName string, login string, apiKey string) (bool, error) {
+	path, err := url.JoinPath("https://api.github.com/orgs/", orgName, "/members/", login)
+	if err != nil {
+		return false, errors.Join(errors.New("Cannot create path"), err)
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return false, errors.Join(errors.New("Cannot create the request"), err)
+	}
+
+	if apiKey != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, errors.Join(errors.New("Cannot execute the GET request"), err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNoContent {
+		return true, nil
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return false, nil
+	}
+
+	return false, fmt.Errorf("Unexpected status code from Github API: %d", resp.StatusCode)
+}

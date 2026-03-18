@@ -1,0 +1,56 @@
+<h1 class="text-xl font-bold">Test Mode Login</h1>
+<p class="font-bold text-red-500 text-lg">
+  If this is a production application turn TEST_MODE off now!
+</p>
+<form
+  class="flex flex-col gap-5 w-full"
+  hx-post="/admin/test-mode"
+  hx-target="#response"
+>
+  <div class="flex flex-row gap-2 justify-between items-center">
+    <label for="admin-name" class="cursor-pointer">Admin Name</label>
+    <input
+      id="admin-name"
+      class="rounded-lg bg-gray-300 p-1 px-2"
+      name="admin-name"
+      type="text"
+      autocomplete="name"
+      placeholder="John Smith"
+      value="Test User"
+      required
+    />
+  </div>
+  <div class="flex flex-row gap-2 justify-between items-center">
+    <label for="admin-id" class="cursor-pointer">Admin ID</label>
+    <input
+      id="admin-id"
+      class="rounded-lg bg-gray-300 p-1 px-2"
+      name="admin-id"
+      type="text"
+      autocomplete="name"
+      placeholder="jsmith1234"
+      value="test-user"
+      required
+    />
+  </div>
+
+  <div class="flex flex-row gap-5">
+    <button
+      type="submit"
+      name="submit-type"
+      value="valid"
+      class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    >
+      Valid Login
+    </button>
+    <button
+      type="submit"
+      name="submit-type"
+      value="invalid"
+      class="rounded-lg p-2 px-5 bg-red-500 max-w-100 text-white font-bold"
+    >
+      Invalid Login
+    </button>
+  </div>
+</form>
+<div id="response"></div>
