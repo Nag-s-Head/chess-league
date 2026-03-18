@@ -66,7 +66,7 @@ func TestAdminLoginExistingUser(t *testing.T) {
 	defer db.Close()
 
 	oauthId := "github-" + uuid.New().String()
-	
+
 	// First login
 	user1, err := model.AdminLogin(db, "First Name", oauthId, "1.1.1.1", "UA1")
 	require.NoError(t, err)

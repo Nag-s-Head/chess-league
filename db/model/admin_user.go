@@ -23,8 +23,8 @@ type AdminUser struct {
 	LastUserAgent string    `db:"last_user_agent"`
 }
 
-func NewAdminUser(name, oauthId, lastIp, LastUserAgent string) AdminUser {
-	return AdminUser{
+func NewAdminUser(name, oauthId, lastIp, LastUserAgent string) *AdminUser {
+	return &AdminUser{
 		Id:            uuid.New(),
 		Name:          name,
 		OauthId:       oauthId,
@@ -36,10 +36,10 @@ func NewAdminUser(name, oauthId, lastIp, LastUserAgent string) AdminUser {
 	}
 }
 
-func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (AdminUser, error) {
+func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminUser, error) {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
-		return AdminUser{}, errors.Join(errors.New("Could not begin transaction"), err)
+		return nil, errors.Join(errors.New("Could not begin transaction"), err)
 	}
 
 	defer tx.Rollback()
@@ -57,31 +57,32 @@ func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (AdminUs
 
 		_, err = tx.NamedExec("UPDATE admin_users SET last_login=:last_login, session_key=:session_key, name=:name, last_ip=:last_ip, last_user_agent=:last_user_agent WHERE id=:id;", user)
 		if err != nil {
-			return AdminUser{}, errors.Join(errors.New("Could not update admin user"), err)
+			return nil, errors.Join(errors.New("Could not update admin user"), err)
 		}
 
 		slog.Info("Admin user has logged in", "id", user.Id, "oauthId", user.OauthId, "name", user.Name)
 	} else if errors.Is(err, sql.ErrNoRows) {
-		user = NewAdminUser(name, oauthId, lastIp, LastUserAgent)
+		userPtr := NewAdminUser(name, oauthId, lastIp, LastUserAgent)
+		user = *userPtr
 		_, err := tx.NamedExec(`
 			INSERT INTO admin_users(id, name, oauth_id, created, session_key, last_login, last_ip, last_user_agent)
 			VALUES (:id, :name, :oauth_id, :created, :session_key, :last_login, :last_ip, :last_user_agent);
 			`, user)
 		if err != nil {
-			return AdminUser{}, errors.Join(errors.New("Could not create new admin user"), err)
+			return nil, errors.Join(errors.New("Could not create new admin user"), err)
 		}
 
 		slog.Info("Created a new admin user", "id", user.Id, "oauthId", user.OauthId, "name", user.Name)
 	} else {
-		return AdminUser{}, errors.Join(errors.New("Could not get the admin user"), err)
+		return nil, errors.Join(errors.New("Could not get the admin user"), err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return AdminUser{}, errors.Join(errors.New("Cold not commit transaction"), err)
+		return nil, errors.Join(errors.New("Cold not commit transaction"), err)
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func AdminLogout(db *db.Db, id uuid.UUID) error {
@@ -95,15 +96,15 @@ func AdminLogout(db *db.Db, id uuid.UUID) error {
 
 const MaxSessionKeyAge = time.Hour
 
-func AdminGetFromSessionKey(db *db.Db, key string) (AdminUser, error) {
+func AdminGetFromSessionKey(db *db.Db, key string) (*AdminUser, error) {
 	if key == "" {
-		return AdminUser{}, errors.New("Session key cannot be empty")
+		return nil, errors.New("Session key cannot be empty")
 	}
 
 	var user AdminUser
 	err := db.GetSqlxDb().Get(&user, "SELECT id, name, oauth_id, created, COALESCE(session_key, '') as session_key, last_login, last_ip, last_user_agent FROM admin_users WHERE session_key = $1;", key)
 	if err != nil {
-		return AdminUser{}, errors.Join(errors.New("Could not get the user from the session ID"), err)
+		return nil, errors.Join(errors.New("Could not get the user from the session ID"), err)
 	}
 
 	if time.Since(user.LastLogin) > MaxSessionKeyAge {
@@ -112,8 +113,8 @@ func AdminGetFromSessionKey(db *db.Db, key string) (AdminUser, error) {
 			slog.Error("Could not log user out after attempted use of an expired session key", "err", err)
 		}
 
-		return AdminUser{}, errors.New("User has been logged in for too long")
+		return nil, errors.New("User has been logged in for too long")
 	}
 
-	return user, nil
+	return &user, nil
 }

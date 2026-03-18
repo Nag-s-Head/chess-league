@@ -6,13 +6,31 @@ import (
 	"os"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/model"
 )
 
 const AuthCookie = "admin-authentication"
 
 var isTestMode = os.Getenv("TEST_MODE") == "true"
 
-func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+// If the key is empty string it will remove the cookie
+func CreateAuthCookie(sessionKey string) *http.Cookie {
+	cookie := &http.Cookie{
+		Name:     AuthCookie,
+		Secure:   true,
+		HttpOnly: true,
+		MaxAge:   3600,
+		Value:    sessionKey,
+	}
+
+	if sessionKey == "" {
+		cookie.MaxAge = 0
+	}
+
+	return cookie
+}
+
+func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Request, user *model.AdminUser)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(AuthCookie)
 		if err != nil {
@@ -24,12 +42,19 @@ func WithAuthentication(db *db.Db, next func(w http.ResponseWriter, r *http.Requ
 			}
 
 			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+			w.Write([]byte("Invalid authentication"))
 			return
 		}
 
-		slog.Error("TODO: handle the authentication cookie", "cookie", cookie)
+		user, err := model.AdminGetFromSessionKey(db, cookie.Value)
+		if err != nil {
+			slog.Warn("User with invalid authentication tried to access the page", "url", r.URL, "err", err)
 
-		// TODO: check the session id stored in cookie
-		next(w, r)
+			http.SetCookie(w, CreateAuthCookie(""))
+			http.Redirect(w, r, "/admin", http.StatusTemporaryRedirect)
+			w.Write([]byte("Invalid authentication"))
+			return
+		}
+		next(w, r, user)
 	}
 }
