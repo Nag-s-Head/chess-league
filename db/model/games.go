@@ -50,14 +50,14 @@ func NextIKey(db *db.Db) (int64, error) {
 	return ikey, nil
 }
 
-func CreateGame(tx *sqlx.Tx, player1, player2 *Player, isWhite bool, ikey int64, score Score, r *http.Request) (Game, error) {
-	if player1.Id == player2.Id {
-		return Game{}, errors.New("Both players are the same")
+func CreateGame(tx *sqlx.Tx, submitter, opponent *Player, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (Game, int, int, error) {
+	if submitter.Id == opponent.Id {
+		return Game{}, 0, 0, errors.New("Both players are the same")
 	}
 
 	game := Game{
 		Score:           score,
-		Submitter:       player1.Id,
+		Submitter:       submitter.Id,
 		Played:          time.Now(),
 		Deleted:         false,
 		SubmitIp:        r.RemoteAddr,
@@ -65,10 +65,13 @@ func CreateGame(tx *sqlx.Tx, player1, player2 *Player, isWhite bool, ikey int64,
 		IKey:            ikey,
 	}
 
-	if !isWhite {
-		tmp := player1
-		player1 = player2
-		player2 = tmp
+	var pWhite, pBlack *Player
+	if submitterIsWhite {
+		pWhite = submitter
+		pBlack = opponent
+	} else {
+		pWhite = opponent
+		pBlack = submitter
 	}
 
 	var outcome Outcome
@@ -81,16 +84,16 @@ func CreateGame(tx *sqlx.Tx, player1, player2 *Player, isWhite bool, ikey int64,
 		outcome = Outcome_Draw
 	}
 
-	eloA, eloB := CalculateElo(player1, player2, outcome)
-	game.PlayerWhite = player1.Id
-	game.PlayerBlack = player2.Id
+	eloWhite, eloBlack := CalculateElo(pWhite, pBlack, outcome)
+	game.PlayerWhite = pWhite.Id
+	game.PlayerBlack = pBlack.Id
 
-	if eloA > 0 {
-		game.EloGiven = eloA
-		game.EloTaken = eloB
+	if eloWhite > eloBlack {
+		game.EloGiven = eloWhite
+		game.EloTaken = eloBlack
 	} else {
-		game.EloGiven = eloB
-		game.EloTaken = eloA
+		game.EloGiven = eloBlack
+		game.EloTaken = eloWhite
 	}
 
 	_, err := tx.NamedExec(`
@@ -99,50 +102,59 @@ VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :el
   	`, game)
 
 	if err != nil {
-		return Game{}, errors.Join(errors.New("Cannot insert game"), err)
+		return Game{}, 0, 0, errors.Join(errors.New("Cannot insert game"), err)
 	}
 
-	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, player1)
+	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, pWhite)
 	if err != nil {
-		return Game{}, errors.Join(errors.New("Cannot set elo of player 1"), err)
+		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of white player"), err)
 	}
 
-	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, player2)
+	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, pBlack)
 	if err != nil {
-		return Game{}, errors.Join(errors.New("Cannot set elo of player 2"), err)
+		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of black player"), err)
 	}
 
-	return game, nil
+	return game, eloWhite, eloBlack, nil
 }
 
-func SubmitGame(db *db.Db, p1Name, p2Name string, isWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, error) {
+func SubmitGame(db *db.Db, whiteName, blackName string, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, int, int, error) {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
-		return nil, nil, nil, errors.Join(errors.New("Could not start transaction"), err)
+		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not start transaction"), err)
 	}
 	defer tx.Rollback()
 
-	player1, err := getOrCreatePlayer(tx, p1Name)
+	white, err := getOrCreatePlayer(tx, whiteName)
 	if err != nil {
-		return nil, nil, nil, errors.Join(errors.New("Could not get or create player 1"), err)
+		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not get or create white player"), err)
 	}
 
-	player2, err := getOrCreatePlayer(tx, p2Name)
+	black, err := getOrCreatePlayer(tx, blackName)
 	if err != nil {
-		return nil, nil, nil, errors.Join(errors.New("Could not get or create player 2"), err)
+		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not get or create black player"), err)
 	}
 
-	game, err := CreateGame(tx, &player1, &player2, isWhite, ikey, score, r)
+	var submitter, opponent *Player
+	if submitterIsWhite {
+		submitter = &white
+		opponent = &black
+	} else {
+		submitter = &black
+		opponent = &white
+	}
+
+	game, eloWhite, eloBlack, err := CreateGame(tx, submitter, opponent, submitterIsWhite, ikey, score, r)
 	if err != nil {
-		return nil, nil, nil, errors.Join(errors.New("Could not create game"), err)
+		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not create game"), err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, nil, nil, errors.Join(errors.New("Could not commit transaction"), err)
+		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not commit transaction"), err)
 	}
 
-	return &game, &player1, &player2, nil
+	return &game, &white, &black, eloWhite, eloBlack, nil
 }
 
 func GetGamesByPlayer(db *db.Db, playerId uuid.UUID) ([]GameWithPlayerNames, error) {

@@ -44,7 +44,7 @@ func TestCreateGameP1White(t *testing.T) {
 	require.NoError(t, err)
 
 	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
-	game, err := model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+	game, eloWhite, eloBlack, err := model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
 	require.NotEqual(t, model.StartingElo, p1.Elo)
@@ -54,8 +54,8 @@ func TestCreateGameP1White(t *testing.T) {
 	require.Equal(t, p1.Id, game.PlayerWhite)
 	require.Equal(t, p2.Id, game.PlayerBlack)
 
-	require.Equal(t, p1.Elo-model.StartingElo, game.EloGiven)
-	require.Equal(t, p2.Elo-model.StartingElo, game.EloTaken)
+	require.Equal(t, p1.Elo-model.StartingElo, eloWhite)
+	require.Equal(t, p2.Elo-model.StartingElo, eloBlack)
 
 	require.Equal(t, model.Score_Win, game.Score)
 	require.Equal(t, false, game.Deleted)
@@ -90,7 +90,7 @@ func TestCreateGameP1Black(t *testing.T) {
 	require.NoError(t, err)
 
 	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
-	game, err := model.CreateGame(tx, &p1, &p2, false, ikey, model.Score_Win, r)
+	game, eloWhite, eloBlack, err := model.CreateGame(tx, &p1, &p2, false, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
 	require.NotEqual(t, model.StartingElo, p1.Elo)
@@ -100,8 +100,8 @@ func TestCreateGameP1Black(t *testing.T) {
 	require.Equal(t, p2.Id, game.PlayerWhite)
 	require.Equal(t, p1.Id, game.PlayerBlack)
 
-	require.Equal(t, p2.Elo-model.StartingElo, game.EloGiven)
-	require.Equal(t, p1.Elo-model.StartingElo, game.EloTaken)
+	require.Equal(t, p2.Elo-model.StartingElo, eloWhite)
+	require.Equal(t, p1.Elo-model.StartingElo, eloBlack)
 
 	require.Equal(t, model.Score_Win, game.Score)
 	require.Equal(t, false, game.Deleted)
@@ -136,9 +136,9 @@ func TestCreateGameSameIkeyFails(t *testing.T) {
 	require.NoError(t, err)
 
 	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
-	_, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+	_, _, _, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
-	_, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+	_, _, _, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.Error(t, err)
 }
