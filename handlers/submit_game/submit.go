@@ -135,6 +135,9 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	white := strings.TrimSpace(r.FormValue(whitePlayerName))
 	black := strings.TrimSpace(r.FormValue(blackPlayerName))
 
+	rawPlayedAs := r.FormValue(playedAs)
+	submitterIsWhite := rawPlayedAs == "white"
+
 	ikeyCookie, err := r.Cookie(IKeyCookie)
 	if err != nil {
 		return errors.Join(errors.New("Could not find ikey cookie"), err)
@@ -157,12 +160,12 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 		return errors.New("Invalid winner")
 	}
 
-	game, player1, player2, err := model.SubmitGame(db, white, black, true, ikey, score, r)
+	game, playerWhite, playerBlack, eloWhite, eloBlack, err := model.SubmitGame(db, white, black, submitterIsWhite, ikey, score, r)
 	if err != nil {
 		return errors.Join(errors.New("Could not submit game"), err)
 	}
 
-	slog.Info("Submitted a game", "game", game, "player1", player1, "player2", player2)
+	slog.Info("Submitted a game", "game", game, "playerWhite", playerWhite, "playerBlack", playerBlack)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   IKeyCookie,
@@ -176,25 +179,15 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 		model.Player
 	}
 
-	p1EloDelta := 0
-	p2EloDelta := 0
-	if winner == "white" {
-		p1EloDelta = game.EloGiven
-		p2EloDelta = game.EloTaken
-	} else if winner == "black" {
-		p1EloDelta = game.EloTaken
-		p2EloDelta = game.EloGiven
-	}
-
 	var buf bytes.Buffer
 	err = successTpl.Execute(&buf, []FinalPlayer{
 		{
-			EloGiven: p1EloDelta,
-			Player:   *player1,
+			EloGiven: eloWhite,
+			Player:   *playerWhite,
 		},
 		{
-			EloGiven: p2EloDelta,
-			Player:   *player2,
+			EloGiven: eloBlack,
+			Player:   *playerBlack,
 		},
 	})
 	if err != nil {
