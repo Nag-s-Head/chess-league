@@ -39,4 +39,8 @@ jobs:
       - name: Test
         env:
           DATABASE_URL: "user=magnus password=bong-cloud dbname=chess-league host=localhost port=5432 sslmode=disable"
+          MAGIC_NUMBER: test-123
+          GITHUB_ORGANISATION: test
+          TEST_MODE: true
+          APP_BASE_URL: localhost:8080
         run: go test -v ./...
