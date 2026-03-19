@@ -307,6 +307,58 @@ func TestSubmit(t *testing.T) {
 		require.Contains(t, err.Error(), "Both players are the same")
 	})
 
+	t.Run("Test final submit black player as submitter", func(t *testing.T) {
+		whiteName := "White-" + uuid.New().String()
+		blackName := "Black-" + uuid.New().String()
+
+		err := model.InsertPlayer(db, model.NewPlayer(whiteName))
+		require.NoError(t, err)
+		err = model.InsertPlayer(db, model.NewPlayer(blackName))
+		require.NoError(t, err)
+
+		players, _ := model.SearchPlayerByName(db, blackName)
+		blackPlayer := players[0]
+
+		form := url.Values{}
+		form.Set("player-name", blackName)
+		form.Set("played-as", "black")
+		form.Set("other-player-name", whiteName)
+		form.Set("white-player-name", whiteName)
+		form.Set("black-player-name", blackName)
+		form.Set("winner", "black")
+		form.Set("submit-type", "final")
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
+
+		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.MagicNumberCookie,
+			Value: os.Getenv(submitgame.MagicNumberEnvVar),
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  rules.RulesVersionCookie,
+			Value: rules.CurrentRulesVersion,
+		})
+		r.AddCookie(&http.Cookie{
+			Name:  submitgame.IKeyCookie,
+			Value: fmt.Sprintf("%d", ikey),
+		})
+
+		w := httptest.NewRecorder()
+		err = submitgame.DoSubmit(db, w, r)
+		require.NoError(t, err)
+		require.Contains(t, w.Body.String(), "Game submitted successfully")
+
+		// Verify submitter in DB
+		var games []model.Game
+		err = db.GetSqlxDb().Select(&games, "SELECT * FROM games WHERE ikey=$1", ikey)
+		require.NoError(t, err)
+		require.Len(t, games, 1)
+		require.Equal(t, blackPlayer.Id, games[0].Submitter)
+	})
+
 	t.Run("Empty magic cookie but valid URL param should work", func(t *testing.T) {
 		url := fmt.Sprintf("/mocked-url?%s=%s&player-name=%s&played-as=white&other-player-name=not_found&winner=white",
 			submitgame.MagicNumberParam, os.Getenv(submitgame.MagicNumberEnvVar), name)
