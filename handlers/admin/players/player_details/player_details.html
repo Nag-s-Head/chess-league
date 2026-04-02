@@ -43,13 +43,13 @@
 </div>
 
 <h2 class="text-lg font-bold">Actions</h2>
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-  <form
-    class="flex flex-col gap-5 w-full"
-    hx-post=""
-    hx-target="#rename-response"
-  >
-    <div class="flex flex-col gap-5" id="rename-response">
+<form
+  class="flex flex-col gap-5 w-full"
+  hx-post=""
+  hx-target="#response"
+>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+    <div class="flex flex-col gap-5">
       <button
         type="submit"
         name="submit-rename"
@@ -59,13 +59,7 @@
         Rename
       </button>
     </div>
-  </form>
-  <form
-    class="flex flex-col gap-5 w-full"
-    hx-post=""
-    hx-target="#delete-response"
-  >
-    <div class="flex flex-col gap-5" id="delete-response">
+    <div class="flex flex-col gap-5">
       <button
         type="submit"
         name="submit-delete"
@@ -75,8 +69,11 @@
         Delete
       </button>
     </div>
-  </form>
-</div>
+  </div>
+
+  <div class="flex flex-col gap-5" id="response">
+  </div>
+</form>
 
 <h2 class="text-lg font-bold">Games</h2>
 {{range $result := .Details.Games}}
