@@ -9,11 +9,10 @@
     <p>({{.Elo}})</p>
   </div>
 
-  <p>Played {{.GamesPlayed}} games.</p>
+  <p>Played {{.GameCount}} games.</p>
 
   <p>
-    Since {{.Created.Format "Jan 02, 2006"}}, last played {{.LastLogin.Format
-    "Jan 02, 2006"}}.
+    Joined {{.JoinTime.Format "Jan 02, 2006"}}.
   </p>
 </a>
 {{end}}

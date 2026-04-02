@@ -24,6 +24,11 @@ type Player struct {
 	Deleted        bool      `db:"deleted"`
 }
 
+type PlayerWithGameCount struct {
+	Player
+	GameCount int `db:"game_count"`
+}
+
 func NewPlayer(name string) Player {
 	return Player{
 		Id:             uuid.New(),
@@ -129,6 +134,34 @@ func GetPlayersByElo(db *db.Db) ([]Player, error) {
 	players := make([]Player, 0)
 	for rows.Next() {
 		var player Player
+		err = rows.StructScan(&player)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot struct scan player"), err)
+		}
+
+		players = append(players, player)
+	}
+
+	return players, nil
+}
+
+func GetPlayersByEloWithGameCount(db *db.Db) ([]PlayerWithGameCount, error) {
+	rows, err := db.GetSqlxDb().Queryx(`
+		SELECT 
+		  players.*, COUNT(games.ikey) AS game_count FROM players 
+		LEFT JOIN 
+		    games 
+		  ON 
+		    games.player_white=players.id OR games.player_black=players.id
+		GROUP by players.id
+		ORDER BY elo DESC;`)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get players"), err)
+	}
+
+	players := make([]PlayerWithGameCount, 0)
+	for rows.Next() {
+		var player PlayerWithGameCount
 		err = rows.StructScan(&player)
 		if err != nil {
 			return nil, errors.Join(errors.New("Cannot struct scan player"), err)
