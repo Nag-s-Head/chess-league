@@ -39,6 +39,86 @@ type GameWithPlayerNames struct {
 	BlackName string `db:"black_name"`
 }
 
+type GameWithOutcome struct {
+	OpponentName string
+	Outcome      string
+	Played       time.Time
+	EloChange    int
+}
+
+type GamesUiFriendly struct {
+	Wins, Draws, Losses         int
+	TotalGames                  int
+	WinRate, LossRate, DrawRate float64
+	WhiteWinRate, BlackWinRate  float64
+	Games                       []GameWithOutcome
+}
+
+func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) GamesUiFriendly {
+	details := GamesUiFriendly{
+		Games:      make([]GameWithOutcome, 0),
+		TotalGames: len(games),
+	}
+
+	var whiteGames, whiteWins, blackGames, blackWins int
+	for _, g := range games {
+		gw := GameWithOutcome{
+			Played: g.Played,
+		}
+
+		isWhite := g.PlayerWhite == playerId
+		if isWhite {
+			whiteGames++
+			gw.OpponentName = g.BlackName
+			if g.Score == Score_Win {
+				gw.Outcome = "Win"
+				gw.EloChange = g.EloGiven
+				details.Wins++
+				whiteWins++
+			} else if g.Score == Score_Loss {
+				gw.Outcome = "Loss"
+				gw.EloChange = g.EloTaken
+				details.Losses++
+			} else {
+				gw.Outcome = "Draw"
+				// We don't know who was underdog in draws without more data,
+				// so we'll show 0 or handle it gracefully.
+				// For simplicity in history, show 0 if not sure.
+				gw.EloChange = 0
+				details.Draws++
+			}
+		} else {
+			blackGames++
+			gw.OpponentName = g.WhiteName
+			if g.Score == Score_Loss {
+				gw.Outcome = "Win"
+				gw.EloChange = g.EloGiven
+				details.Wins++
+				blackWins++
+			} else if g.Score == Score_Win {
+				gw.Outcome = "Loss"
+				gw.EloChange = g.EloTaken
+				details.Losses++
+			} else {
+				gw.Outcome = "Draw"
+				gw.EloChange = 0
+				details.Draws++
+			}
+		}
+		details.Games = append(details.Games, gw)
+	}
+
+	if details.TotalGames > 0 {
+		details.WinRate = float64(details.Wins) / float64(details.TotalGames) * 100
+		details.LossRate = float64(details.Losses) / float64(details.TotalGames) * 100
+		details.DrawRate = float64(details.Draws) / float64(details.TotalGames) * 100
+		details.WhiteWinRate = float64(whiteWins) / float64(whiteGames) * 100
+		details.BlackWinRate = float64(blackWins) / float64(blackGames) * 100
+	}
+
+	return details
+}
+
 func NextIKey(db *db.Db) (int64, error) {
 	var ikey int64
 	row := db.GetSqlxDb().QueryRow("SELECT nextval('game_ikey_sequence');")

@@ -18,17 +18,8 @@ var f embed.FS
 var tpl *template.Template = utils.GetTemplate(f, "details.html")
 
 type PlayerDetails struct {
-	Player       model.Player
-	TotalGames   int
-	Wins         int
-	Losses       int
-	Draws        int
-	WinRate      float64
-	WhiteWinRate float64
-	BlackWinRate float64
-	LossRate     float64
-	DrawRate     float64
-	GameHistory  []GameWithOutcome
+	Player  model.Player
+	Details model.GamesUiFriendly
 }
 
 type GameWithOutcome struct {
@@ -50,65 +41,8 @@ func Render(dbCon *db.Db, id uuid.UUID) (template.HTML, error) {
 	}
 
 	details := PlayerDetails{
-		Player:      player,
-		TotalGames:  len(games),
-		GameHistory: make([]GameWithOutcome, 0),
-	}
-
-	var whiteGames, whiteWins, blackGames, blackWins int
-	for _, g := range games {
-		gw := GameWithOutcome{
-			Played: g.Played,
-		}
-
-		isWhite := g.PlayerWhite == id
-		if isWhite {
-			whiteGames++
-			gw.OpponentName = g.BlackName
-			if g.Score == model.Score_Win {
-				gw.Outcome = "Win"
-				gw.EloChange = g.EloGiven
-				details.Wins++
-				whiteWins++
-			} else if g.Score == model.Score_Loss {
-				gw.Outcome = "Loss"
-				gw.EloChange = g.EloTaken
-				details.Losses++
-			} else {
-				gw.Outcome = "Draw"
-				// We don't know who was underdog in draws without more data,
-				// so we'll show 0 or handle it gracefully.
-				// For simplicity in history, show 0 if not sure.
-				gw.EloChange = 0
-				details.Draws++
-			}
-		} else {
-			blackGames++
-			gw.OpponentName = g.WhiteName
-			if g.Score == model.Score_Loss {
-				gw.Outcome = "Win"
-				gw.EloChange = g.EloGiven
-				details.Wins++
-				blackWins++
-			} else if g.Score == model.Score_Win {
-				gw.Outcome = "Loss"
-				gw.EloChange = g.EloTaken
-				details.Losses++
-			} else {
-				gw.Outcome = "Draw"
-				gw.EloChange = 0
-				details.Draws++
-			}
-		}
-		details.GameHistory = append(details.GameHistory, gw)
-	}
-
-	if details.TotalGames > 0 {
-		details.WinRate = float64(details.Wins) / float64(details.TotalGames) * 100
-		details.LossRate = float64(details.Losses) / float64(details.TotalGames) * 100
-		details.DrawRate = float64(details.Draws) / float64(details.TotalGames) * 100
-		details.WhiteWinRate = float64(whiteWins) / float64(whiteGames) * 100
-		details.BlackWinRate = float64(blackWins) / float64(blackGames) * 100
+		Player:  player,
+		Details: model.MapGamesToUserFriendly(id, games),
 	}
 
 	var buf bytes.Buffer

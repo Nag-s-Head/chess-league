@@ -24,7 +24,7 @@ func TestRender(t *testing.T) {
 	require.NoError(t, model.InsertAdminUser(tx, *user))
 	require.NoError(t, tx.Commit())
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/logout", nil)
+	req := httptest.NewRequest(http.MethodGet, "/admin/admins/042e73dc-8c82-4c9a-9aa4-0c0d593c1faa", nil)
 	req.SetPathValue("id", user.Id.String())
 	rr := httptest.NewRecorder()
 

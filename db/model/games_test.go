@@ -142,3 +142,21 @@ func TestCreateGameSameIkeyFails(t *testing.T) {
 	_, _, _, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.Error(t, err)
 }
+
+func TestMapGamesToUiFriendly(t *testing.T) {
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Commit()
+
+	p1 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, p1))
+
+	games, err := model.GetGamesByPlayer(db, p1.Id)
+	require.NoError(t, err)
+
+	details := model.MapGamesToUserFriendly(p1.Id, games)
+	require.NotEmpty(t, details)
+}
