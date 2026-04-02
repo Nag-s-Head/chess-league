@@ -40,6 +40,7 @@ type GameWithPlayerNames struct {
 }
 
 type GameWithOutcome struct {
+	Ikey         int64
 	OpponentName string
 	Outcome      string
 	Played       time.Time
@@ -64,6 +65,7 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 	for _, g := range games {
 		gw := GameWithOutcome{
 			Played: g.Played,
+			Ikey:   g.IKey,
 		}
 
 		isWhite := g.PlayerWhite == playerId
