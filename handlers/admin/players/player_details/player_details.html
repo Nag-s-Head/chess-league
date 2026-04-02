@@ -1,0 +1,68 @@
+<h1 class="text-xl font-bold">Details For Player {{.Player.Name}}</h1>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Name</p>
+    <p class="text-xl font-bold">{{.Player.Name}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Joined</p>
+    <p class="text-xl font-bold">
+      {{.Player.JoinTime.Format "Jan 02, 2006, 15:04pm"}}
+    </p>
+  </div>
+  {{if .Player.Deleted}}
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-xl font-bold bg-red-300">DELETED</p>
+  </div>
+  {{end}}
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Current Elo</p>
+    <p class="text-2xl font-bold">{{.Player.Elo}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Games Played</p>
+    <p class="text-2xl font-bold">{{.Details.TotalGames}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Win Rate</p>
+    <p class="text-2xl font-bold text-green-800">{{printf "%.1f" .Details.WinRate}}%</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Draw Rate</p>
+    <p class="text-2xl font-bold text-gray-600">{{printf "%.1f" .Details.DrawRate}}%</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">White Win Rate</p>
+    <p class="text-2xl font-bold">{{printf "%.1f" .Details.WhiteWinRate}}%</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Black Win Rate</p>
+    <p class="text-2xl font-bold">{{printf "%.1f" .Details.BlackWinRate}}%</p>
+  </div>
+</div>
+
+<h2 class="text-lg font-bold">Games</h2>
+{{range $result := .Details.Games}}
+  <tr class="border-b border-gray-200">
+    <td class="py-2">{{.OpponentName}}</td>
+    <td class="py-2">
+      <span
+        class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
+      >
+        {{.Outcome}}
+      </span>
+    </td>
+    <td class="py-2">
+      <span
+        class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
+      >
+        {{if gt .EloChange 0}}+{{end}}{{.EloChange}}
+      </span>
+    </td>
+    <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>
+  </tr>
+{{end}}
+
+<h2 class="text-lg font-bold">Audit Log</h2>
+<div clas="flex flex-col gap-5">TODO: This</div>

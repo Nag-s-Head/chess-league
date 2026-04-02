@@ -11,23 +11,23 @@
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Games Played</p>
-      <p class="text-2xl font-bold">{{.TotalGames}}</p>
+      <p class="text-2xl font-bold">{{.Details.TotalGames}}</p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Win Rate</p>
-      <p class="text-2xl font-bold text-green-800">{{printf "%.1f" .WinRate}}%</p>
+      <p class="text-2xl font-bold text-green-800">{{printf "%.1f" .Details.WinRate}}%</p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Draw Rate</p>
-      <p class="text-2xl font-bold text-gray-600">{{printf "%.1f" .DrawRate}}%</p>
+      <p class="text-2xl font-bold text-gray-600">{{printf "%.1f" .Details.DrawRate}}%</p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">White Win Rate</p>
-      <p class="text-2xl font-bold">{{printf "%.1f" .WhiteWinRate}}%</p>
+      <p class="text-2xl font-bold">{{printf "%.1f" .Details.WhiteWinRate}}%</p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Black Win Rate</p>
-      <p class="text-2xl font-bold">{{printf "%.1f" .BlackWinRate}}%</p>
+      <p class="text-2xl font-bold">{{printf "%.1f" .Details.BlackWinRate}}%</p>
     </div>
   </div>
 
@@ -44,7 +44,7 @@
           </tr>
         </thead>
         <tbody>
-          {{range .GameHistory}}
+          {{range .Details.Games}}
           <tr class="border-b border-gray-200">
             <td class="py-2">{{.OpponentName}}</td>
             <td class="py-2">

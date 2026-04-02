@@ -12,6 +12,8 @@ import (
 	adminusers "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users"
 	adminuserdetails "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users/admin_user_details"
 	"github.com/Nag-s-Head/chess-league/handlers/admin/auth"
+	"github.com/Nag-s-Head/chess-league/handlers/admin/players"
+	"github.com/Nag-s-Head/chess-league/handlers/admin/players/player_details"
 	qrcode "github.com/Nag-s-Head/chess-league/handlers/admin/qr_code"
 	testmode "github.com/Nag-s-Head/chess-league/handlers/admin/test_mode"
 )
@@ -72,4 +74,6 @@ func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWr
 	mux.HandleFunc(fmt.Sprintf("GET %s/qr-code", BasePath), auth.WithAuthentication(db, qrcode.Render))
 	mux.HandleFunc(fmt.Sprintf("GET %s/admins", BasePath), WithLayoutAndAuthentication(db, adminusers.Render(db), LayoutRender))
 	mux.HandleFunc(fmt.Sprintf("GET %s/admins/{id}", BasePath), WithLayoutAndAuthentication(db, adminuserdetails.Render(db), LayoutRender))
+	mux.HandleFunc(fmt.Sprintf("GET %s/players", BasePath), WithLayoutAndAuthentication(db, players.Render(db), LayoutRender))
+	mux.HandleFunc(fmt.Sprintf("GET %s/players/{id}", BasePath), WithLayoutAndAuthentication(db, player_details.Render(db), LayoutRender))
 }

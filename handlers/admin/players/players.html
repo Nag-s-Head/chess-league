@@ -1,0 +1,18 @@
+<h1 class="text-xl font-bold">Players</h1>
+{{range $result := .}}
+<a
+  href="/admin/players/{{.Id}}"
+  class="flex flex-col gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+>
+  <div class="flex flex-row justify-between w-full">
+    <h4 class="text-lg font-bold">{{.Name}}</h4>
+    <p>{{.Elo}} ELO</p>
+  </div>
+
+  <p>Played {{.GameCount}} games.</p>
+
+  <p>
+    Joined {{.JoinTime.Format "Jan 02, 2006"}}.
+  </p>
+</a>
+{{end}}
