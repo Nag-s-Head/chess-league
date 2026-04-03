@@ -200,3 +200,59 @@ func GetTotalPlayerCount(db *db.Db) (int, error) {
 
 	return count, nil
 }
+
+func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+	defer tx.Rollback()
+
+	var oldName string
+	err = tx.Get(&oldName, "SELECT name FROM players WHERE id=$1;", id)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get old player name"), err)
+	}
+
+	_, err = tx.
+		Exec("UPDATE players SET name=$1, name_normalised=$2 WHERE id=$3;",
+			newName,
+			normalisation.Normalise(newName),
+			id)
+	if err != nil {
+		return errors.Join(errors.New("Cannot update player"), err)
+	}
+
+	auditLogId := uuid.New()
+	_, err = tx.NamedExec(`
+	  INSERT INTO audit_logs (id, operation_name, operation_description, done_by) 
+		VALUES (:id, :operation_name, :operation_description, :done_by);
+		`, AuditLog{
+		Id:                    auditLogId,
+		OperationName:         "Player rename",
+		OperationDescrription: fmt.Sprintf("Renamed from '%s' to '%s'", oldName, newName),
+		DoneBy:                adminId,
+	})
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert audit log"), err)
+	}
+
+	_, err = tx.NamedExec(`
+	  INSERT INTO audit_log_player_affected (audit_log_id, player_id, elo_change) 
+		VALUES(:audit_log_id, :player_id, :elo_change); 
+		`, AuditLogPlayerAffected{
+		AuditLogId: auditLogId,
+		PlayerId:   id,
+		EloChange:  0,
+	})
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert audit log player affected"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
+}
