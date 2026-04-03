@@ -156,7 +156,7 @@ CREATE TABLE audit_logs (
 
 CREATE TABLE audit_log_player_affected (
 	audit_log_id UUID NOT NULL REFERENCES audit_logs(id),
-	player_id UUID NOT NULL REFERENCES players(id),
+	player_id TEXT NOT NULL REFERENCES players(id),
 	elo_change INT NOT NULL,
 	UNIQUE(audit_log_id, player_id)
 );
