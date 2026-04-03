@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
@@ -49,6 +50,8 @@ func TestCreateGameP1White(t *testing.T) {
 
 	require.NotEqual(t, model.StartingElo, p1.Elo)
 	require.NotEqual(t, model.StartingElo, p2.Elo)
+	require.NotEqual(t, model.StartingLiglicko2Rating, p1.Liglicko2Rating)
+	require.NotEqual(t, model.StartingLiglicko2Rating, p2.Liglicko2Rating)
 
 	require.Equal(t, p1.Id, game.Submitter)
 	require.Equal(t, p1.Id, game.PlayerWhite)
@@ -56,9 +59,13 @@ func TestCreateGameP1White(t *testing.T) {
 
 	require.Equal(t, p1.Elo-model.StartingElo, eloWhite)
 	require.Equal(t, p2.Elo-model.StartingElo, eloBlack)
+	require.InDelta(t, p1.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2White, 1e-9)
+	require.InDelta(t, p2.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2Black, 1e-9)
 
 	require.Equal(t, model.Score_Win, game.Score)
 	require.Equal(t, false, game.Deleted)
+	require.NotEqual(t, 0.0, game.Liglicko2White)
+	require.NotEqual(t, 0.0, game.Liglicko2Black)
 
 	require.Equal(t, ikey, game.IKey)
 	require.NoError(t, tx.Commit())
@@ -66,10 +73,12 @@ func TestCreateGameP1White(t *testing.T) {
 	p1New, err := model.GetPlayer(db, p1.Id)
 	require.NoError(t, err)
 	require.Equal(t, p1.Elo, p1New.Elo)
+	require.Equal(t, p1.Liglicko2Rating, p1New.Liglicko2Rating)
 
 	p2New, err := model.GetPlayer(db, p2.Id)
 	require.NoError(t, err)
 	require.Equal(t, p2.Elo, p2New.Elo)
+	require.Equal(t, p2.Liglicko2Rating, p2New.Liglicko2Rating)
 }
 
 func TestCreateGameP1Black(t *testing.T) {
@@ -95,6 +104,8 @@ func TestCreateGameP1Black(t *testing.T) {
 
 	require.NotEqual(t, model.StartingElo, p1.Elo)
 	require.NotEqual(t, model.StartingElo, p2.Elo)
+	require.NotEqual(t, model.StartingLiglicko2Rating, p1.Liglicko2Rating)
+	require.NotEqual(t, model.StartingLiglicko2Rating, p2.Liglicko2Rating)
 
 	require.Equal(t, p1.Id, game.Submitter)
 	require.Equal(t, p2.Id, game.PlayerWhite)
@@ -102,9 +113,13 @@ func TestCreateGameP1Black(t *testing.T) {
 
 	require.Equal(t, p2.Elo-model.StartingElo, eloWhite)
 	require.Equal(t, p1.Elo-model.StartingElo, eloBlack)
+	require.InDelta(t, p2.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2White, 1e-9)
+	require.InDelta(t, p1.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2Black, 1e-9)
 
 	require.Equal(t, model.Score_Win, game.Score)
 	require.Equal(t, false, game.Deleted)
+	require.NotEqual(t, 0.0, game.Liglicko2White)
+	require.NotEqual(t, 0.0, game.Liglicko2Black)
 
 	require.Equal(t, ikey, game.IKey)
 	require.NoError(t, tx.Commit())
@@ -112,10 +127,12 @@ func TestCreateGameP1Black(t *testing.T) {
 	p1New, err := model.GetPlayer(db, p1.Id)
 	require.NoError(t, err)
 	require.Equal(t, p1.Elo, p1New.Elo)
+	require.Equal(t, p1.Liglicko2Rating, p1New.Liglicko2Rating)
 
 	p2New, err := model.GetPlayer(db, p2.Id)
 	require.NoError(t, err)
 	require.Equal(t, p2.Elo, p2New.Elo)
+	require.Equal(t, p2.Liglicko2Rating, p2New.Liglicko2Rating)
 }
 
 func TestCreateGameSameIkeyFails(t *testing.T) {
@@ -159,4 +176,29 @@ func TestMapGamesToUiFriendly(t *testing.T) {
 
 	details := model.MapGamesToUserFriendly(p1.Id, games)
 	require.NotEmpty(t, details)
+}
+
+func TestMapGamesToUiFriendlyDrawUsesLiglicko2PerColor(t *testing.T) {
+	player := model.NewPlayer(uuid.New().String())
+	opponent := model.NewPlayer(uuid.New().String())
+
+	games := []model.GameWithPlayerNames{
+		{
+			Game: model.Game{
+				PlayerWhite:    player.Id,
+				PlayerBlack:    opponent.Id,
+				Score:          model.Score_Draw,
+				Played:         time.Now(),
+				Liglicko2White: 4.2,
+				Liglicko2Black: -4.2,
+			},
+			WhiteName: player.Name,
+			BlackName: opponent.Name,
+		},
+	}
+
+	details := model.MapGamesToUserFriendly(player.Id, games)
+	require.Len(t, details.Games, 1)
+	require.Equal(t, "Draw", details.Games[0].Outcome)
+	require.InDelta(t, 4.2, details.Games[0].Liglicko2Change, 1e-9)
 }

@@ -32,3 +32,5 @@ go.work.sum
 # .vscode/
 chess-league
 *.orig
+
+local/
