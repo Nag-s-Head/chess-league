@@ -1,6 +1,9 @@
 .git
 .github
 *.orig
+*.sql
+*.md
+*.env
 ./README.md
 ./LICENSE
 ./docker-compose.yml

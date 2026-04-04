@@ -10,7 +10,7 @@ docker-images:
 
 test: docker-images
 	docker compose restart database # Makes sure the db is empty
-	go test ./...
+	go test ./... -timeout=60s
 
 format:
 	gofmt -l -w .

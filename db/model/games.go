@@ -20,17 +20,22 @@ const (
 )
 
 type Game struct {
-	PlayerWhite     uuid.UUID `db:"player_white"`
-	PlayerBlack     uuid.UUID `db:"player_black"`
-	Score           Score     `db:"score"`
-	Submitter       uuid.UUID `db:"submitter"`
-	Played          time.Time `db:"played"`
-	Deleted         bool      `db:"deleted"`
-	EloGiven        int       `db:"elo_given"`
-	EloTaken        int       `db:"elo_taken"`
-	SubmitIp        string    `db:"submit_ip"`
-	SubmitUserAgent string    `db:"submit_user_agent"`
-	IKey            int64     `db:"ikey"`
+	PlayerWhite uuid.UUID `db:"player_white"`
+	PlayerBlack uuid.UUID `db:"player_black"`
+	Score       Score     `db:"score"`
+	Submitter   uuid.UUID `db:"submitter"`
+	Played      time.Time `db:"played"`
+	Deleted     bool      `db:"deleted"`
+	EloGiven    int       `db:"elo_given"`
+	EloTaken    int       `db:"elo_taken"`
+	// Liglicko2White and Liglicko2Black are per-game liglicko2 deltas for each side.
+	// They preserve sign, so draws between uneven players can still show non-zero
+	// changes.
+	Liglicko2White  float64 `db:"liglicko2_white"`
+	Liglicko2Black  float64 `db:"liglicko2_black"`
+	SubmitIp        string  `db:"submit_ip"`
+	SubmitUserAgent string  `db:"submit_user_agent"`
+	IKey            int64   `db:"ikey"`
 }
 
 type GameWithPlayerNames struct {
@@ -40,11 +45,12 @@ type GameWithPlayerNames struct {
 }
 
 type GameWithOutcome struct {
-	Ikey         int64
-	OpponentName string
-	Outcome      string
-	Played       time.Time
-	EloChange    int
+	Ikey            int64
+	OpponentName    string
+	Outcome         string
+	Played          time.Time
+	EloChange       int
+	Liglicko2Change float64
 }
 
 type GamesUiFriendly struct {
@@ -75,18 +81,18 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 			if g.Score == Score_Win {
 				gw.Outcome = "Win"
 				gw.EloChange = g.EloGiven
+				gw.Liglicko2Change = g.Liglicko2White
 				details.Wins++
 				whiteWins++
 			} else if g.Score == Score_Loss {
 				gw.Outcome = "Loss"
 				gw.EloChange = g.EloTaken
+				gw.Liglicko2Change = g.Liglicko2White
 				details.Losses++
 			} else {
 				gw.Outcome = "Draw"
-				// We don't know who was underdog in draws without more data,
-				// so we'll show 0 or handle it gracefully.
-				// For simplicity in history, show 0 if not sure.
 				gw.EloChange = 0
+				gw.Liglicko2Change = g.Liglicko2White
 				details.Draws++
 			}
 		} else {
@@ -95,15 +101,18 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 			if g.Score == Score_Loss {
 				gw.Outcome = "Win"
 				gw.EloChange = g.EloGiven
+				gw.Liglicko2Change = g.Liglicko2Black
 				details.Wins++
 				blackWins++
 			} else if g.Score == Score_Win {
 				gw.Outcome = "Loss"
 				gw.EloChange = g.EloTaken
+				gw.Liglicko2Change = g.Liglicko2Black
 				details.Losses++
 			} else {
 				gw.Outcome = "Draw"
 				gw.EloChange = 0
+				gw.Liglicko2Change = g.Liglicko2Black
 				details.Draws++
 			}
 		}
@@ -167,6 +176,10 @@ func CreateGame(tx *sqlx.Tx, submitter, opponent *Player, submitterIsWhite bool,
 	}
 
 	eloWhite, eloBlack := CalculateElo(pWhite, pBlack, outcome)
+	liglicko2White, liglicko2Black, err := CalculateLiglicko2(pWhite, pBlack, outcome, game.Played)
+	if err != nil {
+		return Game{}, 0, 0, errors.Join(errors.New("Could not calculate liglicko2"), err)
+	}
 	game.PlayerWhite = pWhite.Id
 	game.PlayerBlack = pBlack.Id
 
@@ -178,21 +191,28 @@ func CreateGame(tx *sqlx.Tx, submitter, opponent *Player, submitterIsWhite bool,
 		game.EloTaken = eloWhite
 	}
 
-	_, err := tx.NamedExec(`
-INSERT INTO games (player_white, player_black, score, submitter, played, deleted, elo_given, elo_taken, submit_ip, submit_user_agent, ikey)
-VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :elo_given, :elo_taken, :submit_ip, :submit_user_agent, :ikey);
+	game.Liglicko2White = liglicko2White
+	game.Liglicko2Black = liglicko2Black
+
+	_, err = tx.NamedExec(`
+INSERT INTO games (player_white, player_black, score, submitter, played, deleted, elo_given, elo_taken, liglicko2_white, liglicko2_black, submit_ip, submit_user_agent, ikey)
+VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :elo_given, :elo_taken, :liglicko2_white, :liglicko2_black, :submit_ip, :submit_user_agent, :ikey);
   	`, game)
 
 	if err != nil {
 		return Game{}, 0, 0, errors.Join(errors.New("Cannot insert game"), err)
 	}
 
-	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, pWhite)
+	_, err = tx.NamedExec(`UPDATE players 
+SET elo=:elo, liglicko2_rating=:liglicko2_rating, liglicko2_deviation=:liglicko2_deviation, liglicko2_volatility=:liglicko2_volatility, liglicko2_at=:liglicko2_at
+WHERE id=:id`, pWhite)
 	if err != nil {
 		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of white player"), err)
 	}
 
-	_, err = tx.NamedExec(`UPDATE players SET elo=:elo WHERE id=:id`, pBlack)
+	_, err = tx.NamedExec(`UPDATE players 
+SET elo=:elo, liglicko2_rating=:liglicko2_rating, liglicko2_deviation=:liglicko2_deviation, liglicko2_volatility=:liglicko2_volatility, liglicko2_at=:liglicko2_at
+WHERE id=:id`, pBlack)
 	if err != nil {
 		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of black player"), err)
 	}

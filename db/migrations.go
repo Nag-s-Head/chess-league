@@ -175,6 +175,9 @@ CREATE INDEX idx_audit_log_game_affected_audit_log_id ON audit_log_game_affected
 CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(game_ikey);
 			`,
 		},
+		{
+			PreProcess: InternalMigrateLegacyLiglicko2,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR
