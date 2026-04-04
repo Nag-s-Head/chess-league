@@ -47,10 +47,6 @@ CREATE TABLE players (
 	name TEXT NOT NULL,
 	name_normalised TEXT NOT NULL UNIQUE,
 	elo INTEGER DEFAULT 1000 CHECK(elo >= 0),
-	liglicko2_rating DOUBLE PRECISION NOT NULL DEFAULT 1500,
-	liglicko2_deviation DOUBLE PRECISION NOT NULL DEFAULT 500 CHECK(liglicko2_deviation >= 0),
-	liglicko2_volatility DOUBLE PRECISION NOT NULL DEFAULT 0.09 CHECK(liglicko2_volatility >= 0),
-	liglicko2_at DOUBLE PRECISION NOT NULL DEFAULT 0,
 	join_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -63,8 +59,6 @@ CREATE TABLE games (
 	deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	elo_given INT NOT NULL,
 	elo_taken INT NOT NULL,
-	liglicko2_white DOUBLE PRECISION NOT NULL DEFAULT 0,
-	liglicko2_black DOUBLE PRECISION NOT NULL DEFAULT 0,
 	submit_ip TEXT,
 	submit_user_agent TEXT
 ); 
@@ -74,7 +68,6 @@ CREATE TABLE games (
 			Sql: `
 CREATE INDEX idx_players_name_norm ON players(name_normalised);
 CREATE INDEX idx_players_elo ON players(elo);
-CREATE INDEX idx_players_liglicko2_rating ON players(liglicko2_rating);
 			`,
 		},
 		{
@@ -180,6 +173,17 @@ CREATE TABLE audit_log_game_affected (
 
 CREATE INDEX idx_audit_log_game_affected_audit_log_id ON audit_log_game_affected(audit_log_id);
 CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(game_ikey);
+			`,
+		},
+		{
+			Sql: `
+ALTER TABLE players ADD COLUMN liglicko2_rating DOUBLE PRECISION NOT NULL DEFAULT 1500;
+ALTER TABLE players ADD COLUMN liglicko2_deviation DOUBLE PRECISION NOT NULL DEFAULT 500 CHECK(liglicko2_deviation >= 0);
+ALTER TABLE players ADD COLUMN liglicko2_volatility DOUBLE PRECISION NOT NULL DEFAULT 0.09 CHECK(liglicko2_volatility >= 0);
+ALTER TABLE players ADD COLUMN liglicko2_at DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN liglicko2_white DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN liglicko2_black DOUBLE PRECISION NOT NULL DEFAULT 0;
+CREATE INDEX idx_players_liglicko2_rating ON players(liglicko2_rating);
 			`,
 		},
 		{

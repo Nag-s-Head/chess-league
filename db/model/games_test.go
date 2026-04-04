@@ -179,6 +179,8 @@ func TestMapGamesToUiFriendly(t *testing.T) {
 }
 
 func TestMapGamesToUiFriendlyDrawUsesLiglicko2PerColor(t *testing.T) {
+	t.Parallel()
+
 	player := model.NewPlayer(uuid.New().String())
 	opponent := model.NewPlayer(uuid.New().String())
 

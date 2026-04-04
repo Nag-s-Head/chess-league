@@ -110,7 +110,7 @@ INSERT INTO games (player_white, player_black, score, submitter, played, deleted
 	var migrationVersion int
 	err = scopedConn.Get(&migrationVersion, `SELECT version FROM migrations ORDER BY version DESC LIMIT 1;`)
 	require.NoError(t, err)
-	require.Equal(t, 10, migrationVersion)
+	require.Equal(t, 11, migrationVersion)
 
 	playerOneExpected := model.Player{
 		Liglicko2Rating:     model.StartingLiglicko2Rating,
