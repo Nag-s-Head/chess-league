@@ -176,17 +176,6 @@ CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(ga
 			`,
 		},
 		{
-			Sql: `
-ALTER TABLE players ADD COLUMN liglicko2_rating DOUBLE PRECISION NOT NULL DEFAULT 1500;
-ALTER TABLE players ADD COLUMN liglicko2_deviation DOUBLE PRECISION NOT NULL DEFAULT 500 CHECK(liglicko2_deviation >= 0);
-ALTER TABLE players ADD COLUMN liglicko2_volatility DOUBLE PRECISION NOT NULL DEFAULT 0.09 CHECK(liglicko2_volatility >= 0);
-ALTER TABLE players ADD COLUMN liglicko2_at DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE games ADD COLUMN liglicko2_white DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE games ADD COLUMN liglicko2_black DOUBLE PRECISION NOT NULL DEFAULT 0;
-CREATE INDEX idx_players_liglicko2_rating ON players(liglicko2_rating);
-			`,
-		},
-		{
 			PreProcess: InternalMigrateLegacyLiglicko2,
 		},
 	})
