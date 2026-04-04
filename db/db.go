@@ -34,7 +34,8 @@ func InternalConnect() (*sqlx.DB, error) {
 	)
 
 	for tries := range maxTries {
-		slog.Info("Trying to connect to database...", "try number", tries+1, "max tries", maxTries)
+		tries++
+		slog.Info("Trying to connect to database...", "try number", tries, "max tries", maxTries)
 		pgDb, err := connect()
 		if err != nil {
 			slog.Warn("Could not connect to database trying again...", "waiting for", wait, "err", err)
