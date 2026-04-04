@@ -10,18 +10,20 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigrateFromPreLiglicko2SchemaBackfillsLiglicko2(t *testing.T) {
-	baseConn, err := db.InternalConnect()
-	require.NoError(t, err)
-	defer baseConn.Close()
+	testDb := testutils.GetDb(t)
+	defer testDb.Close()
+
+	baseConn := testDb.GetSqlxDb()
 
 	schemaName := "migration_liglicko2_" + strings.ReplaceAll(uuid.New().String(), "-", "")
-	_, err = baseConn.Exec(`CREATE SCHEMA ` + schemaName)
+	_, err := baseConn.Exec(`CREATE SCHEMA ` + schemaName)
 	require.NoError(t, err)
 	defer func() {
 		_, _ = baseConn.Exec(`DROP SCHEMA IF EXISTS ` + schemaName + ` CASCADE`)
