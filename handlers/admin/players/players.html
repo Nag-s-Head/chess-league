@@ -6,7 +6,7 @@
 >
   <div class="flex flex-row justify-between w-full">
     <h4 class="text-lg font-bold">{{.Name}}</h4>
-    <p>{{.Elo}} ELO</p>
+    <p>{{.Elo}} ELO | {{printf "%.0f" .Liglicko2Rating}} liglicko2</p>
   </div>
 
   <p>Played {{.GameCount}} games.</p>

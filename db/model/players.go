@@ -14,14 +14,29 @@ import (
 )
 
 const StartingElo = 1000
+const (
+	StartingLiglicko2Rating     = 1500.0
+	StartingLiglicko2Deviation  = 500.0
+	StartingLiglicko2Volatility = 0.09
+)
 
 type Player struct {
 	Id             uuid.UUID `db:"id"`
 	Name           string    `db:"name"`
 	NameNormalised string    `db:"name_normalised"`
 	Elo            int       `db:"elo"`
-	JoinTime       time.Time `db:"join_time"`
-	Deleted        bool      `db:"deleted"`
+	// Liglicko2Rating is the player's current liglicko2 rating scalar.
+	Liglicko2Rating float64 `db:"liglicko2_rating"`
+	// Liglicko2Deviation is the player's current liglicko2 rating deviation (RD).
+	Liglicko2Deviation float64 `db:"liglicko2_deviation"`
+	// Liglicko2Volatility is the player's current liglicko2 volatility (sigma).
+	Liglicko2Volatility float64 `db:"liglicko2_volatility"`
+	// Liglicko2At is the liglicko2 timestamp used by the algorithm.
+	// It is stored as "rating periods since Unix epoch", where this app currently
+	// defines 1 rating period as 1 day.
+	Liglicko2At float64   `db:"liglicko2_at"`
+	JoinTime    time.Time `db:"join_time"`
+	Deleted     bool      `db:"deleted"`
 }
 
 type PlayerWithGameCount struct {
@@ -31,19 +46,24 @@ type PlayerWithGameCount struct {
 
 func NewPlayer(name string) Player {
 	return Player{
-		Id:             uuid.New(),
-		Name:           name,
-		NameNormalised: normalisation.Normalise(name),
-		Elo:            StartingElo,
-		JoinTime:       time.Now(),
-		Deleted:        false,
+		Id:                  uuid.New(),
+		Name:                name,
+		NameNormalised:      normalisation.Normalise(name),
+		Elo:                 StartingElo,
+		Liglicko2Rating:     StartingLiglicko2Rating,
+		Liglicko2Deviation:  StartingLiglicko2Deviation,
+		Liglicko2Volatility: StartingLiglicko2Volatility,
+		Liglicko2At:         liglicko2InstantFromTime(time.Now()),
+		JoinTime:            time.Now(),
+		Deleted:             false,
 	}
 }
 
 func InsertPlayerTx(tx *sqlx.Tx, player Player) error {
 	_, err := tx.
 		NamedExec(
-			"INSERT INTO players (id, name, name_normalised, elo, join_time) VALUES (:id, :name, :name_normalised, :elo, :join_time);",
+			`INSERT INTO players (id, name, name_normalised, elo, liglicko2_rating, liglicko2_deviation, liglicko2_volatility, liglicko2_at, join_time)
+VALUES (:id, :name, :name_normalised, :elo, :liglicko2_rating, :liglicko2_deviation, :liglicko2_volatility, :liglicko2_at, :join_time);`,
 			player)
 
 	if err != nil {

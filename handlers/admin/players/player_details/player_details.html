@@ -21,6 +21,10 @@
     <p class="text-2xl font-bold">{{.Player.Elo}}</p>
   </div>
   <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Current liglicko2</p>
+    <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
     <p class="text-sm text-gray-500">Games Played</p>
     <p class="text-2xl font-bold">{{.Details.TotalGames}}</p>
   </div>
@@ -96,6 +100,13 @@
             class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
           >
             {{if gt .EloChange 0}}+{{end}}{{.EloChange}}
+          </span>
+        </td>
+        <td class="py-2">
+          <span
+            class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
+          >
+            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}}
           </span>
         </td>
         <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>
