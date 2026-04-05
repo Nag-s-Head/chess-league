@@ -1,0 +1,25 @@
+<fieldset>
+  <div class="flex flex-col gap-3">
+    <legend class="font-bold text-lg">Rename Player</legend>
+
+    <div class="flex flex-row gap-3 justify-between">
+      <label for="player-name" class="cursor-pointer">New name</label>
+      <input
+        id="player-name"
+        name="player-name"
+        class="rounded-lg bg-gray-300 p-1 px-2"
+        type="text"
+        placeholder="John Smith"
+        required
+      />
+    </div>
+    <button
+      type="submit"
+      name="submit"
+      value="rename"
+      class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    >
+      Submit Rename
+    </button>
+  </div>
+</fieldset>

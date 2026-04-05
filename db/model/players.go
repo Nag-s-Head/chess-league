@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
@@ -258,6 +259,8 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 	if err != nil {
 		return errors.Join(errors.New("Cannot commit transaction"), err)
 	}
+
+	slog.Info("Player renamed", "oldName", oldName, "newName", newName, "by", adminId)
 
 	return nil
 }
