@@ -159,3 +159,30 @@ func TestGetAuditLogsUiFriendlyByPlayer(t *testing.T) {
 	require.NotEmpty(t, auditLogs[0])
 	require.NotEmpty(t, auditLogs[0].AdminName)
 }
+
+func TestGetAuditLogsUiFriendlyByAdmin(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+
+	name := uuid.New().String()
+	desc := uuid.New().String()
+
+	auditLog := model.NewAuditLog(admin.Id, name, desc)
+	require.NoError(t, model.InsertAuditLog(tx, auditLog))
+	require.NoError(t, tx.Commit())
+
+	auditLogs, err := model.GetAuditLogsUiFriendlyForAdmin(db, admin.Id)
+	require.NoError(t, err)
+	require.Len(t, auditLogs, 1)
+
+	require.NotEmpty(t, auditLogs[0])
+	require.NotEmpty(t, auditLogs[0].AdminName)
+}
