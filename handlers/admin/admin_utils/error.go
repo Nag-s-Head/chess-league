@@ -1,7 +1,6 @@
 package adminutils
 
 import (
-	"embed"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -11,8 +10,6 @@ import (
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
 )
 
-//go:embed error.html
-var f embed.FS
 var errorTpl *template.Template = utils.GetTemplate(f, "error.html")
 
 type ErrorModel struct {

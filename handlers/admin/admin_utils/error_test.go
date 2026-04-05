@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRender(t *testing.T) {
+func TestRenderError(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	testError := errors.New("TEST ERROR")
