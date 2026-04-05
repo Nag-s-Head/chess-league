@@ -164,7 +164,6 @@ func GetAuditLogsUiFriendlyForAdmin(db *db.Db, id uuid.UUID) ([]AuditLogUiFriend
 		SELECT audit_logs.*, admin_users.name AS admin_name
 		FROM audit_logs
 		INNER JOIN admin_users ON admin_users.id = audit_logs.done_by
-		INNER JOIN audit_log_player_affected ON audit_logs.id = audit_log_player_affected.audit_log_id
 		WHERE admin_users.id = $1
 		ORDER BY created DESC;
 		`, id)
