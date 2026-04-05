@@ -143,3 +143,31 @@ func TestSearchPlayerByNameManyResults(t *testing.T) {
 		require.Len(t, players, 3)
 	})
 }
+
+func TestRenamePlayer(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	oldName := uuid.New().String()
+	player := model.NewPlayer(oldName)
+	err := model.InsertPlayer(db, player)
+	require.NoError(t, err)
+
+	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+	require.NoError(t, tx.Commit())
+
+	newName := uuid.New().String()
+	err = model.RenamePlayer(db, player.Id, newName, admin.Id)
+	require.NoError(t, err)
+
+	player, err = model.GetPlayer(db, player.Id)
+	require.NoError(t, err)
+	require.Equal(t, newName, player.Name)
+	require.Equal(t, normalisation.Normalise(newName), player.NameNormalised)
+}
