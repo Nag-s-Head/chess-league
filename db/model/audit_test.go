@@ -99,3 +99,63 @@ func TestGetAuditLog(t *testing.T) {
 	require.Equal(t, player.Id, details.Players[0].PlayerId)
 	require.NoError(t, tx.Commit())
 }
+
+func TestGetAuditLogsUiFriendly(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+
+	name := uuid.New().String()
+	desc := uuid.New().String()
+
+	auditLog := model.NewAuditLog(admin.Id, name, desc)
+	require.NoError(t, model.InsertAuditLog(tx, auditLog))
+	require.NoError(t, tx.Commit())
+
+	auditLogs, err := model.GetAuditLogsUiFriendly(db)
+	require.NoError(t, err)
+	require.True(t, len(auditLogs) > 1)
+
+	for _, log := range auditLogs {
+		require.NotEmpty(t, log)
+		require.NotEmpty(t, log.AdminName)
+	}
+}
+
+func TestGetAuditLogsUiFriendlyByPlayer(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	player := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayerTx(tx, player))
+
+	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+
+	name := uuid.New().String()
+	desc := uuid.New().String()
+
+	auditLog := model.NewAuditLog(admin.Id, name, desc)
+	require.NoError(t, model.InsertAuditLog(tx, auditLog))
+	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id, 123)))
+	require.NoError(t, tx.Commit())
+
+	auditLogs, err := model.GetAuditLogsUiFriendlyForPlayer(db, player.Id)
+	require.NoError(t, err)
+	require.Len(t, auditLogs, 1)
+
+	require.NotEmpty(t, auditLogs[0])
+	require.NotEmpty(t, auditLogs[0].AdminName)
+}

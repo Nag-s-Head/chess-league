@@ -20,8 +20,9 @@ var indexTpl *template.Template = utils.GetTemplate(f, "player_details.html")
 var renameFormTpl *template.Template = utils.GetTemplate(f, "rename_form.html")
 
 type Model struct {
-	Player  model.Player
-	Details model.GamesUiFriendly
+	Player    model.Player
+	Details   model.GamesUiFriendly
+	AuditLogs template.HTML
 }
 
 func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
@@ -43,11 +44,21 @@ func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser
 		}
 
 		details := model.MapGamesToUserFriendly(id, games)
+		auditLogs, err := model.GetAuditLogsUiFriendlyForPlayer(db, id)
+		if err != nil {
+			return "", err
+		}
+
+		renderedAuditLogs, err := adminutils.RenderAuditLogs(auditLogs)
+		if err != nil {
+			return "", err
+		}
 
 		var buf bytes.Buffer
 		err = indexTpl.Execute(&buf, Model{
-			Player:  player,
-			Details: details,
+			Player:    player,
+			Details:   details,
+			AuditLogs: renderedAuditLogs,
 		})
 		if err != nil {
 			return "", err

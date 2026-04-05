@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -97,4 +98,62 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 	}
 
 	return result, nil
+}
+
+type AuditLogUiFriendly struct {
+	AuditLog
+	AdminName string `db:"admin_name"`
+}
+
+func GetAuditLogsUiFriendly(db *db.Db) ([]AuditLogUiFriendly, error) {
+	logs := make([]AuditLogUiFriendly, 0)
+	rows, err := db.GetSqlxDb().Queryx(`
+		SELECT audit_logs.*, admin_users.name AS admin_name
+		FROM audit_logs
+		INNER JOIN admin_users ON admin_users.id = audit_logs.done_by
+		ORDER BY created DESC;
+		`)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get audit logs"), err)
+	}
+
+	for rows.Next() {
+		var log AuditLogUiFriendly
+		err = rows.StructScan(&log)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot scan audit log"), err)
+		}
+
+		logs = append(logs, log)
+	}
+
+	return logs, nil
+}
+
+func GetAuditLogsUiFriendlyForPlayer(db *db.Db, id uuid.UUID) ([]AuditLogUiFriendly, error) {
+	logs := make([]AuditLogUiFriendly, 0)
+	rows, err := db.GetSqlxDb().Queryx(`
+		SELECT audit_logs.*, admin_users.name AS admin_name
+		FROM audit_logs
+		INNER JOIN admin_users ON admin_users.id = audit_logs.done_by
+		INNER JOIN audit_log_player_affected ON audit_logs.id = audit_log_player_affected.audit_log_id
+		INNER JOIN players ON players.id =  audit_log_player_affected.player_id
+		WHERE players.id = $1
+		ORDER BY created DESC;
+		`, id)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get audit logs"), err)
+	}
+
+	for rows.Next() {
+		var log AuditLogUiFriendly
+		err = rows.StructScan(&log)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot scan audit log"), err)
+		}
+
+		logs = append(logs, log)
+	}
+
+	return logs, nil
 }
