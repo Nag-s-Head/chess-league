@@ -1,0 +1,40 @@
+<h1 class="text-xl font-bold">Games</h1>
+
+{{range $result := .}}
+  <a
+    href="/admin/games/{{.Ikey}}"
+    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  >
+    <div class="flex flex-row justify-between w-full">
+      <tr class="border-b border-gray-200">
+        <td class="py-2">
+          <p>
+            <span class="font-bold">{{.PlayerName}}</span> vs. <span class="font-bold">{{.OpponentName}}</span>
+          </p>
+        </td>
+        <td class="py-2">
+          <span
+            class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
+          >
+            {{.Outcome}}
+          </span>
+        </td>
+        <td class="py-2">
+          <span
+            class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
+          >
+            {{if gt .EloChange 0}}+{{end}}{{.EloChange}} ELO
+          </span>
+        </td>
+        <td class="py-2">
+          <span
+            class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
+          >
+            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}} liglicko2
+          </span>
+        </td>
+        <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>
+      </tr>
+    </div>
+  </a>
+{{end}}

@@ -1,0 +1,32 @@
+package games
+
+import (
+	"bytes"
+	"embed"
+	"html/template"
+	"net/http"
+
+	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/model"
+	"github.com/Nag-s-Head/chess-league/handlers/utils"
+)
+
+//go:embed games.html
+var f embed.FS
+var indexTpl *template.Template = utils.GetTemplate(f, "games.html")
+
+func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
+	return func(w http.ResponseWriter, r *http.Request, au *model.AdminUser) (template.HTML, error) {
+		games, err := model.GetGamesWithOutcomes(db)
+		if err != nil {
+			return "", err
+		}
+
+		var buf bytes.Buffer
+		err = indexTpl.Execute(&buf, games)
+		if err != nil {
+			return "", err
+		}
+		return template.HTML(buf.String()), nil
+	}
+}

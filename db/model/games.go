@@ -46,11 +46,32 @@ type GameWithPlayerNames struct {
 
 type GameWithOutcome struct {
 	Ikey            int64
+	PlayerName      string
 	OpponentName    string
 	Outcome         string
 	Played          time.Time
 	EloChange       int
 	Liglicko2Change float64
+}
+
+func GetGamesWithOutcomes(db *db.Db) ([]GameWithOutcome, error) {
+	var games []GameWithPlayerNames
+	err := db.GetSqlxDb().Select(&games, `
+SELECT g.*, w.name as white_name, b.name as black_name
+FROM games g
+JOIN players w ON g.player_white = w.id
+JOIN players b ON g.player_black = b.id
+ORDER BY g.played DESC;`)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get games by player"), err)
+	}
+
+	gamesWithOutcomes := make([]GameWithOutcome, 0)
+	for _, g := range games {
+		gamesWithOutcomes = append(gamesWithOutcomes, g.MapGameToGameWithOutcome(g.PlayerWhite))
+	}
+
+	return gamesWithOutcomes, nil
 }
 
 type GamesUiFriendly struct {
@@ -61,6 +82,50 @@ type GamesUiFriendly struct {
 	Games                       []GameWithOutcome
 }
 
+func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameWithOutcome {
+	gw := GameWithOutcome{
+		Played: g.Played,
+		Ikey:   g.IKey,
+	}
+
+	isWhite := g.PlayerWhite == playerId
+	if isWhite {
+		gw.OpponentName = g.BlackName
+		gw.PlayerName = g.WhiteName
+		if g.Score == Score_Win {
+			gw.Outcome = "Win"
+			gw.EloChange = g.EloGiven
+			gw.Liglicko2Change = g.Liglicko2White
+		} else if g.Score == Score_Loss {
+			gw.Outcome = "Loss"
+			gw.EloChange = g.EloTaken
+			gw.Liglicko2Change = g.Liglicko2White
+		} else {
+			gw.Outcome = "Draw"
+			gw.EloChange = 0
+			gw.Liglicko2Change = g.Liglicko2White
+		}
+	} else {
+		gw.OpponentName = g.WhiteName
+		gw.PlayerName = g.BlackName
+		if g.Score == Score_Loss {
+			gw.Outcome = "Win"
+			gw.EloChange = g.EloGiven
+			gw.Liglicko2Change = g.Liglicko2Black
+		} else if g.Score == Score_Win {
+			gw.Outcome = "Loss"
+			gw.EloChange = g.EloTaken
+			gw.Liglicko2Change = g.Liglicko2Black
+		} else {
+			gw.Outcome = "Draw"
+			gw.EloChange = 0
+			gw.Liglicko2Change = g.Liglicko2Black
+		}
+	}
+
+	return gw
+}
+
 func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) GamesUiFriendly {
 	details := GamesUiFriendly{
 		Games:      make([]GameWithOutcome, 0),
@@ -69,53 +134,31 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 
 	var whiteGames, whiteWins, blackGames, blackWins int
 	for _, g := range games {
-		gw := GameWithOutcome{
-			Played: g.Played,
-			Ikey:   g.IKey,
-		}
 
 		isWhite := g.PlayerWhite == playerId
 		if isWhite {
 			whiteGames++
-			gw.OpponentName = g.BlackName
 			if g.Score == Score_Win {
-				gw.Outcome = "Win"
-				gw.EloChange = g.EloGiven
-				gw.Liglicko2Change = g.Liglicko2White
 				details.Wins++
 				whiteWins++
 			} else if g.Score == Score_Loss {
-				gw.Outcome = "Loss"
-				gw.EloChange = g.EloTaken
-				gw.Liglicko2Change = g.Liglicko2White
 				details.Losses++
 			} else {
-				gw.Outcome = "Draw"
-				gw.EloChange = 0
-				gw.Liglicko2Change = g.Liglicko2White
 				details.Draws++
 			}
 		} else {
 			blackGames++
-			gw.OpponentName = g.WhiteName
 			if g.Score == Score_Loss {
-				gw.Outcome = "Win"
-				gw.EloChange = g.EloGiven
-				gw.Liglicko2Change = g.Liglicko2Black
 				details.Wins++
 				blackWins++
 			} else if g.Score == Score_Win {
-				gw.Outcome = "Loss"
-				gw.EloChange = g.EloTaken
-				gw.Liglicko2Change = g.Liglicko2Black
 				details.Losses++
 			} else {
-				gw.Outcome = "Draw"
-				gw.EloChange = 0
-				gw.Liglicko2Change = g.Liglicko2Black
 				details.Draws++
 			}
 		}
+
+		gw := g.MapGameToGameWithOutcome(playerId)
 		details.Games = append(details.Games, gw)
 	}
 
