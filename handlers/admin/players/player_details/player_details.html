@@ -98,14 +98,14 @@
           <span
             class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
           >
-            {{if gt .EloChange 0}}+{{end}}{{.EloChange}}
+            {{if gt .EloChange 0}}+{{end}}{{.EloChange}} ELO
           </span>
         </td>
         <td class="py-2">
           <span
             class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
           >
-            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}}
+            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}} liglicko2
           </span>
         </td>
         <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>
