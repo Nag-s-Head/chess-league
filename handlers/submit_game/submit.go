@@ -150,10 +150,18 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 
 	var score model.Score
 	winner := r.FormValue(winner)
-	if winner == "white" {
-		score = model.Score_Win
-	} else if winner == "black" {
-		score = model.Score_Loss
+	if winner == "win" {
+		if submitterIsWhite {
+			score = model.Score_Win
+		} else {
+			score = model.Score_Loss
+		}
+	} else if winner == "loss" {
+		if submitterIsWhite {
+			score = model.Score_Loss
+		} else {
+			score = model.Score_Win
+		}
 	} else if winner == "draw" {
 		score = model.Score_Draw
 	} else {
