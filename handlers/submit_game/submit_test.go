@@ -70,7 +70,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Test render of player lookup", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=win", name), strings.NewReader(""))
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.MagicNumberCookie,
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
@@ -90,7 +90,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Test render of player lookup, no magic number", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=win", name), strings.NewReader(""))
 
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
@@ -104,7 +104,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		ikey, err := model.NextIKey(db)
@@ -142,6 +143,7 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
+		form.Set("played-as", "white")
 		form.Set("winner", "draw")
 		form.Set("submit-type", "final")
 
@@ -181,7 +183,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
@@ -208,7 +211,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
@@ -276,7 +280,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", whiteName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		ikey, err := model.NextIKey(db)
@@ -325,7 +330,7 @@ func TestSubmit(t *testing.T) {
 		form.Set("other-player-name", whiteName)
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "black")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		ikey, err := model.NextIKey(db)
@@ -360,7 +365,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Empty magic cookie but valid URL param should work", func(t *testing.T) {
-		url := fmt.Sprintf("/mocked-url?%s=%s&player-name=%s&played-as=white&other-player-name=not_found&winner=white",
+		url := fmt.Sprintf("/mocked-url?%s=%s&player-name=%s&played-as=white&other-player-name=not_found&winner=win",
 			submitgame.MagicNumberParam, os.Getenv(submitgame.MagicNumberEnvVar), name)
 		r := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
 		r.AddCookie(&http.Cookie{
