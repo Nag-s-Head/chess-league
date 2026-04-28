@@ -147,7 +147,7 @@ func GetPlayers(db *db.Db) ([]Player, error) {
 }
 
 func GetPlayersByElo(db *db.Db) ([]Player, error) {
-	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players ORDER BY elo DESC;")
+	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players ORDER BY liglicko2_rating DESC, name;")
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get players"), err)
 	}
