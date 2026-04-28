@@ -15,6 +15,8 @@ import (
 )
 
 func TestNextIkey(t *testing.T) {
+	t.Parallel()
+
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -28,6 +30,8 @@ func TestNextIkey(t *testing.T) {
 }
 
 func TestCreateGameP1White(t *testing.T) {
+	t.Parallel()
+
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -82,6 +86,8 @@ func TestCreateGameP1White(t *testing.T) {
 }
 
 func TestCreateGameP1Black(t *testing.T) {
+	t.Parallel()
+
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -136,6 +142,8 @@ func TestCreateGameP1Black(t *testing.T) {
 }
 
 func TestCreateGameSameIkeyFails(t *testing.T) {
+	t.Parallel()
+
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -161,6 +169,8 @@ func TestCreateGameSameIkeyFails(t *testing.T) {
 }
 
 func TestMapGamesToUiFriendly(t *testing.T) {
+	t.Parallel()
+
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -203,4 +213,35 @@ func TestMapGamesToUiFriendlyDrawUsesLiglicko2PerColor(t *testing.T) {
 	require.Len(t, details.Games, 1)
 	require.Equal(t, "Draw", details.Games[0].Outcome)
 	require.InDelta(t, 4.2, details.Games[0].Liglicko2Change, 1e-9)
+}
+
+func TestGetGame(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	p1 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, p1))
+
+	p2 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, p2))
+
+	ikey, err := model.NextIKey(db)
+	require.NoError(t, err)
+
+	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+	game, _, _, err := model.CreateGame(tx, &p1, &p2, false, ikey, model.Score_Win, r)
+	require.NoError(t, err)
+
+	require.Equal(t, ikey, game.IKey)
+	require.NoError(t, tx.Commit())
+
+	game2, err := model.GetGameWithDetails(db, game.IKey)
+	require.NoError(t, err)
+	require.Equal(t, game.IKey, game2.IKey)
 }
