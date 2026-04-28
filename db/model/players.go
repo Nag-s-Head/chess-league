@@ -25,7 +25,7 @@ type Player struct {
 	Id             uuid.UUID `db:"id"`
 	Name           string    `db:"name"`
 	NameNormalised string    `db:"name_normalised"`
-	Elo            int       `db:"elo"`
+	DEPRECATEDElo  int       `db:"elo"` // Deprecated: for use with old elo system
 	// Liglicko2Rating is the player's current liglicko2 rating scalar.
 	Liglicko2Rating float64 `db:"liglicko2_rating"`
 	// Liglicko2Deviation is the player's current liglicko2 rating deviation (RD).
@@ -50,7 +50,7 @@ func NewPlayer(name string) Player {
 		Id:                  uuid.New(),
 		Name:                name,
 		NameNormalised:      normalisation.Normalise(name),
-		Elo:                 StartingElo,
+		DEPRECATEDElo:       StartingElo,
 		Liglicko2Rating:     StartingLiglicko2Rating,
 		Liglicko2Deviation:  StartingLiglicko2Deviation,
 		Liglicko2Volatility: StartingLiglicko2Volatility,
@@ -175,7 +175,7 @@ func GetPlayersByEloWithGameCount(db *db.Db) ([]PlayerWithGameCount, error) {
 		  ON 
 		    games.player_white=players.id OR games.player_black=players.id
 		GROUP by players.id
-		ORDER BY elo DESC;`)
+		ORDER BY liglicko2_rating DESC, name;`)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get players"), err)
 	}

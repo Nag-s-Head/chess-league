@@ -48,8 +48,8 @@ func TestCreateGameP1White(t *testing.T) {
 	game, eloWhite, eloBlack, err := model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
-	require.NotEqual(t, model.StartingElo, p1.Elo)
-	require.NotEqual(t, model.StartingElo, p2.Elo)
+	require.NotEqual(t, model.StartingElo, p1.DEPRECATEDElo)
+	require.NotEqual(t, model.StartingElo, p2.DEPRECATEDElo)
 	require.NotEqual(t, model.StartingLiglicko2Rating, p1.Liglicko2Rating)
 	require.NotEqual(t, model.StartingLiglicko2Rating, p2.Liglicko2Rating)
 
@@ -57,8 +57,8 @@ func TestCreateGameP1White(t *testing.T) {
 	require.Equal(t, p1.Id, game.PlayerWhite)
 	require.Equal(t, p2.Id, game.PlayerBlack)
 
-	require.Equal(t, p1.Elo-model.StartingElo, eloWhite)
-	require.Equal(t, p2.Elo-model.StartingElo, eloBlack)
+	require.Equal(t, int(p1.Liglicko2Rating-model.StartingLiglicko2Rating), eloWhite)
+	require.Equal(t, int(p2.Liglicko2Rating-model.StartingLiglicko2Rating), eloBlack)
 	require.InDelta(t, p1.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2White, 1e-9)
 	require.InDelta(t, p2.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2Black, 1e-9)
 
@@ -72,12 +72,12 @@ func TestCreateGameP1White(t *testing.T) {
 
 	p1New, err := model.GetPlayer(db, p1.Id)
 	require.NoError(t, err)
-	require.Equal(t, p1.Elo, p1New.Elo)
+	require.Equal(t, p1.DEPRECATEDElo, p1New.DEPRECATEDElo)
 	require.Equal(t, p1.Liglicko2Rating, p1New.Liglicko2Rating)
 
 	p2New, err := model.GetPlayer(db, p2.Id)
 	require.NoError(t, err)
-	require.Equal(t, p2.Elo, p2New.Elo)
+	require.Equal(t, p2.DEPRECATEDElo, p2New.DEPRECATEDElo)
 	require.Equal(t, p2.Liglicko2Rating, p2New.Liglicko2Rating)
 }
 
@@ -102,8 +102,8 @@ func TestCreateGameP1Black(t *testing.T) {
 	game, eloWhite, eloBlack, err := model.CreateGame(tx, &p1, &p2, false, ikey, model.Score_Win, r)
 	require.NoError(t, err)
 
-	require.NotEqual(t, model.StartingElo, p1.Elo)
-	require.NotEqual(t, model.StartingElo, p2.Elo)
+	require.NotEqual(t, model.StartingElo, p1.DEPRECATEDElo)
+	require.NotEqual(t, model.StartingElo, p2.DEPRECATEDElo)
 	require.NotEqual(t, model.StartingLiglicko2Rating, p1.Liglicko2Rating)
 	require.NotEqual(t, model.StartingLiglicko2Rating, p2.Liglicko2Rating)
 
@@ -111,8 +111,8 @@ func TestCreateGameP1Black(t *testing.T) {
 	require.Equal(t, p2.Id, game.PlayerWhite)
 	require.Equal(t, p1.Id, game.PlayerBlack)
 
-	require.Equal(t, p2.Elo-model.StartingElo, eloWhite)
-	require.Equal(t, p1.Elo-model.StartingElo, eloBlack)
+	require.Equal(t, int(p2.Liglicko2Rating-model.StartingLiglicko2Rating), eloWhite)
+	require.Equal(t, int(p1.Liglicko2Rating-model.StartingLiglicko2Rating), eloBlack)
 	require.InDelta(t, p2.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2White, 1e-9)
 	require.InDelta(t, p1.Liglicko2Rating-model.StartingLiglicko2Rating, game.Liglicko2Black, 1e-9)
 
@@ -126,12 +126,12 @@ func TestCreateGameP1Black(t *testing.T) {
 
 	p1New, err := model.GetPlayer(db, p1.Id)
 	require.NoError(t, err)
-	require.Equal(t, p1.Elo, p1New.Elo)
+	require.Equal(t, p1.DEPRECATEDElo, p1New.DEPRECATEDElo)
 	require.Equal(t, p1.Liglicko2Rating, p1New.Liglicko2Rating)
 
 	p2New, err := model.GetPlayer(db, p2.Id)
 	require.NoError(t, err)
-	require.Equal(t, p2.Elo, p2New.Elo)
+	require.Equal(t, p2.DEPRECATEDElo, p2New.DEPRECATEDElo)
 	require.Equal(t, p2.Liglicko2Rating, p2New.Liglicko2Rating)
 }
 

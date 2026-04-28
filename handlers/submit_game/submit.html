@@ -4,7 +4,7 @@
   <h3 class="text-xl">
     <span class="font-bold">Found {{.Name}}</span> ({{if
     .IsWhite}}white{{else}}black{{end}} player) {{range
-    .Players}}{{.Elo}}{{end}} ELO.
+    .Players}}{{printf "%.0f" .Liglicko2Rating}}{{end}} ELO.
   </h3>
 
   <input
@@ -34,7 +34,7 @@
         />
         <div class="flex flex-row justify-between w-full">
           <h4 class="text-lg font-bold">{{.Name}}</h4>
-          <p>{{.Elo}} ELO</p>
+          <p>{{printf "%.0f" .Liglicko2Rating}} ELO</p>
         </div>
       </label>
       {{end}}
