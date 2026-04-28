@@ -54,8 +54,8 @@ func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser
 			return "", err
 		}
 
-		var buf bytes.Buffer
-		err = indexTpl.Execute(&buf, Model{
+		buf := bytes.NewBuffer(nil)
+		err = indexTpl.Execute(buf, Model{
 			Player:    player,
 			Details:   details,
 			AuditLogs: renderedAuditLogs,
