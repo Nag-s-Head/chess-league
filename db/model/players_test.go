@@ -19,7 +19,7 @@ func TestNewPlayer(t *testing.T) {
 	require.Equal(t, name, player.Name)
 	require.Equal(t, name, player.NameNormalised)
 	require.NotEmpty(t, player.JoinTime)
-	require.Equal(t, model.StartingElo, player.Elo)
+	require.Equal(t, model.StartingElo, player.DEPRECATEDElo)
 	require.Equal(t, model.StartingLiglicko2Rating, player.Liglicko2Rating)
 	require.Equal(t, model.StartingLiglicko2Deviation, player.Liglicko2Deviation)
 	require.Equal(t, model.StartingLiglicko2Volatility, player.Liglicko2Volatility)

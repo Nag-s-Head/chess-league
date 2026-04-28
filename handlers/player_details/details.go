@@ -5,7 +5,6 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
-	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
@@ -20,13 +19,6 @@ var tpl *template.Template = utils.GetTemplate(f, "details.html")
 type PlayerDetails struct {
 	Player  model.Player
 	Details model.GamesUiFriendly
-}
-
-type GameWithOutcome struct {
-	OpponentName string
-	Outcome      string
-	Played       time.Time
-	EloChange    int
 }
 
 func Render(dbCon *db.Db, id uuid.UUID) (template.HTML, error) {

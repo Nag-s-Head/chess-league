@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-5">
-  <div class="flex flex-row justify-between items-center">
+Liglicko2Rating  <div class="flex flex-row justify-between items-center">
     <h1 class="text-2xl font-bold">{{.Player.Name}}</h1>
     <a href="/" class="text-blue-600 hover:underline">Back</a>
   </div>
@@ -7,7 +7,7 @@
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Current Elo</p>
-      <p class="text-2xl font-bold">{{.Player.Elo}}</p>
+      <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Games Played</p>
@@ -26,11 +26,10 @@
       <p class="text-2xl font-bold">{{printf "%.1f" .Details.WhiteWinRate}}%</p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
-      <p class="text-sm text-gray-500">Black Win Rate</p>
-      <p class="text-2xl font-bold">{{printf "%.1f" .Details.BlackWinRate}}%</p>
+      <p class="text-sm text-gray-500">Rating</p>
+      <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
     </div>
   </div>
-
   <div class="flex flex-col gap-2">
     <h2 class="text-xl font-bold">Game History</h2>
     <div class="overflow-x-auto">
@@ -39,7 +38,7 @@
           <tr class="border-b-2 border-gray-300">
             <th class="py-2">Against</th>
             <th class="py-2">Result</th>
-            <th class="py-2">Elo</th>
+            <th class="py-2">ELO</th>
             <th class="py-2">Date</th>
           </tr>
         </thead>
@@ -56,9 +55,9 @@
             </td>
             <td class="py-2">
               <span
-                class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
+                class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
               >
-                {{if gt .EloChange 0}}+{{end}}{{.EloChange}}
+                {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}}
               </span>
             </td>
             <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>
@@ -66,6 +65,7 @@
           {{end}}
         </tbody>
       </table>
+    </div>
     </div>
   </div>
 </div>

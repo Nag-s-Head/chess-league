@@ -26,8 +26,8 @@ type Game struct {
 	Submitter   uuid.UUID `db:"submitter"`
 	Played      time.Time `db:"played"`
 	Deleted     bool      `db:"deleted"`
-	EloGiven    int       `db:"elo_given"`
-	EloTaken    int       `db:"elo_taken"`
+	DEPRECATEDEloGiven    int       `db:"elo_given"` // Deprecated: for use with old elo system
+	DEPRECATEDEloTaken    int       `db:"elo_taken"` // Deprecated: for use with old elo system
 	// Liglicko2White and Liglicko2Black are per-game liglicko2 deltas for each side.
 	// They preserve sign, so draws between uneven players can still show non-zero
 	// changes.
@@ -94,11 +94,11 @@ func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameW
 		gw.PlayerName = g.WhiteName
 		if g.Score == Score_Win {
 			gw.Outcome = "Win"
-			gw.EloChange = g.EloGiven
+			gw.EloChange = g.DEPRECATEDEloGiven
 			gw.Liglicko2Change = g.Liglicko2White
 		} else if g.Score == Score_Loss {
 			gw.Outcome = "Loss"
-			gw.EloChange = g.EloTaken
+			gw.EloChange = g.DEPRECATEDEloTaken
 			gw.Liglicko2Change = g.Liglicko2White
 		} else {
 			gw.Outcome = "Draw"
@@ -110,11 +110,11 @@ func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameW
 		gw.PlayerName = g.BlackName
 		if g.Score == Score_Loss {
 			gw.Outcome = "Win"
-			gw.EloChange = g.EloGiven
+			gw.EloChange = g.DEPRECATEDEloGiven
 			gw.Liglicko2Change = g.Liglicko2Black
 		} else if g.Score == Score_Win {
 			gw.Outcome = "Loss"
-			gw.EloChange = g.EloTaken
+			gw.EloChange = g.DEPRECATEDEloTaken
 			gw.Liglicko2Change = g.Liglicko2Black
 		} else {
 			gw.Outcome = "Draw"
@@ -227,11 +227,11 @@ func CreateGame(tx *sqlx.Tx, submitter, opponent *Player, submitterIsWhite bool,
 	game.PlayerBlack = pBlack.Id
 
 	if eloWhite > eloBlack {
-		game.EloGiven = eloWhite
-		game.EloTaken = eloBlack
+		game.DEPRECATEDEloGiven = eloWhite
+		game.DEPRECATEDEloTaken = eloBlack
 	} else {
-		game.EloGiven = eloBlack
-		game.EloTaken = eloWhite
+		game.DEPRECATEDEloGiven = eloBlack
+		game.DEPRECATEDEloTaken = eloWhite
 	}
 
 	game.Liglicko2White = liglicko2White
@@ -260,7 +260,7 @@ WHERE id=:id`, pBlack)
 		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of black player"), err)
 	}
 
-	return game, eloWhite, eloBlack, nil
+	return game, int(liglicko2White), int(liglicko2Black), nil
 }
 
 func SubmitGame(db *db.Db, whiteName, blackName string, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, int, int, error) {
