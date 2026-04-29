@@ -10,7 +10,7 @@ docker-images:
 
 nuke-db:
 	docker compose down database
-	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database
+	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
 
 test: docker-images
 	docker compose restart database

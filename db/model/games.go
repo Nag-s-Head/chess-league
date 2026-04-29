@@ -20,22 +20,33 @@ const (
 )
 
 type Game struct {
-	PlayerWhite        uuid.UUID `db:"player_white"`
-	PlayerBlack        uuid.UUID `db:"player_black"`
-	Score              Score     `db:"score"`
-	Submitter          uuid.UUID `db:"submitter"`
-	Played             time.Time `db:"played"`
-	Deleted            bool      `db:"deleted"`
-	DEPRECATEDEloGiven int       `db:"elo_given"` // Deprecated: for use with old elo system
-	DEPRECATEDEloTaken int       `db:"elo_taken"` // Deprecated: for use with old elo system
+	PlayerWhite     uuid.UUID `db:"player_white"`
+	PlayerBlack     uuid.UUID `db:"player_black"`
+	Score           Score     `db:"score"`
+	Submitter       uuid.UUID `db:"submitter"`
+	Played          time.Time `db:"played"`
+	Deleted         bool      `db:"deleted"`
+	SubmitIp        string    `db:"submit_ip"`
+	SubmitUserAgent string    `db:"submit_user_agent"`
+	IKey            int64     `db:"ikey"`
+
+	DEPRECATEDEloGiven int `db:"elo_given"` // Deprecated: for use with old elo system
+	DEPRECATEDEloTaken int `db:"elo_taken"` // Deprecated: for use with old elo system
+
 	// Liglicko2White and Liglicko2Black are per-game liglicko2 deltas for each side.
 	// They preserve sign, so draws between uneven players can still show non-zero
 	// changes.
-	Liglicko2White  float64 `db:"liglicko2_white"`
-	Liglicko2Black  float64 `db:"liglicko2_black"`
-	SubmitIp        string  `db:"submit_ip"`
-	SubmitUserAgent string  `db:"submit_user_agent"`
-	IKey            int64   `db:"ikey"`
+	Liglicko2White              float64 `db:"liglicko2_white"`
+	Liglicko2WhiteOldRating     float64 `db:"liglicko2_white_old_rating"`
+	Liglicko2WhiteOldVolatility float64 `db:"liglicko2_white_old_volatility"`
+	Liglicko2WhiteOldDeviation  float64 `db:"liglicko2_white_old_deviation"`
+	Liglicko2WhiteOldAt         float64 `db:"liglicko2_white_old_at"`
+
+	Liglicko2Black              float64 `db:"liglicko2_black"`
+	Liglicko2BlackOldRating     float64 `db:"liglicko2_black_old_rating"`
+	Liglicko2BlackOldVolatility float64 `db:"liglicko2_black_old_volatility"`
+	Liglicko2BlackOldDeviation  float64 `db:"liglicko2_black_old_deviation"`
+	Liglicko2BlackOldAt         float64 `db:"liglicko2_black_old_at"`
 }
 
 type GameWithPlayerNames struct {

@@ -178,6 +178,9 @@ CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(ga
 		{
 			PreProcess: InternalMigrateLegacyLiglicko2,
 		},
+		{
+			PreProcess: InternalMigrateLiglicko2ToAddOldStatesToGames,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR
