@@ -20,19 +20,6 @@
     </div>
   </a>
   <div class="p-4 bg-gray-100 rounded-lg">
-    <p class="text-sm text-gray-500">Winner</p>
-    <p class="text-2xl font-bold">{{.WinnerName}}</p>
-  </div>
-  <div class="p-4 bg-gray-100 rounded-lg">
-    <p class="text-sm text-gray-500">Played</p>
-    <p class="text-xl font-bold">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</p>
-  </div>
-  {{if .Deleted}}
-  <div class="p-4 bg-gray-100 rounded-lg">
-    <p class="text-xl font-bold bg-red-300">DELETED</p>
-  </div>
-  {{end}}
-  <div class="p-4 bg-gray-100 rounded-lg">
     <p class="text-sm text-gray-500">White ELO</p>
     <p class="text-2xl font-bold">
       <span
@@ -54,6 +41,19 @@
       </span>
     </p>
   </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Winner</p>
+    <p class="text-2xl font-bold">{{.WinnerName}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Played</p>
+    <p class="text-xl font-bold">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</p>
+  </div>
+  {{if .Deleted}}
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-xl font-bold bg-red-300">DELETED</p>
+  </div>
+  {{end}}
   <div class="p-4 bg-gray-100 rounded-lg">
     <p class="text-sm text-gray-500">Submitter</p>
     <p class="text-2xl font-bold">{{.SubmitterName}}</p>
