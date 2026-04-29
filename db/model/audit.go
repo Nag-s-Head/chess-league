@@ -57,9 +57,23 @@ func InsertAuditLogPlayerAffected(tx *sqlx.Tx, playerAffected *AuditLogPlayerAff
 	return err
 }
 
+type AuditLogGameAffected struct {
+	AuditLogId uuid.UUID `db:"audit_log_id"`
+	GameIkey   int64     `db:"game_ikey"`
+}
+
+func InsertAuditLogGameAffected(tx *sqlx.Tx, gameAffected *AuditLogGameAffected) error {
+	_, err := tx.NamedExec(`
+	  INSERT INTO audit_log_game_affected (audit_log_id, game_ikey) 
+		VALUES(:audit_log_id, :game_ikey);
+	`, gameAffected)
+	return err
+}
+
 type DetailedAuditLog struct {
 	AuditLog
 	Players []AuditLogPlayerAffected
+	Games   []AuditLogGameAffected
 }
 
 func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
@@ -80,8 +94,6 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 		return nil, errors.Join(errors.New("Cannot get audit log player affected"), err)
 	}
 
-	defer rows.Close()
-
 	for rows.Next() {
 		var player AuditLogPlayerAffected
 		err := rows.StructScan(&player)
@@ -92,9 +104,33 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 		players = append(players, player)
 	}
 
+	rows.Close()
+
+	games := make([]AuditLogGameAffected, 0)
+	rows, err = tx.Queryx(`
+		SELECT audit_log_game_affected.* 
+		FROM audit_log_game_affected 
+		INNER JOIN audit_logs 
+		  ON audit_logs.id=audit_log_game_affected.audit_log_id
+		WHERE audit_log_game_affected.audit_log_id=$1;`, id)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get audit log game affected"), err)
+	}
+
+	for rows.Next() {
+		var game AuditLogGameAffected
+		err := rows.StructScan(&game)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot scan audit log game affacted"), err)
+		}
+
+		games = append(games, game)
+	}
+
 	result := &DetailedAuditLog{
 		AuditLog: auditLog,
 		Players:  players,
+		Games:    games,
 	}
 
 	return result, nil
@@ -141,6 +177,33 @@ func GetAuditLogsUiFriendlyForPlayer(db *db.Db, id uuid.UUID) ([]AuditLogUiFrien
 		WHERE players.id = $1
 		ORDER BY created DESC;
 		`, id)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get audit logs"), err)
+	}
+
+	for rows.Next() {
+		var log AuditLogUiFriendly
+		err = rows.StructScan(&log)
+		if err != nil {
+			return nil, errors.Join(errors.New("Cannot scan audit log"), err)
+		}
+
+		logs = append(logs, log)
+	}
+
+	return logs, nil
+}
+
+func GetAuditLogsUiFriendlyForGame(db *db.Db, ikey int64) ([]AuditLogUiFriendly, error) {
+	logs := make([]AuditLogUiFriendly, 0)
+	rows, err := db.GetSqlxDb().Queryx(`
+		SELECT audit_logs.*, admin_users.name AS admin_name
+		FROM audit_logs
+		INNER JOIN admin_users ON admin_users.id = audit_logs.done_by
+		INNER JOIN audit_log_game_affected ON audit_logs.id = audit_log_game_affected.audit_log_id
+		WHERE audit_log_game_affected.game_ikey = $1
+		ORDER BY created DESC;
+		`, ikey)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit logs"), err)
 	}

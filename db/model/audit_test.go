@@ -1,6 +1,9 @@
 package model_test
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Nag-s-Head/chess-league/db/model"
@@ -185,4 +188,109 @@ func TestGetAuditLogsUiFriendlyByAdmin(t *testing.T) {
 
 	require.NotEmpty(t, auditLogs[0])
 	require.NotEmpty(t, auditLogs[0].AdminName)
+}
+
+func TestGetAuditLogsUiFriendlyByGame(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+
+	p1 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayerTx(tx, p1))
+
+	p2 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayerTx(tx, p2))
+
+	ikey, err := model.NextIKey(db)
+	require.NoError(t, err)
+
+	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+
+	_, _, _, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+	require.NoError(t, err)
+
+	auditLog := model.NewAuditLog(admin.Id, "test-1", "test-2")
+	require.NoError(t, model.InsertAuditLog(tx, auditLog))
+	require.NoError(t, model.InsertAuditLogGameAffected(tx, &model.AuditLogGameAffected{
+		AuditLogId: auditLog.Id,
+		GameIkey:   ikey,
+	}))
+
+	require.NoError(t, tx.Commit())
+
+	logs, err := model.GetAuditLogsUiFriendlyForGame(db, ikey)
+	require.NoError(t, err)
+	require.Len(t, logs, 1)
+
+	require.Equal(t, auditLog.Id, logs[0].Id)
+}
+
+func TestGetAuditLogWithGameAndPlayer(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+
+	p1 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayerTx(tx, p1))
+
+	p2 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayerTx(tx, p2))
+
+	ikey, err := model.NextIKey(db)
+	require.NoError(t, err)
+
+	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+
+	_, _, _, err = model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+	require.NoError(t, err)
+
+	auditLog := model.NewAuditLog(admin.Id, "test-1", "test-2")
+	require.NoError(t, model.InsertAuditLog(tx, auditLog))
+
+	gameAuditLog := model.AuditLogGameAffected{
+		AuditLogId: auditLog.Id,
+		GameIkey:   ikey,
+	}
+	require.NoError(t, model.InsertAuditLogGameAffected(tx, &gameAuditLog))
+
+	p1AuditLog := model.AuditLogPlayerAffected{
+		AuditLogId: auditLog.Id,
+		PlayerId:   p1.Id,
+		EloChange:  123,
+	}
+	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, &p1AuditLog))
+
+	p2AuditLog := model.AuditLogPlayerAffected{
+		AuditLogId: auditLog.Id,
+		PlayerId:   p2.Id,
+		EloChange:  456,
+	}
+	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, &p2AuditLog))
+
+	log, err := model.GetAuditLog(tx, auditLog.Id)
+	require.NoError(t, err)
+
+	require.NoError(t, tx.Commit())
+
+	require.Equal(t, auditLog.Id, log.Id)
+	require.Len(t, log.Players, 2)
+	require.Len(t, log.Games, 1)
+
+	require.Contains(t, log.Games, gameAuditLog)
 }
