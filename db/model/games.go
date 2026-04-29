@@ -20,14 +20,14 @@ const (
 )
 
 type Game struct {
-	PlayerWhite uuid.UUID `db:"player_white"`
-	PlayerBlack uuid.UUID `db:"player_black"`
-	Score       Score     `db:"score"`
-	Submitter   uuid.UUID `db:"submitter"`
-	Played      time.Time `db:"played"`
-	Deleted     bool      `db:"deleted"`
-	DEPRECATEDEloGiven    int       `db:"elo_given"` // Deprecated: for use with old elo system
-	DEPRECATEDEloTaken    int       `db:"elo_taken"` // Deprecated: for use with old elo system
+	PlayerWhite        uuid.UUID `db:"player_white"`
+	PlayerBlack        uuid.UUID `db:"player_black"`
+	Score              Score     `db:"score"`
+	Submitter          uuid.UUID `db:"submitter"`
+	Played             time.Time `db:"played"`
+	Deleted            bool      `db:"deleted"`
+	DEPRECATEDEloGiven int       `db:"elo_given"` // Deprecated: for use with old elo system
+	DEPRECATEDEloTaken int       `db:"elo_taken"` // Deprecated: for use with old elo system
 	// Liglicko2White and Liglicko2Black are per-game liglicko2 deltas for each side.
 	// They preserve sign, so draws between uneven players can still show non-zero
 	// changes.
@@ -50,8 +50,25 @@ type GameWithOutcome struct {
 	OpponentName    string
 	Outcome         string
 	Played          time.Time
+	Deleted         bool
 	EloChange       int
 	Liglicko2Change float64
+}
+
+type GameWithDetails struct {
+	Game
+	WhiteName     string `db:"white_name"`
+	BlackName     string `db:"black_name"`
+	SubmitterName string `db:"submitter_name"`
+}
+
+func (g GameWithDetails) WinnerName() string {
+	if g.Score == Score_Win {
+		return g.WhiteName
+	} else if g.Score == Score_Loss {
+		return g.BlackName
+	}
+	return "Draw"
 }
 
 func GetGamesWithOutcomes(db *db.Db) ([]GameWithOutcome, error) {
@@ -74,6 +91,22 @@ ORDER BY g.played DESC;`)
 	return gamesWithOutcomes, nil
 }
 
+func GetGameWithDetails(db *db.Db, ikey int64) (GameWithDetails, error) {
+	var game GameWithDetails
+	err := db.GetSqlxDb().Get(&game, `
+SELECT g.*, w.name as white_name, b.name as black_name, s.name as submitter_name
+FROM games g
+JOIN players w ON g.player_white = w.id
+JOIN players b ON g.player_black = b.id
+JOIN players s ON g.submitter = s.id
+WHERE g.ikey = $1;`, ikey)
+	if err != nil {
+		return GameWithDetails{}, errors.Join(errors.New("Cannot get game details"), err)
+	}
+
+	return game, nil
+}
+
 type GamesUiFriendly struct {
 	Wins, Draws, Losses         int
 	TotalGames                  int
@@ -84,8 +117,9 @@ type GamesUiFriendly struct {
 
 func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameWithOutcome {
 	gw := GameWithOutcome{
-		Played: g.Played,
-		Ikey:   g.IKey,
+		Played:  g.Played,
+		Deleted: g.Deleted,
+		Ikey:    g.IKey,
 	}
 
 	isWhite := g.PlayerWhite == playerId

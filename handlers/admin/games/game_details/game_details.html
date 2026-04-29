@@ -1,0 +1,103 @@
+<h1 class="text-xl font-bold">Details For Game #{{.IKey}}</h1>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+  <a
+    href="/admin/players/{{.PlayerWhite}}"
+    class="border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  >
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <p class="text-sm text-gray-500">White Player</p>
+      <p class="text-xl font-bold">{{.WhiteName}}</p>
+    </div>
+  </a>
+  <a
+    href="/admin/players/{{.PlayerBlack}}"
+    class="border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  >
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <p class="text-sm text-gray-500">Black Player</p>
+      <p class="text-xl font-bold">{{.BlackName}}</p>
+    </div>
+  </a>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">White ELO</p>
+    <p class="text-2xl font-bold">
+      <span
+        class="{{if gt .Liglicko2White 0.0}}text-green-800 font-bold{{else if lt .Liglicko2White 0.0}}text-red-700{{else}}text-gray-500{{end}}"
+      >
+        {{if gt .Liglicko2White 0.0}}+{{end}}{{printf "%.0f" .Liglicko2White}}
+        ELO
+      </span>
+    </p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Black ELO</p>
+    <p class="text-2xl font-bold">
+      <span
+        class="{{if gt .Liglicko2Black 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Black 0.0}}text-red-700{{else}}text-gray-500{{end}}"
+      >
+        {{if gt .Liglicko2Black 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Black}}
+        ELO
+      </span>
+    </p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Winner</p>
+    <p class="text-2xl font-bold">{{.WinnerName}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Played</p>
+    <p class="text-xl font-bold">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</p>
+  </div>
+  {{if .Deleted}}
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-xl font-bold bg-red-300">DELETED</p>
+  </div>
+  {{end}}
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Submitter</p>
+    <p class="text-2xl font-bold">{{.SubmitterName}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Submit IP</p>
+    <p class="text-2xl font-bold">{{.SubmitIp}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Submit User Agent</p>
+    <p class="text-2xl font-bold">{{.SubmitUserAgent}}</p>
+  </div>
+</div>
+
+<h2 class="text-lg font-bold">Actions</h2>
+<form class="flex flex-col gap-5 w-full" hx-post="" hx-target="#response">
+  <div class="flex flex-col gap-5" id="response">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <button
+        type="submit"
+        name="submit"
+        value="swap-winner"
+        class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+      >
+        Swap Winner
+      </button>
+      <button
+        type="submit"
+        name="submit"
+        value="set-draw"
+        class="rounded-lg p-2 px-5 bg-yellow-800 max-w-100 text-white font-bold"
+      >
+        Change To Draw
+      </button>
+      <button
+        type="submit"
+        name="submit"
+        value="delete"
+        class="rounded-lg p-2 px-5 bg-red-500 max-w-100 text-white font-bold"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</form>
+
+{{.AuditLogs}}

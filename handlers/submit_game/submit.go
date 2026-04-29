@@ -145,7 +145,7 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 
 	ikey, err := strconv.ParseInt(ikeyCookie.Value, 10, 64)
 	if err != nil {
-		return errors.Join(errors.New("Could not read ikey cookie"), err)
+		return errors.New("Could not read ikey cookie, please refresh the page")
 	}
 
 	var score model.Score
