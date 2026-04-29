@@ -109,10 +109,20 @@ INSERT INTO games (player_white, player_black, score, submitter, played, deleted
 	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_white"))
 	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_black"))
 
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_white_old_rating"))
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_white_old_deviation"))
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_white_old_volatility"))
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_white_old_at"))
+
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_black_old_rating"))
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_black_old_deviation"))
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_black_old_volatility"))
+	require.True(t, columnExists(t, scopedConn, schemaName, "games", "liglicko2_black_old_at"))
+
 	var migrationVersion int
 	err = scopedConn.Get(&migrationVersion, `SELECT version FROM migrations ORDER BY version DESC LIMIT 1;`)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, migrationVersion, 10)
+	require.GreaterOrEqual(t, migrationVersion, 11)
 
 	playerOneExpected := model.Player{
 		Liglicko2Rating:     model.StartingLiglicko2Rating,
@@ -127,8 +137,15 @@ INSERT INTO games (player_white, player_black, score, submitter, played, deleted
 		Liglicko2At:         liglicko2InstantFromTimeForTest(playerTwoJoin),
 	}
 
+	// Capture states before games
+	p1OldGame1 := playerOneExpected
+	p2OldGame1 := playerTwoExpected
+
 	gameOneWhiteDeltaExpected, gameOneBlackDeltaExpected, err := model.CalculateLiglicko2(&playerOneExpected, &playerTwoExpected, model.Outcome_Win, gameOnePlayed)
 	require.NoError(t, err)
+
+	p1OldGame2 := playerOneExpected
+	p2OldGame2 := playerTwoExpected
 	gameTwoWhiteDeltaExpected, gameTwoBlackDeltaExpected, err := model.CalculateLiglicko2(&playerTwoExpected, &playerOneExpected, model.Outcome_Draw, gameTwoPlayed)
 	require.NoError(t, err)
 
@@ -136,15 +153,58 @@ INSERT INTO games (player_white, player_black, score, submitter, played, deleted
 		IKey           int64   `db:"ikey"`
 		Liglicko2White float64 `db:"liglicko2_white"`
 		Liglicko2Black float64 `db:"liglicko2_black"`
+
+		Liglicko2WhiteOldRating     float64 `db:"liglicko2_white_old_rating"`
+		Liglicko2WhiteOldDeviation  float64 `db:"liglicko2_white_old_deviation"`
+		Liglicko2WhiteOldVolatility float64 `db:"liglicko2_white_old_volatility"`
+		Liglicko2WhiteOldAt         float64 `db:"liglicko2_white_old_at"`
+
+		Liglicko2BlackOldRating     float64 `db:"liglicko2_black_old_rating"`
+		Liglicko2BlackOldDeviation  float64 `db:"liglicko2_black_old_deviation"`
+		Liglicko2BlackOldVolatility float64 `db:"liglicko2_black_old_volatility"`
+		Liglicko2BlackOldAt         float64 `db:"liglicko2_black_old_at"`
 	}
 	var migratedGames []gameLiglicko2
-	err = scopedConn.Select(&migratedGames, `SELECT ikey, liglicko2_white, liglicko2_black FROM games ORDER BY ikey ASC;`)
+	err = scopedConn.Select(&migratedGames, `
+SELECT 
+    ikey, 
+    liglicko2_white, 
+    liglicko2_black, 
+    liglicko2_white_old_rating, 
+    liglicko2_white_old_deviation, 
+    liglicko2_white_old_volatility, 
+    liglicko2_white_old_at, 
+    liglicko2_black_old_rating, 
+    liglicko2_black_old_deviation, 
+    liglicko2_black_old_volatility, 
+    liglicko2_black_old_at 
+FROM games ORDER BY ikey ASC;`)
 	require.NoError(t, err)
 	require.Len(t, migratedGames, 2)
+
+	// Game 1
 	require.InDelta(t, gameOneWhiteDeltaExpected, migratedGames[0].Liglicko2White, 1e-9)
 	require.InDelta(t, gameOneBlackDeltaExpected, migratedGames[0].Liglicko2Black, 1e-9)
+	require.InDelta(t, p1OldGame1.Liglicko2Rating, migratedGames[0].Liglicko2WhiteOldRating, 1e-9)
+	require.InDelta(t, p1OldGame1.Liglicko2Deviation, migratedGames[0].Liglicko2WhiteOldDeviation, 1e-9)
+	require.InDelta(t, p1OldGame1.Liglicko2Volatility, migratedGames[0].Liglicko2WhiteOldVolatility, 1e-9)
+	require.InDelta(t, p1OldGame1.Liglicko2At, migratedGames[0].Liglicko2WhiteOldAt, 1e-9)
+	require.InDelta(t, p2OldGame1.Liglicko2Rating, migratedGames[0].Liglicko2BlackOldRating, 1e-9)
+	require.InDelta(t, p2OldGame1.Liglicko2Deviation, migratedGames[0].Liglicko2BlackOldDeviation, 1e-9)
+	require.InDelta(t, p2OldGame1.Liglicko2Volatility, migratedGames[0].Liglicko2BlackOldVolatility, 1e-9)
+	require.InDelta(t, p2OldGame1.Liglicko2At, migratedGames[0].Liglicko2BlackOldAt, 1e-9)
+
+	// Game 2
 	require.InDelta(t, gameTwoWhiteDeltaExpected, migratedGames[1].Liglicko2White, 1e-9)
 	require.InDelta(t, gameTwoBlackDeltaExpected, migratedGames[1].Liglicko2Black, 1e-9)
+	require.InDelta(t, p2OldGame2.Liglicko2Rating, migratedGames[1].Liglicko2WhiteOldRating, 1e-9)
+	require.InDelta(t, p2OldGame2.Liglicko2Deviation, migratedGames[1].Liglicko2WhiteOldDeviation, 1e-9)
+	require.InDelta(t, p2OldGame2.Liglicko2Volatility, migratedGames[1].Liglicko2WhiteOldVolatility, 1e-9)
+	require.InDelta(t, p2OldGame2.Liglicko2At, migratedGames[1].Liglicko2WhiteOldAt, 1e-9)
+	require.InDelta(t, p1OldGame2.Liglicko2Rating, migratedGames[1].Liglicko2BlackOldRating, 1e-9)
+	require.InDelta(t, p1OldGame2.Liglicko2Deviation, migratedGames[1].Liglicko2BlackOldDeviation, 1e-9)
+	require.InDelta(t, p1OldGame2.Liglicko2Volatility, migratedGames[1].Liglicko2BlackOldVolatility, 1e-9)
+	require.InDelta(t, p1OldGame2.Liglicko2At, migratedGames[1].Liglicko2BlackOldAt, 1e-9)
 
 	type playerLiglicko2 struct {
 		ID                 string  `db:"id"`

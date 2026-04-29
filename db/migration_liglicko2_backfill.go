@@ -163,22 +163,6 @@ func InternalMigrateLiglicko2ToAddOldStatesToGames(tx *sqlx.Tx) error {
 		Liglicko2BlackOldAt         float64 `db:"liglicko2_black_old_at"`
 	}
 
-	// Player type is copied from model when the migration was written to keep it working forever
-	type Player struct {
-		Id uuid.UUID `db:"id"`
-		// Liglicko2Rating is the player's current liglicko2 rating scalar.
-		Liglicko2Rating float64 `db:"liglicko2_rating"`
-		// Liglicko2Deviation is the player's current liglicko2 rating deviation (RD).
-		Liglicko2Deviation float64 `db:"liglicko2_deviation"`
-		// Liglicko2Volatility is the player's current liglicko2 volatility (sigma).
-		Liglicko2Volatility float64 `db:"liglicko2_volatility"`
-		// Liglicko2At is the liglicko2 timestamp used by the algorithm.
-		// It is stored as "rating periods since Unix epoch", where this app currently
-		// defines 1 rating period as 1 day.
-		Liglicko2At float64   `db:"liglicko2_at"`
-		JoinTime    time.Time `db:"join_time"`
-	}
-
 	_, err := tx.Exec(`
 -- The liglicko2 state of each player at the time before the game is saved so that replays (due to deletion or result swap) do not require replaying the full database
 -- It is more cumbersome, but is more correct
@@ -196,15 +180,9 @@ ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_black_old_at DOUBLE PRECISI
 		return errors.Join(errors.New("Cannot add new columns to games table"), err)
 	}
 
-	var playersList []Player
-	err = tx.Select(&playersList, "SELECT id, join_time FROM players;")
-	if err != nil {
-		return errors.Join(errors.New("Cannot get get players"), err)
-	}
-
-	players := make(map[uuid.UUID]Player)
-	for _, player := range playersList {
-		players[player.Id] = player
+	var players []legacyLiglicko2Player
+	if err := tx.Select(&players, "SELECT id, join_time FROM players;"); err != nil {
+		return errors.Join(errors.New("cannot load players for liglicko2 backfill"), err)
 	}
 
 	ratings := make(map[uuid.UUID]liglicko2core.Rating, len(players))
@@ -224,24 +202,14 @@ ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_black_old_at DOUBLE PRECISI
 	}
 
 	for _, game := range games {
-		white, found := players[game.PlayerWhite]
+		white, found := ratings[game.PlayerWhite]
 		if !found {
-			return fmt.Errorf("Cannot find player %s", game.PlayerWhite)
+			return fmt.Errorf("Cannot find white player %s", game.PlayerWhite)
 		}
 
-		whiteRating, found := ratings[game.PlayerWhite]
+		black, found := ratings[game.PlayerBlack]
 		if !found {
-			return fmt.Errorf("Cannot find player %s", game.PlayerWhite)
-		}
-
-		black, found := players[game.PlayerBlack]
-		if !found {
-			return fmt.Errorf("Cannot find player %s", game.PlayerWhite)
-		}
-
-		blackRating, found := ratings[game.PlayerBlack]
-		if !found {
-			return fmt.Errorf("Cannot find player %s", game.PlayerWhite)
+			return fmt.Errorf("Cannot find black player %s", game.PlayerBlack)
 		}
 
 		now := liglicko2core.InstantFromTime(game.Played)
@@ -259,33 +227,40 @@ SET
 	liglicko2_black_old_deviation=$6,
 
 	liglicko2_white_old_at=$7,
-	liglicko2_black_old_at=$7
+	liglicko2_black_old_at=$8
 WHERE
-  ikey = $8;`,
-			white.Liglicko2Rating,
-			white.Liglicko2Volatility,
-			white.Liglicko2Deviation,
-			black.Liglicko2Rating,
-			black.Liglicko2Volatility,
-			black.Liglicko2Deviation,
-			now,
+  ikey = $9;`,
+			white.Rating,
+			white.Volatility,
+			white.Deviation,
+			black.Rating,
+			black.Volatility,
+			black.Deviation,
+			white.At,
+			black.At,
 			game.IKey,
 		)
+		if err != nil {
+			return errors.Join(fmt.Errorf("Cannot update game with liglicko2 state %d", game.IKey), err)
+		}
 
 		score, err := liglicko2ScoreFromResult(game.Score)
 		if err != nil {
 			return errors.Join(fmt.Errorf("cannot parse score for game %d", game.IKey), err)
 		}
 
-		_, err = liglicko2core.UpdateSingle(whiteRating, blackRating, score, now, liglicko2core.FirstAdvantage)
+		nextWhite, err := liglicko2core.UpdateSingle(white, black, score, now, liglicko2core.FirstAdvantage)
 		if err != nil {
 			return errors.Join(fmt.Errorf("cannot backfill white liglicko2 for game %d", game.IKey), err)
 		}
 
-		_, err = liglicko2core.UpdateSingle(blackRating, whiteRating, 1.0-score, now, -liglicko2core.FirstAdvantage)
+		nextBlack, err := liglicko2core.UpdateSingle(black, white, 1.0-score, now, -liglicko2core.FirstAdvantage)
 		if err != nil {
 			return errors.Join(fmt.Errorf("cannot backfill black liglicko2 for game %d", game.IKey), err)
 		}
+
+		ratings[game.PlayerWhite] = nextWhite
+		ratings[game.PlayerBlack] = nextBlack
 	}
 
 	return nil

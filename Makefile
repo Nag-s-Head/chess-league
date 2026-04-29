@@ -18,3 +18,6 @@ test: docker-images
 
 format:
 	gofmt -l -w .
+
+psql:
+	docker compose exec -it database psql -U magnus -d chess-league

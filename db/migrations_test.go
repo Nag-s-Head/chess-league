@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
@@ -101,4 +102,31 @@ func TestMigrationsOnPrototypeDatabase(t *testing.T) {
 	database, err := db.From(sqlDb)
 	require.NoError(t, err)
 	defer database.Close()
+
+	t.Run("Test migrations ran", func(t *testing.T) {
+		var migrationVersion int
+		err = database.GetSqlxDb().Get(&migrationVersion, `SELECT version FROM migrations ORDER BY version DESC LIMIT 1;`)
+		require.NoError(t, err)
+		require.GreaterOrEqual(t, migrationVersion, 10)
+	})
+
+	t.Run("Test liglicko2 states where set", func(t *testing.T) {
+		var games []model.Game
+		err = database.GetSqlxDb().Select(&games, "SELECT * FROM games;")
+		require.NoError(t, err)
+
+		for _, game := range games {
+			require.NotZero(t, game.Liglicko2Black)
+			require.NotZero(t, game.Liglicko2BlackOldAt)
+			require.NotZero(t, game.Liglicko2BlackOldDeviation)
+			require.NotZero(t, game.Liglicko2BlackOldVolatility)
+			require.NotZero(t, game.Liglicko2BlackOldRating)
+
+			require.NotZero(t, game.Liglicko2White)
+			require.NotZero(t, game.Liglicko2WhiteOldAt)
+			require.NotZero(t, game.Liglicko2WhiteOldDeviation)
+			require.NotZero(t, game.Liglicko2WhiteOldVolatility)
+			require.NotZero(t, game.Liglicko2WhiteOldRating)
+		}
+	})
 }
