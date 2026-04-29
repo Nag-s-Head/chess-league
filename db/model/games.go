@@ -50,6 +50,7 @@ type GameWithOutcome struct {
 	OpponentName    string
 	Outcome         string
 	Played          time.Time
+	Deleted         bool
 	EloChange       int
 	Liglicko2Change float64
 }
@@ -116,8 +117,9 @@ type GamesUiFriendly struct {
 
 func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameWithOutcome {
 	gw := GameWithOutcome{
-		Played: g.Played,
-		Ikey:   g.IKey,
+		Played:  g.Played,
+		Deleted: g.Deleted,
+		Ikey:    g.IKey,
 	}
 
 	isWhite := g.PlayerWhite == playerId

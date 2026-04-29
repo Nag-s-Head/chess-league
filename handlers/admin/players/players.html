@@ -2,7 +2,7 @@
 {{range $result := .}}
 <a
   href="/admin/players/{{.Id}}"
-  class="flex flex-col gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  class="flex flex-col gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}"
 >
   <div class="flex flex-row justify-between w-full">
     <h4 class="text-lg font-bold">{{.Name}}</h4>
