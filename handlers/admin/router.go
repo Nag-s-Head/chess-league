@@ -87,5 +87,5 @@ func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWr
 
 	mux.HandleFunc(fmt.Sprintf("GET %s/games", BasePath), WithLayoutAndAuthentication(db, games.Render(db), LayoutRender))
 	mux.HandleFunc(fmt.Sprintf("GET %s/games/{ikey}", BasePath), WithLayoutAndAuthentication(db, gamedetails.Render(db), LayoutRender))
-	// mux.HandleFunc(fmt.Sprintf("POST %s/games/{ikey}", BasePath), auth.WithAuthentication(db, game_details.PostPlayerDetails(db)))
+	mux.HandleFunc(fmt.Sprintf("POST %s/games/{ikey}", BasePath), auth.WithAuthentication(db, gamedetails.PostGameDetails(db)))
 }

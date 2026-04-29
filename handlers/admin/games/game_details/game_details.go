@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -56,5 +57,33 @@ func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser
 		}
 
 		return template.HTML(buf.String()), nil
+	}
+}
+
+func PostGameDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
+	return func(au *model.AdminUser) func(http.ResponseWriter, *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ikeyStr := r.PathValue("ikey")
+			_, err := strconv.ParseInt(ikeyStr, 10, 64)
+			if err != nil {
+				adminutils.RenderError(w, errors.New("Cannot read ikey"))
+			}
+
+			err = r.ParseForm()
+			if err != nil {
+				adminutils.RenderError(w, err)
+				return
+			}
+
+			submitType := r.Form.Get("submit")
+			switch submitType {
+			case "swap-winner":
+			case "set-draw":
+			case "delete":
+			default:
+				adminutils.RenderError(w, fmt.Errorf("%s is not a valid submit type", submitType))
+				return
+			}
+		}
 	}
 }

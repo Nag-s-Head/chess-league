@@ -68,4 +68,36 @@
   </div>
 </div>
 
+<h2 class="text-lg font-bold">Actions</h2>
+<form class="flex flex-col gap-5 w-full" hx-post="" hx-target="#response">
+  <div class="flex flex-col gap-5" id="response">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <button
+        type="submit"
+        name="submit"
+        value="swap-winner"
+        class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+      >
+        Swap Winner
+      </button>
+      <button
+        type="submit"
+        name="submit"
+        value="set-draw"
+        class="rounded-lg p-2 px-5 bg-yellow-800 max-w-100 text-white font-bold"
+      >
+        Change To Draw
+      </button>
+      <button
+        type="submit"
+        name="submit"
+        value="delete"
+        class="rounded-lg p-2 px-5 bg-red-500 max-w-100 text-white font-bold"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</form>
+
 {{.AuditLogs}}
