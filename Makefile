@@ -8,9 +8,16 @@ export MAGIC_NUMBER
 docker-images:
 	docker compose up -d --build
 
+nuke-db:
+	docker compose down database
+	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
+
 test: docker-images
-	docker compose restart database # Makes sure the db is empty
+	docker compose restart database
 	go test ./... -timeout=60s
 
 format:
 	gofmt -l -w .
+
+psql:
+	docker compose exec -it database psql -U magnus -d chess-league

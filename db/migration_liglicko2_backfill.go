@@ -23,6 +23,7 @@ type legacyLiglicko2Game struct {
 	Played      time.Time `db:"played"`
 }
 
+// This is the initial migration from old ELO to liglicko2
 func InternalMigrateLegacyLiglicko2(tx *sqlx.Tx) error {
 	statements := []string{
 		`ALTER TABLE players ADD COLUMN IF NOT EXISTS liglicko2_rating DOUBLE PRECISION NOT NULL DEFAULT 1500;`,
@@ -133,4 +134,134 @@ func liglicko2ScoreFromResult(score string) (float64, error) {
 	default:
 		return 0.0, fmt.Errorf("unknown score: %s", score)
 	}
+}
+
+// This migration stores the deviation, volatility, and last rating calculation time ("at") for each of the old games so that replay after game edit works
+func InternalMigrateLiglicko2ToAddOldStatesToGames(tx *sqlx.Tx) error {
+	// Game type is copied from model when the migration was written to keep it working forver
+	type Game struct {
+		PlayerWhite uuid.UUID `db:"player_white"`
+		PlayerBlack uuid.UUID `db:"player_black"`
+		Score       string    `db:"score"`
+		Submitter   uuid.UUID `db:"submitter"`
+		Played      time.Time `db:"played"`
+		IKey        int64     `db:"ikey"`
+
+		// Liglicko2White and Liglicko2Black are per-game liglicko2 deltas for each side.
+		// They preserve sign, so draws between uneven players can still show non-zero
+		// changes.
+		Liglicko2White              float64 `db:"liglicko2_white"`
+		Liglicko2WhiteOldRating     float64 `db:"liglicko2_white_old_rating"`
+		Liglicko2WhiteOldVolatility float64 `db:"liglicko2_white_old_volatility"`
+		Liglicko2WhiteOldDeviation  float64 `db:"liglicko2_white_old_deviation"`
+		Liglicko2WhiteOldAt         float64 `db:"liglicko2_white_old_at"`
+
+		Liglicko2Black              float64 `db:"liglicko2_black"`
+		Liglicko2BlackOldRating     float64 `db:"liglicko2_black_old_rating"`
+		Liglicko2BlackOldVolatility float64 `db:"liglicko2_black_old_volatility"`
+		Liglicko2BlackOldDeviation  float64 `db:"liglicko2_black_old_deviation"`
+		Liglicko2BlackOldAt         float64 `db:"liglicko2_black_old_at"`
+	}
+
+	_, err := tx.Exec(`
+-- The liglicko2 state of each player at the time before the game is saved so that replays (due to deletion or result swap) do not require replaying the full database
+-- It is more cumbersome, but is more correct
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_white_old_rating DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_white_old_volatility DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_white_old_deviation DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_white_old_at DOUBLE PRECISION NOT NULL DEFAULT 0;
+
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_black_old_rating DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_black_old_volatility DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_black_old_deviation DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS liglicko2_black_old_at DOUBLE PRECISION NOT NULL DEFAULT 0;
+		`)
+	if err != nil {
+		return errors.Join(errors.New("Cannot add new columns to games table"), err)
+	}
+
+	var players []legacyLiglicko2Player
+	if err := tx.Select(&players, "SELECT id, join_time FROM players;"); err != nil {
+		return errors.Join(errors.New("cannot load players for liglicko2 backfill"), err)
+	}
+
+	ratings := make(map[uuid.UUID]liglicko2core.Rating, len(players))
+	for _, p := range players {
+		ratings[p.Id] = liglicko2core.Rating{
+			Rating:     liglicko2core.DefaultRating,
+			Deviation:  liglicko2core.DefaultDeviation,
+			Volatility: liglicko2core.DefaultVolatility,
+			At:         liglicko2core.InstantFromTime(p.JoinTime),
+		}
+	}
+
+	var games []Game
+	err = tx.Select(&games, "SELECT ikey, player_white, player_black, score, played FROM games ORDER BY played ASC;")
+	if err != nil {
+		return errors.Join(errors.New("Cannot get get games"), err)
+	}
+
+	for _, game := range games {
+		white, found := ratings[game.PlayerWhite]
+		if !found {
+			return fmt.Errorf("Cannot find white player %s", game.PlayerWhite)
+		}
+
+		black, found := ratings[game.PlayerBlack]
+		if !found {
+			return fmt.Errorf("Cannot find black player %s", game.PlayerBlack)
+		}
+
+		now := liglicko2core.InstantFromTime(game.Played)
+
+		// Save the current player state in the database
+		_, err := tx.Exec(`
+UPDATE games 
+SET
+	liglicko2_white_old_rating=$1,
+	liglicko2_white_old_volatility=$2,
+	liglicko2_white_old_deviation=$3,
+
+	liglicko2_black_old_rating=$4,
+	liglicko2_black_old_volatility=$5,
+	liglicko2_black_old_deviation=$6,
+
+	liglicko2_white_old_at=$7,
+	liglicko2_black_old_at=$8
+WHERE
+  ikey = $9;`,
+			white.Rating,
+			white.Volatility,
+			white.Deviation,
+			black.Rating,
+			black.Volatility,
+			black.Deviation,
+			white.At,
+			black.At,
+			game.IKey,
+		)
+		if err != nil {
+			return errors.Join(fmt.Errorf("Cannot update game with liglicko2 state %d", game.IKey), err)
+		}
+
+		score, err := liglicko2ScoreFromResult(game.Score)
+		if err != nil {
+			return errors.Join(fmt.Errorf("cannot parse score for game %d", game.IKey), err)
+		}
+
+		nextWhite, err := liglicko2core.UpdateSingle(white, black, score, now, liglicko2core.FirstAdvantage)
+		if err != nil {
+			return errors.Join(fmt.Errorf("cannot backfill white liglicko2 for game %d", game.IKey), err)
+		}
+
+		nextBlack, err := liglicko2core.UpdateSingle(black, white, 1.0-score, now, -liglicko2core.FirstAdvantage)
+		if err != nil {
+			return errors.Join(fmt.Errorf("cannot backfill black liglicko2 for game %d", game.IKey), err)
+		}
+
+		ratings[game.PlayerWhite] = nextWhite
+		ratings[game.PlayerBlack] = nextBlack
+	}
+
+	return nil
 }

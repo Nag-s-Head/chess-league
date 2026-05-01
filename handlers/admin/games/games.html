@@ -6,7 +6,7 @@
   class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}"
   >
     <div class="flex flex-row justify-between w-full">
-      <tr class="border-b border-gray-200">
+    <tr class="border-b border-gray-200 {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}">
         <td class="py-2">
           <p>
             <span class="font-bold">{{.PlayerName}}</span> vs. <span class="font-bold">{{.OpponentName}}</span>
@@ -14,7 +14,7 @@
         </td>
         <td class="py-2">
           <span
-            class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
+            class="{{if eq .Outcome "Win"}}text-green-800 font-bold {{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
           >
             {{.Outcome}}
           </span>

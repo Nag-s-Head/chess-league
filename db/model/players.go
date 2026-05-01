@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/liglicko2"
 	"github.com/djpiper28/rpg-book/common/normalisation"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -40,6 +41,13 @@ type Player struct {
 	Deleted     bool      `db:"deleted"`
 }
 
+func (p *Player) ApplyRating(rating liglicko2.Rating) {
+	p.Liglicko2Rating = rating.Rating
+	p.Liglicko2Deviation = rating.Deviation
+	p.Liglicko2Volatility = rating.Volatility
+	p.Liglicko2At = rating.At
+}
+
 type PlayerWithGameCount struct {
 	Player
 	GameCount int `db:"game_count"`
@@ -54,7 +62,7 @@ func NewPlayer(name string) Player {
 		Liglicko2Rating:     StartingLiglicko2Rating,
 		Liglicko2Deviation:  StartingLiglicko2Deviation,
 		Liglicko2Volatility: StartingLiglicko2Volatility,
-		Liglicko2At:         liglicko2InstantFromTime(time.Now()),
+		Liglicko2At:         Liglicko2InstantFromTime(time.Now()),
 		JoinTime:            time.Now(),
 		Deleted:             false,
 	}
@@ -144,6 +152,16 @@ func GetPlayers(db *db.Db) ([]Player, error) {
 	}
 
 	return players, nil
+}
+
+func getPlayerById(txx *sqlx.Tx, id uuid.UUID) (Player, error) {
+	var player Player
+	err := txx.Get(&player, "SELECT * FROM players WHERE id = $1;", id)
+	if err != nil {
+		return Player{}, errors.Join(errors.New("Cannot get player"), err)
+	}
+
+	return player, nil
 }
 
 func GetPlayersByElo(db *db.Db) ([]Player, error) {

@@ -1,0 +1,23 @@
+<div
+  class="flex flex-row gap-3 items-center border-t-2 pt-3 border-gray-300"
+>
+  <input
+    type="checkbox"
+    id="confirm"
+    name="confirm"
+    value="confirmed"
+    required
+    class="w-6 h-6 rounded bg-gray-300 cursor-pointer accent-green-800"
+  />
+  <label for="confirm" class="cursor-pointer text-lg font-bold"
+    >Tick to confirm that you want to {{.Action}}</label
+  >
+</div>
+<button
+  type="submit"
+  name="submit"
+  value="{{.ButtonValue}}"
+  class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+>
+  {{.Action}}
+</button>

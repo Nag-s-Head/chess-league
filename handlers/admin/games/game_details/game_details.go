@@ -60,11 +60,17 @@ func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser
 	}
 }
 
+const (
+	swapWinner = "swap-winner"
+	setDraw    = "set-draw"
+	deleted    = "delete"
+)
+
 func PostGameDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
 	return func(au *model.AdminUser) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ikeyStr := r.PathValue("ikey")
-			_, err := strconv.ParseInt(ikeyStr, 10, 64)
+			ikey, err := strconv.ParseInt(ikeyStr, 10, 64)
 			if err != nil {
 				adminutils.RenderError(w, errors.New("Cannot read ikey"))
 			}
@@ -76,14 +82,52 @@ func PostGameDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWriter,
 			}
 
 			submitType := r.Form.Get("submit")
+			if !utils.IsConfirmed(r) {
+				actionName := ""
+				switch submitType {
+				case swapWinner:
+					actionName = "Swap The Winner"
+				case setDraw:
+					actionName = "Set The Game To A Draw"
+				case deleted:
+					actionName = "Delete The Game"
+				default:
+					adminutils.RenderError(w, fmt.Errorf("%s is not a valid submit type", submitType))
+					return
+				}
+
+				err = utils.RenderConfirmationPage(w, actionName, submitType)
+				if err != nil {
+					adminutils.RenderError(w, fmt.Errorf("%s is not a valid submit type", submitType))
+				}
+				return
+			}
+
 			switch submitType {
-			case "swap-winner":
-			case "set-draw":
-			case "delete":
+			case swapWinner:
+				err = model.SwapGameWinner(db, au.Id, ikey)
+				if err != nil {
+					adminutils.RenderError(w, errors.Join(errors.New("Cannot swap game winner"), err))
+					return
+				}
+			case setDraw:
+				err = model.SetGameToDraw(db, au.Id, ikey)
+				if err != nil {
+					adminutils.RenderError(w, errors.Join(errors.New("Cannot set game to a draw"), err))
+					return
+				}
+			case deleted:
+				err = model.DeleteGame(db, au.Id, ikey)
+				if err != nil {
+					adminutils.RenderError(w, errors.Join(errors.New("Cannot delete game"), err))
+					return
+				}
 			default:
 				adminutils.RenderError(w, fmt.Errorf("%s is not a valid submit type", submitType))
 				return
 			}
+
+			w.Write([]byte("<script>window.location.reload();</script>"))
 		}
 	}
 }
