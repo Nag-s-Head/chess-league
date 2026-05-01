@@ -52,7 +52,7 @@ func TestReplayFromConsistency(t *testing.T) {
 	p2Orig, _ := model.GetPlayer(db, p2.Id)
 
 	var gamesOrig []model.Game
-	err = db.GetSqlxDb().Select(&gamesOrig, "SELECT * FROM games WHERE player_white IN ($1, $2) ORDER BY played ASC", p1.Id, p2.Id)
+	err = db.GetSqlxDb().Select(&gamesOrig, "SELECT * FROM games WHERE player_white IN ($1, $2) ORDER BY played ASC, ikey ASC", p1.Id, p2.Id)
 	require.NoError(t, err)
 	require.Len(t, gamesOrig, 3)
 
@@ -61,7 +61,8 @@ func TestReplayFromConsistency(t *testing.T) {
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.Played)
+	// Replay starting from the first game
+	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.IKey)
 	require.NoError(t, err)
 
 	// Find our players in the affected list
@@ -140,7 +141,7 @@ func TestReplayAfterEdit(t *testing.T) {
 	_, err = tx.Exec("UPDATE games SET score = $1 WHERE ikey = $2", model.Score_Draw, ikey1)
 	require.NoError(t, err)
 
-	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.Played)
+	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.IKey)
 	require.NoError(t, err)
 
 	var g1Final, g2Final *model.Game

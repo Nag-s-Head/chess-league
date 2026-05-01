@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -304,4 +305,53 @@ func GetTotalGameCount(db *db.Db) (int, error) {
 	}
 
 	return count, nil
+}
+
+func DeleteGame(db *db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set the game as deleted"), err)
+	}
+
+	games, players, err := ReplayFrom(tx, ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games to calculate new ratings"), err)
+	}
+
+	auditLog := NewAuditLog(adminId, "Game Deletion", fmt.Sprintf("Deleted game %d", ikey))
+	err = InsertAuditLog(tx, auditLog)
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert audit log"), err)
+	}
+
+	for _, game := range games {
+		err = InsertAuditLogGameAffected(tx, &AuditLogGameAffected{
+			AuditLogId: auditLog.Id,
+			GameIkey:   game.IKey,
+		})
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert audit log game affected"), err)
+		}
+	}
+
+	for _, player := range players {
+		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert audit log player affected"), err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
 }
