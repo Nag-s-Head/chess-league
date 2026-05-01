@@ -74,11 +74,11 @@
 {{range $result := .Details.Games}}
   <a
     href="/admin/games/{{.Ikey}}"
-    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}"
   >
     <div class="flex flex-row justify-between w-full">
       <tr class="border-b border-gray-200">
-        <td class="py-2">{{.OpponentName}}</td>
+      <td class="py-2">{{.OpponentName}}{{if .Deleted}} <span class="font-bold">(deleted)</span>{{end}}</td>
         <td class="py-2">
           <span
             class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"

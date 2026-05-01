@@ -299,7 +299,7 @@ SELECT g.*, w.name as white_name, b.name as black_name
 FROM games g
 JOIN players w ON g.player_white = w.id
 JOIN players b ON g.player_black = b.id
-WHERE (g.player_white=$1 OR g.player_black=$1) AND g.deleted=false
+WHERE (g.player_white=$1 OR g.player_black=$1)
 ORDER BY g.played DESC`, playerId)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get games by player"), err)
