@@ -105,7 +105,17 @@ func PostGameDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWriter,
 
 			switch submitType {
 			case swapWinner:
+				err = model.SwapGameWinner(db, au.Id, ikey)
+				if err != nil {
+					adminutils.RenderError(w, errors.Join(errors.New("Cannot swap game winner"), err))
+					return
+				}
 			case setDraw:
+				err = model.SetGameToDraw(db, au.Id, ikey)
+				if err != nil {
+					adminutils.RenderError(w, errors.Join(errors.New("Cannot set game to a draw"), err))
+					return
+				}
 			case deleted:
 				err = model.DeleteGame(db, au.Id, ikey)
 				if err != nil {

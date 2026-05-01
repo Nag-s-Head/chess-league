@@ -107,6 +107,7 @@ func ReplayFrom(txx *sqlx.Tx, ikey int64) ([]Game, []*Player, error) {
 	}
 
 	for i, game := range affectedGames {
+
 		white, err := getOrAddPlayer(txx, affectedPlayers, game.PlayerWhite, &game)
 		if err != nil {
 			return nil, nil, errors.Join(errors.New("Cannot get white player"), err)
@@ -189,6 +190,14 @@ WHERE id = :id`, player)
 		if err != nil {
 			return nil, nil, errors.Join(fmt.Errorf("Cannot update player %s during replay", player.Id), err)
 		}
+	}
+
+	if len(affectedGames) > 0 {
+		if affectedGames[0].IKey != ikey {
+			affectedGames = append(affectedGames, seedGame)
+		}
+	} else {
+		affectedGames = append(affectedGames, seedGame)
 	}
 
 	return affectedGames, players, nil

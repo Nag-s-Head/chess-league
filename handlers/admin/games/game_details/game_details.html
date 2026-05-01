@@ -72,6 +72,8 @@
 <form class="flex flex-col gap-5 w-full" hx-post="" hx-target="#response">
   <div class="flex flex-col gap-5" id="response">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      {{if not .Deleted}}
+      {{if ne .Score "1/2-1/2"}}
       <button
         type="submit"
         name="submit"
@@ -88,6 +90,7 @@
       >
         Change To Draw
       </button>
+      {{end}}
       <button
         type="submit"
         name="submit"
@@ -96,6 +99,7 @@
       >
         Delete
       </button>
+      {{end}}
     </div>
   </div>
 </form>

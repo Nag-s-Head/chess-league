@@ -9,6 +9,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 type Score string
@@ -30,6 +31,16 @@ func (s Score) Outcome() Outcome {
 	}
 
 	panic("Invalid score detected")
+}
+
+func (s *Score) Switch() {
+	switch *s {
+	case Score_Win:
+		*s = Score_Loss
+	case Score_Draw:
+	case Score_Loss:
+		*s = Score_Win
+	}
 }
 
 type Game struct {
@@ -307,25 +318,13 @@ func GetTotalGameCount(db *db.Db) (int, error) {
 	return count, nil
 }
 
-func DeleteGame(db *db.Db, adminId uuid.UUID, ikey int64) error {
-	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
-	if err != nil {
-		return errors.Join(errors.New("Cannot start transaction"), err)
-	}
-
-	defer tx.Rollback()
-
-	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE ikey=$1;", ikey)
-	if err != nil {
-		return errors.Join(errors.New("Cannot set the game as deleted"), err)
-	}
-
+func replayGames(tx *sqlx.Tx, adminId uuid.UUID, ikey int64, auditLogOperation, auditLogMessage string) error {
 	games, players, err := ReplayFrom(tx, ikey)
 	if err != nil {
 		return errors.Join(errors.New("Cannot replay games to calculate new ratings"), err)
 	}
 
-	auditLog := NewAuditLog(adminId, "Game Deletion", fmt.Sprintf("Deleted game %d", ikey))
+	auditLog := NewAuditLog(adminId, auditLogOperation, auditLogMessage)
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert audit log"), err)
@@ -346,6 +345,86 @@ func DeleteGame(db *db.Db, adminId uuid.UUID, ikey int64) error {
 		if err != nil {
 			return errors.Join(errors.New("Cannot insert audit log player affected"), err)
 		}
+	}
+
+	return nil
+}
+
+func DeleteGame(db *db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set the game as deleted"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Game Deletion", fmt.Sprintf("Deleted game %d", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
+}
+
+func SwapGameWinner(db *db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	var game Game
+	err = tx.Get(&game, "SELECT * FROM games WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get the game"), err)
+	}
+
+	game.Score.Switch()
+
+	_, err = tx.Exec("UPDATE games SET score=$1 WHERE ikey=$2;", game.Score, ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot change the game winner"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Swap Game Winner", fmt.Sprintf("Swapped winner for game %d", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
+}
+func SetGameToDraw(db *db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE games SET score=$1 WHERE ikey=$2;", Score_Draw, ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set the game as deleted"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Game Set To Draw", fmt.Sprintf("Set game %d to be a draw", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
 	}
 
 	err = tx.Commit()
