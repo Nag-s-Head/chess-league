@@ -18,6 +18,19 @@ const (
 	Score_Draw Score = "1/2-1/2"
 )
 
+func (s Score) Outcome() Outcome {
+	switch s {
+	case Score_Win:
+		return 1.0
+	case Score_Draw:
+		return 0.5
+	case Score_Loss:
+		return 0.0
+	}
+
+	panic("Invalid score detected")
+}
+
 type Game struct {
 	PlayerWhite     uuid.UUID `db:"player_white"`
 	PlayerBlack     uuid.UUID `db:"player_black"`
