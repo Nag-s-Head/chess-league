@@ -18,7 +18,7 @@ func CreateGame(tx *sqlx.Tx, submitter, opponent *Player, submitterIsWhite bool,
 		Submitter:       submitter.Id,
 		Played:          time.Now(),
 		Deleted:         false,
-		SubmitIp:        r.RemoteAddr,
+		SubmitIp:        GetRemoteAddr(r),
 		SubmitUserAgent: r.UserAgent(),
 		IKey:            ikey,
 	}

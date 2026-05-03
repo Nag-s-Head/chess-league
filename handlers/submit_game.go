@@ -36,7 +36,7 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if magic != magicNumber {
-			slog.Warn("An attempt to access the submit form without the magic number was made")
+			slog.Warn("An attempt to access the submit form without the magic number was made", "ip", model.GetRemoteAddr(r))
 			w.Write([]byte("This page can only be accessed from the QR code in the pub"))
 			return
 		}
@@ -49,12 +49,12 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 		assignNewIkey := false
 		ikeyCookie, err := r.Cookie(submitgame.IKeyCookie)
 		if err != nil {
-			slog.Info("No ikey for user trying to submit game")
+			slog.Info("No ikey for user trying to submit game", "ip", model.GetRemoteAddr(r))
 			assignNewIkey = true
 		} else {
 			ikey, err := strconv.ParseInt(ikeyCookie.Value, 10, 64)
 			if err != nil || ikey < 0 {
-				slog.Warn("Invalid ikey detected", "err", err, "key", ikeyCookie.Value)
+				slog.Warn("Invalid ikey detected", "err", err, "key", ikeyCookie.Value, "ip", model.GetRemoteAddr(r))
 				assignNewIkey = true
 			}
 		}
@@ -62,7 +62,7 @@ func SubmitGame(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 		if assignNewIkey {
 			ikey, err := model.NextIKey(db)
 			if err != nil {
-				slog.Warn("Could not assign new ikey", "err", err)
+				slog.Warn("Could not assign new ikey", "err", err, "ip", model.GetRemoteAddr(r))
 				w.Write([]byte("Could not generate an idempotency - unable to report a game"))
 				return
 			}

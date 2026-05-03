@@ -173,7 +173,7 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 		return errors.Join(errors.New("Could not submit game"), err)
 	}
 
-	slog.Info("Submitted a game", "game", game, "playerWhite", playerWhite, "playerBlack", playerBlack)
+	slog.Info("Submitted a game", "game", game, "playerWhite", playerWhite, "playerBlack", playerBlack, "ip", model.GetRemoteAddr(r))
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   IKeyCookie,
@@ -212,7 +212,7 @@ func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if !VerifyMagic(r) {
-		slog.Warn("An attempt to access submit the form without the magic number was made")
+		slog.Warn("An attempt to access submit the form without the magic number was made", "ip", model.GetRemoteAddr(r))
 		return errors.New("Magic number for submit is invalid")
 	}
 
@@ -224,10 +224,10 @@ func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	submitType := r.FormValue("submit-type")
 
 	if submitType == "final" {
-		slog.Info("Submitting a game", "form", r.Form)
+		slog.Info("Submitting a game", "form", r.Form, "ip", model.GetRemoteAddr(r))
 		return doFinalSubmit(db, w, r)
 	} else {
-		slog.Info("Doing user lookup", "form", r.Form)
+		slog.Info("Doing user lookup", "form", r.Form, "ip", model.GetRemoteAddr(r))
 		return doUserLookupSubmit(db, w, r)
 	}
 }
@@ -240,7 +240,7 @@ func Register(mux *http.ServeMux, db *db.Db) {
 	mux.HandleFunc(fmt.Sprintf("POST %s/submit", BasePath), func(w http.ResponseWriter, r *http.Request) {
 		err := DoSubmit(db, w, r)
 		if err != nil {
-			slog.Error("Could not submit a game", "err", err, "params", r.Form)
+			slog.Error("Could not submit a game", "err", err, "params", r.Form, "ip", model.GetRemoteAddr(r))
 
 			var buf bytes.Buffer
 			err := errorTpl.Execute(&buf, Error{Error: err.Error()})
