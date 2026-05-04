@@ -12,6 +12,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/Nag-s-Head/chess-league/handlers/admin"
+	"github.com/Nag-s-Head/chess-league/handlers/assets"
 	playerdetails "github.com/Nag-s-Head/chess-league/handlers/player_details"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
@@ -93,6 +94,7 @@ func NewHandler(db *db.Db) http.Handler {
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
 	submitgame.Register(mux, db)
 	admin.Register(mux, db, WithLayoutAdmin)
+	assets.Register(mux)
 
 	slog.Info(fmt.Sprintf("To submit a game use %s/%s?%s=%s",
 		os.Getenv("APP_BASE_URL"),
