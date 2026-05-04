@@ -53,7 +53,7 @@ func LoginPost(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			user, err := model.AdminLogin(db, adminName, adminId, r.RemoteAddr, r.UserAgent())
+			user, err := model.AdminLogin(db, adminName, adminId, model.GetRemoteAddr(r), r.UserAgent())
 			if err != nil {
 				slog.Error("Could not log test user in", "err", err, "adminId", adminId)
 				w.Write(fmt.Appendf(nil, "Could not log test user in: %s", err))

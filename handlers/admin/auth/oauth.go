@@ -81,7 +81,7 @@ func Callback(db *db.Db) http.HandlerFunc {
 		}
 
 		// Login successful, create or update admin user in DB
-		adminUser, err := model.AdminLogin(db, ghUser.Name, ghUser.Login, r.RemoteAddr, r.UserAgent())
+		adminUser, err := model.AdminLogin(db, ghUser.Name, ghUser.Login, model.GetRemoteAddr(r), r.UserAgent())
 		if err != nil {
 			slog.Error("Could not login admin user in database", "err", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
