@@ -39,6 +39,7 @@ type AuditLogPlayerAffected struct {
 	AuditLogId uuid.UUID `db:"audit_log_id"`
 	PlayerId   uuid.UUID `db:"player_id"`
 	EloChange  int       `db:"elo_change"`
+	PlayerName string    `db:"player_name"`
 }
 
 func NewAuditLogPlayerAffected(auditId uuid.UUID, PlayerId uuid.UUID, EloChange int) *AuditLogPlayerAffected {
@@ -60,6 +61,9 @@ func InsertAuditLogPlayerAffected(tx *sqlx.Tx, playerAffected *AuditLogPlayerAff
 type AuditLogGameAffected struct {
 	AuditLogId uuid.UUID `db:"audit_log_id"`
 	GameIkey   int64     `db:"game_ikey"`
+	WhiteName  string    `db:"white_name"`
+	BlackName  string    `db:"black_name"`
+	Played     time.Time `db:"played"`
 }
 
 func InsertAuditLogGameAffected(tx *sqlx.Tx, gameAffected *AuditLogGameAffected) error {
@@ -72,65 +76,52 @@ func InsertAuditLogGameAffected(tx *sqlx.Tx, gameAffected *AuditLogGameAffected)
 
 type DetailedAuditLog struct {
 	AuditLog
-	Players []AuditLogPlayerAffected
-	Games   []AuditLogGameAffected
+	AdminName string `db:"admin_name"`
+	Players   []AuditLogPlayerAffected
+	Games     []AuditLogGameAffected
 }
 
 func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
-	var auditLog AuditLog
-	err := tx.Get(&auditLog, "SELECT * FROM audit_logs WHERE id=$1;", id)
+	var auditLog struct {
+		AuditLog
+		AdminName string `db:"admin_name"`
+	}
+	err := tx.Get(&auditLog, `
+		SELECT audit_logs.*, admin_users.name as admin_name 
+		FROM audit_logs 
+		JOIN admin_users ON audit_logs.done_by = admin_users.id
+		WHERE audit_logs.id=$1;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log"), err)
 	}
 
 	players := make([]AuditLogPlayerAffected, 0)
-	rows, err := tx.Queryx(`
-		SELECT audit_log_player_affected.* 
-		FROM audit_log_player_affected 
-		INNER JOIN audit_logs 
-		  ON audit_logs.id=audit_log_player_affected.audit_log_id
-		WHERE audit_log_player_affected.audit_log_id=$1;`, id)
+	err = tx.Select(&players, `
+		SELECT a.*, p.name as player_name 
+		FROM audit_log_player_affected a
+		JOIN players p ON a.player_id = p.id
+		WHERE a.audit_log_id=$1;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log player affected"), err)
 	}
 
-	for rows.Next() {
-		var player AuditLogPlayerAffected
-		err := rows.StructScan(&player)
-		if err != nil {
-			return nil, errors.Join(errors.New("Cannot scan audit log player affacted"), err)
-		}
-
-		players = append(players, player)
-	}
-
-	rows.Close()
-
 	games := make([]AuditLogGameAffected, 0)
-	rows, err = tx.Queryx(`
-		SELECT audit_log_game_affected.* 
-		FROM audit_log_game_affected 
-		INNER JOIN audit_logs 
-		  ON audit_logs.id=audit_log_game_affected.audit_log_id
-		WHERE audit_log_game_affected.audit_log_id=$1;`, id)
+	err = tx.Select(&games, `
+		SELECT a.*, w.name as white_name, b.name as black_name, g.played
+		FROM audit_log_game_affected a
+		JOIN games g ON a.game_ikey = g.ikey
+		JOIN players w ON g.player_white = w.id
+		JOIN players b ON g.player_black = b.id
+		WHERE a.audit_log_id=$1;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log game affected"), err)
 	}
 
-	for rows.Next() {
-		var game AuditLogGameAffected
-		err := rows.StructScan(&game)
-		if err != nil {
-			return nil, errors.Join(errors.New("Cannot scan audit log game affacted"), err)
-		}
-
-		games = append(games, game)
-	}
-
 	result := &DetailedAuditLog{
-		AuditLog: auditLog,
-		Players:  players,
-		Games:    games,
+		AuditLog:  auditLog.AuditLog,
+		AdminName: auditLog.AdminName,
+		Players:   players,
+		Games:     games,
 	}
 
 	return result, nil

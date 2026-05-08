@@ -1,0 +1,58 @@
+<h1 class="text-xl font-bold">Details For Audit Log #{{.Id}}</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-2">
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Operation</p>
+    <p class="text-xl font-bold">{{.OperationName}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Description</p>
+    <p class="text-xl font-bold">{{.OperationDescription}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Done By</p>
+    <p class="text-xl font-bold">{{.AdminName}}</p>
+  </div>
+  <div class="p-4 bg-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">Created</p>
+    <p class="text-xl font-bold">{{.Created.Format "Jan 02, 2006, 15:04pm"}}</p>
+  </div>
+</div>
+
+{{if .Players}}
+<h2 class="text-lg font-bold mt-5">Affected Players</h2>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+  {{range .Players}}
+  <a
+    href="/admin/players/{{.PlayerId}}"
+    class="border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  >
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <p class="text-sm text-gray-500">Player</p>
+      <p class="text-xl font-bold">{{.PlayerName}}</p>
+      <p class="text-sm {{if gt .EloChange 0}}text-green-800{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}">
+        {{if gt .EloChange 0}}+{{end}}{{.EloChange}} ELO Change
+      </p>
+    </div>
+  </a>
+  {{end}}
+</div>
+{{end}}
+
+{{if .Games}}
+<h2 class="text-lg font-bold mt-5">Affected Games</h2>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+  {{range .Games}}
+  <a
+    href="/admin/games/{{.GameIkey}}"
+    class="border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  >
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <p class="text-sm text-gray-500">Game #{{.GameIkey}}</p>
+      <p class="text-lg font-bold">{{.WhiteName}} vs {{.BlackName}}</p>
+      <p class="text-sm text-gray-500">{{.Played.Format "Jan 02, 2006"}}</p>
+    </div>
+  </a>
+  {{end}}
+</div>
+{{end}}

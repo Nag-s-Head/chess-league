@@ -12,6 +12,7 @@ import (
 	adminusers "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users"
 	adminuserdetails "github.com/Nag-s-Head/chess-league/handlers/admin/admin_users/admin_user_details"
 	auditlogs "github.com/Nag-s-Head/chess-league/handlers/admin/audit_logs"
+	auditlogsdetails "github.com/Nag-s-Head/chess-league/handlers/admin/audit_logs/audit_details"
 	"github.com/Nag-s-Head/chess-league/handlers/admin/auth"
 	"github.com/Nag-s-Head/chess-league/handlers/admin/games"
 	gamedetails "github.com/Nag-s-Head/chess-league/handlers/admin/games/game_details"
@@ -83,7 +84,7 @@ func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWr
 	mux.HandleFunc(fmt.Sprintf("POST %s/players/{id}", BasePath), auth.WithAuthentication(db, player_details.PostPlayerDetails(db)))
 
 	mux.HandleFunc(fmt.Sprintf("GET %s/audit_logs", BasePath), WithLayoutAndAuthentication(db, auditlogs.Render(db), LayoutRender))
-	// mux.HandleFunc(fmt.Sprintf("GET %s/audit_logs/{id}", BasePath), auth.WithAuthentication(db, auditlogsdetails.Render(db)))
+	mux.HandleFunc(fmt.Sprintf("GET %s/audit_logs/{id}", BasePath), WithLayoutAndAuthentication(db, auditlogsdetails.Render(db), LayoutRender))
 
 	mux.HandleFunc(fmt.Sprintf("GET %s/games", BasePath), WithLayoutAndAuthentication(db, games.Render(db), LayoutRender))
 	mux.HandleFunc(fmt.Sprintf("GET %s/games/{ikey}", BasePath), WithLayoutAndAuthentication(db, gamedetails.Render(db), LayoutRender))
