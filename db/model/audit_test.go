@@ -289,8 +289,16 @@ func TestGetAuditLogWithGameAndPlayer(t *testing.T) {
 	require.NoError(t, tx.Commit())
 
 	require.Equal(t, auditLog.Id, log.Id)
+	require.Equal(t, admin.Name, log.AdminName)
 	require.Len(t, log.Players, 2)
 	require.Len(t, log.Games, 1)
 
-	require.Contains(t, log.Games, gameAuditLog)
+	require.Equal(t, gameAuditLog.AuditLogId, log.Games[0].AuditLogId)
+	require.Equal(t, gameAuditLog.GameIkey, log.Games[0].GameIkey)
+	require.Equal(t, p1.Name, log.Games[0].WhiteName)
+	require.Equal(t, p2.Name, log.Games[0].BlackName)
+	require.False(t, log.Games[0].Played.IsZero())
+
+	require.Equal(t, p1AuditLog.PlayerId, log.Players[0].PlayerId)
+	require.Equal(t, p1.Name, log.Players[0].PlayerName)
 }
