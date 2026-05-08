@@ -409,6 +409,7 @@ func SwapGameWinner(db *db.Db, adminId uuid.UUID, ikey int64) error {
 
 	return nil
 }
+
 func SetGameToDraw(db *db.Db, adminId uuid.UUID, ikey int64) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {

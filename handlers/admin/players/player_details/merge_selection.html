@@ -1,0 +1,28 @@
+<fieldset>
+  <div class="flex flex-col gap-3">
+    <legend class="font-bold text-lg">Merge {{.TargetName}} INTO...</legend>
+
+    <div class="flex flex-col gap-2">
+      <label for="merge-player-dest" class="cursor-pointer">Select destination player</label>
+      <select
+        id="merge-player-dest"
+        name="merge-player-dest"
+        class="rounded-lg bg-gray-300 p-2"
+        required
+      >
+        <option value="" disabled selected>Select a player</option>
+        {{range .Players}}
+          <option value="{{.Id}}">{{.Name}}</option>
+        {{end}}
+      </select>
+    </div>
+    <button
+      type="submit"
+      name="submit"
+      value="merge-select"
+      class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    >
+      Next
+    </button>
+  </div>
+</fieldset>

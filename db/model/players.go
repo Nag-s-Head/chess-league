@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
@@ -279,6 +280,118 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 	}
 
 	slog.Info("Player renamed", "oldName", oldName, "newName", newName, "by", adminId)
+
+	return nil
+}
+
+func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+	defer tx.Rollback()
+
+	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s into %s.", target, dest))
+	err = InsertAuditLog(tx, auditLog)
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert player merger audit log"), err)
+	}
+
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, target, 0))
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert player affected audit log (target)"), err)
+	}
+
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, dest, 0))
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert player affected audit log (dest)"), err)
+	}
+
+	var ikey int64
+	err = tx.Get(&ikey, "SELECT ikey FROM games WHERE (player_white=$1 OR player_black=$1) ORDER BY played ASC LIMIT 1;", target)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return errors.Join(errors.New("Cannot get first game from of the target player"), err)
+	}
+	noGames := errors.Is(err, sql.ErrNoRows)
+
+	// Update the player to be deleted and tagged as merged
+	_, err = tx.Exec("UPDATE players SET deleted=TRUE, name=name || '-MERGED', name_normalised=$1 WHERE id=$2", uuid.New().String(), target)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set player to deleted with merged status"), err)
+	}
+
+	if noGames {
+		return tx.Commit()
+	}
+
+	// Set target player to dest in all games
+	var affectedGames []int64
+	err = tx.Select(&affectedGames, "SELECT ikey FROM games WHERE  (player_white=$1 OR player_black=$1)", target)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get a list of affected games for player merger"), err)
+	}
+
+	for _, gameIkey := range affectedGames {
+		err = InsertAuditLogGameAffected(tx, &AuditLogGameAffected{
+			AuditLogId: auditLog.Id,
+			GameIkey:   gameIkey,
+		})
+
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert game affected audit log"), err)
+		}
+	}
+
+	_, err = tx.Exec("UPDATE games SET player_white=$1 WHERE player_white=$2", dest, target)
+	if err != nil {
+		return errors.Join(errors.New("Cannot update white players"), err)
+	}
+
+	_, err = tx.Exec("UPDATE games SET player_black=$1 WHERE player_black=$2", dest, target)
+	if err != nil {
+		return errors.Join(errors.New("Cannot update black players"), err)
+	}
+
+	// DELETE target vs dest games
+	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE (player_white=$1 AND player_black=$1)", dest)
+	if err != nil {
+		return errors.Join(errors.New("Cannot delete games where the player played against themselves"), err)
+	}
+
+	games, players, err := ReplayFrom(tx, ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games to calculate new ELOs"), err)
+	}
+
+	for _, game := range games {
+		if slices.Contains(affectedGames, game.IKey) {
+			continue
+		}
+
+		err = InsertAuditLogGameAffected(tx, &AuditLogGameAffected{
+			AuditLogId: auditLog.Id,
+			GameIkey:   game.IKey,
+		})
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert game affected audit log"), err)
+		}
+	}
+
+	for _, player := range players {
+		if player.Id == target || player.Id == dest {
+			continue
+		}
+
+		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert player affected audit log"), err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
 
 	return nil
 }
