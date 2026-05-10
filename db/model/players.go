@@ -295,7 +295,19 @@ func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
 	}
 	defer tx.Rollback()
 
-	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s into %s.", target, dest))
+	var targetName string
+	err = tx.Get(&targetName, "select name from players where id=$1;", target)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get player target name for audit logs"), err)
+	}
+
+	var destName string
+	err = tx.Get(&destName, "select name from players where id=$1;", dest)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get player dest name for audit logs"), err)
+	}
+
+	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s (%s) into %s (%s).", target, targetName, dest, destName))
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert player merger audit log"), err)
