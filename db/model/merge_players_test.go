@@ -64,6 +64,38 @@ func TestMergePlayers_NoGames(t *testing.T) {
 	require.Equal(t, p.Id.String(), p.NameNormalised)
 }
 
+func TestMergePlayers_DeletedPlayers(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+	admin := setupAdmin(t, db)
+
+	t.Run("Target is deleted", func(t *testing.T) {
+		dest := model.NewPlayer("Dest " + uuid.New().String())
+		target := model.NewPlayer("Target " + uuid.New().String())
+		target.Deleted = true
+
+		require.NoError(t, model.InsertPlayer(db, dest))
+		require.NoError(t, model.InsertPlayer(db, target))
+
+		err := model.MergePlayers(db, target.Id, dest.Id, admin.Id)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "target player is deleted")
+	})
+
+	t.Run("Destination is deleted", func(t *testing.T) {
+		dest := model.NewPlayer("Dest " + uuid.New().String())
+		dest.Deleted = true
+		target := model.NewPlayer("Target " + uuid.New().String())
+
+		require.NoError(t, model.InsertPlayer(db, dest))
+		require.NoError(t, model.InsertPlayer(db, target))
+
+		err := model.MergePlayers(db, target.Id, dest.Id, admin.Id)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "destination player is deleted")
+	})
+}
 func TestMergePlayers_TargetPlayedDest(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()

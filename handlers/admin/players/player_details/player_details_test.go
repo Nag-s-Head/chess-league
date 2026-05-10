@@ -125,7 +125,7 @@ func TestPostPlayerDetails_Rename(t *testing.T) {
 	require.NoError(t, tx.Commit())
 
 	// Setup player
-	player := model.NewPlayer("Original Name")
+	player := model.NewPlayer("Original Name " + uuid.New().String())
 	require.NoError(t, model.InsertPlayer(db, player))
 
 	t.Run("Rename Button Clicked (Form Request)", func(t *testing.T) {
@@ -145,7 +145,7 @@ func TestPostPlayerDetails_Rename(t *testing.T) {
 	})
 
 	t.Run("Rename Submitted", func(t *testing.T) {
-		newName := "New Awesome Name"
+		newName := "New Awesome Name " + uuid.New().String()
 		form := url.Values{}
 		form.Set("submit", "rename")
 		form.Set("player-name", newName)
