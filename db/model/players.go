@@ -72,8 +72,8 @@ func NewPlayer(name string) Player {
 func InsertPlayerTx(tx *sqlx.Tx, player Player) error {
 	_, err := tx.
 		NamedExec(
-			`INSERT INTO players (id, name, name_normalised, elo, liglicko2_rating, liglicko2_deviation, liglicko2_volatility, liglicko2_at, join_time)
-VALUES (:id, :name, :name_normalised, :elo, :liglicko2_rating, :liglicko2_deviation, :liglicko2_volatility, :liglicko2_at, :join_time);`,
+			`INSERT INTO players (id, name, name_normalised, elo, liglicko2_rating, liglicko2_deviation, liglicko2_volatility, liglicko2_at, join_time, deleted)
+VALUES (:id, :name, :name_normalised, :elo, :liglicko2_rating, :liglicko2_deviation, :liglicko2_volatility, :liglicko2_at, :join_time, :deleted);`,
 			player)
 
 	if err != nil {
@@ -165,8 +165,8 @@ func getPlayerById(txx *sqlx.Tx, id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
-func GetPlayersByElo(db *db.Db) ([]Player, error) {
-	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players ORDER BY liglicko2_rating DESC, name;")
+func GetPlayersByElo(db *db.Db, showDeleted bool) ([]Player, error) {
+	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players WHERE deleted=FALSE OR deleted=$1 ORDER BY liglicko2_rating DESC, name;", showDeleted)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get players"), err)
 	}
@@ -192,7 +192,11 @@ func GetPlayersByEloWithGameCount(db *db.Db) ([]PlayerWithGameCount, error) {
 		LEFT JOIN 
 		    games 
 		  ON 
-		    games.player_white=players.id OR games.player_black=players.id
+		    (
+		      games.player_white=players.id OR games.player_black=players.id
+		    )
+		      AND 
+		    games.deleted = false
 		GROUP by players.id
 		ORDER BY liglicko2_rating DESC, name;`)
 	if err != nil {

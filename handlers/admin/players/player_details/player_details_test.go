@@ -51,8 +51,8 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 	require.NoError(t, tx.Commit())
 
 	// Setup players
-	target := model.NewPlayer("Target")
-	dest := model.NewPlayer("Dest")
+	target := model.NewPlayer("Target" + uuid.New().String())
+	dest := model.NewPlayer("Dest" + uuid.New().String())
 	require.NoError(t, model.InsertPlayer(db, target))
 	require.NoError(t, model.InsertPlayer(db, dest))
 
@@ -67,7 +67,8 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 		player_details.PostPlayerDetails(db)(admin)(rr, req)
 
 		require.Equal(t, http.StatusOK, rr.Code)
-		require.Contains(t, rr.Body.String(), "Merge Target INTO...")
+		require.Contains(t, rr.Body.String(), "Merge Target")
+		require.Contains(t, rr.Body.String(), "INTO...")
 		require.Contains(t, rr.Body.String(), "value=\"merge-select\"")
 	})
 
@@ -83,7 +84,8 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 		player_details.PostPlayerDetails(db)(admin)(rr, req)
 
 		require.Equal(t, http.StatusOK, rr.Code)
-		require.Contains(t, rr.Body.String(), "Tick to confirm that you want to merge Target INTO Dest")
+		require.Contains(t, rr.Body.String(), "Tick to confirm that you want to merge Target")
+		require.Contains(t, rr.Body.String(), "INTO Dest")
 		require.Contains(t, rr.Body.String(), "value=\"merge-confirm\"")
 		require.Contains(t, rr.Body.String(), dest.Id.String()) // Hidden input check
 	})

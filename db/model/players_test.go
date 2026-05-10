@@ -81,9 +81,82 @@ func TestGetPlayers(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, len(players), 1)
 
-	players, err = model.GetPlayersByElo(db)
+	found := false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayers results")
+
+	players, err = model.GetPlayersByElo(db, false)
 	require.NoError(t, err)
 	require.Greater(t, len(players), 1)
+
+	found = false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayersByElo results")
+
+	playersWithCount, err := model.GetPlayersByEloWithGameCount(db)
+	require.NoError(t, err)
+	require.Greater(t, len(playersWithCount), 1)
+
+	for _, player := range players {
+		require.False(t, player.Deleted)
+	}
+}
+
+func TestGetPlayersShowDeleted(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	name := uuid.New().String()
+	player := model.NewPlayer(name)
+	player.Deleted = true
+	player.NameNormalised = player.Id.String()
+
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	players, err := model.GetPlayers(db)
+	require.NoError(t, err)
+	require.Greater(t, len(players), 1)
+
+	found := false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayers results")
+
+	players, err = model.GetPlayersByElo(db, true)
+	require.NoError(t, err)
+	require.Greater(t, len(players), 1)
+
+	found = false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayersByElo results")
 
 	playersWithCount, err := model.GetPlayersByEloWithGameCount(db)
 	require.NoError(t, err)
