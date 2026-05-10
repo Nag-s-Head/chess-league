@@ -49,6 +49,9 @@
   hx-target="#response"
 >
   <div class="flex flex-col gap-5" id="response">
+  {{if .Player.Deleted}}
+    <p>A deleted player cannot be acted upon.</p>
+  {{else}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
       <button
         type="submit"
@@ -75,6 +78,7 @@
         Delete
       </button>
     </div>
+  {{end}}
   </div>
 </form>
 
