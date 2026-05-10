@@ -1,6 +1,6 @@
 module github.com/Nag-s-Head/chess-league
 
-go 1.25.6
+go 1.26.3
 
 require (
 	github.com/djpiper28/rpg-book v0.0.1
