@@ -72,6 +72,26 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 		require.Contains(t, rr.Body.String(), "value=\"merge-select\"")
 	})
 
+	t.Run("Merge Button Clicked - Excludes Deleted", func(t *testing.T) {
+		deletedPlayer := model.NewPlayer("Deleted Player")
+		deletedPlayer.Deleted = true
+		require.NoError(t, model.InsertPlayer(db, deletedPlayer))
+
+		form := url.Values{}
+		form.Set("submit", "merge")
+		req := httptest.NewRequest(http.MethodPost, "/admin/players/"+target.Id.String(), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetPathValue("id", target.Id.String())
+		rr := httptest.NewRecorder()
+
+		player_details.PostPlayerDetails(db)(admin)(rr, req)
+
+		require.Equal(t, http.StatusOK, rr.Code)
+		require.Contains(t, rr.Body.String(), "Merge Target")
+		require.NotContains(t, rr.Body.String(), deletedPlayer.Id.String())
+		require.NotContains(t, rr.Body.String(), "Deleted Player")
+	})
+
 	t.Run("Destination Selected", func(t *testing.T) {
 		form := url.Values{}
 		form.Set("submit", "merge-select")
@@ -109,5 +129,60 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 		p, err := model.GetPlayer(db, target.Id)
 		require.NoError(t, err)
 		require.True(t, p.Deleted)
+	})
+}
+
+func TestPostPlayerDetails_Rename(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	// Setup admin
+	admin := model.NewAdminUser("admin", uuid.New().String(), "password", "salt")
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+	require.NoError(t, tx.Commit())
+
+	// Setup player
+	player := model.NewPlayer("Original Name " + uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	t.Run("Rename Button Clicked (Form Request)", func(t *testing.T) {
+		form := url.Values{}
+		form.Set("submit", "rename")
+		// No player-name provided
+		req := httptest.NewRequest(http.MethodPost, "/admin/players/"+player.Id.String(), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetPathValue("id", player.Id.String())
+		rr := httptest.NewRecorder()
+
+		player_details.PostPlayerDetails(db)(admin)(rr, req)
+
+		require.Equal(t, http.StatusOK, rr.Code)
+		require.Contains(t, rr.Body.String(), "Rename Player")
+		require.Contains(t, rr.Body.String(), "name=\"player-name\"")
+	})
+
+	t.Run("Rename Submitted", func(t *testing.T) {
+		newName := "New Awesome Name " + uuid.New().String()
+		form := url.Values{}
+		form.Set("submit", "rename")
+		form.Set("player-name", newName)
+		req := httptest.NewRequest(http.MethodPost, "/admin/players/"+player.Id.String(), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetPathValue("id", player.Id.String())
+		rr := httptest.NewRecorder()
+
+		player_details.PostPlayerDetails(db)(admin)(rr, req)
+
+		require.Equal(t, http.StatusOK, rr.Code)
+		require.Contains(t, rr.Body.String(), "Success, reloading...")
+		require.Contains(t, rr.Body.String(), "window.location.reload()")
+
+		// Verify rename in DB
+		p, err := model.GetPlayer(db, player.Id)
+		require.NoError(t, err)
+		require.Equal(t, newName, p.Name)
 	})
 }

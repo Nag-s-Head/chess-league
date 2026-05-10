@@ -49,9 +49,6 @@
   hx-target="#response"
 >
   <div class="flex flex-col gap-5" id="response">
-  {{if .Player.Deleted}}
-    <p>A deleted player cannot be acted upon.</p>
-  {{else}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
       <button
         type="submit"
@@ -59,8 +56,11 @@
         value="rename"
         class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
         >
-        Rename
+          Rename
       </button>
+      {{if .Player.Deleted}}
+      <p>Player is deleted, actions are limited.</p>
+      {{else}}
       <button
         type="submit"
         name="submit"
@@ -77,8 +77,8 @@
       >
         Delete
       </button>
+      {{end}}
     </div>
-  {{end}}
   </div>
 </form>
 

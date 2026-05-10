@@ -252,22 +252,28 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 	}
 	defer tx.Rollback()
 
-	var oldName string
-	err = tx.Get(&oldName, "SELECT name FROM players WHERE id=$1;", id)
+	var oldPlayer Player
+	err = tx.Get(&oldPlayer, "SELECT * FROM players WHERE id=$1;", id)
 	if err != nil {
 		return errors.Join(errors.New("Cannot get old player name"), err)
+	}
+
+	nameNormalised := normalisation.Normalise(newName)
+
+	if oldPlayer.Deleted {
+		nameNormalised = oldPlayer.Id.String()
 	}
 
 	_, err = tx.
 		Exec("UPDATE players SET name=$1, name_normalised=$2 WHERE id=$3;",
 			newName,
-			normalisation.Normalise(newName),
+			nameNormalised,
 			id)
 	if err != nil {
 		return errors.Join(errors.New("Cannot update player"), err)
 	}
 
-	auditLog := NewAuditLog(adminId, "Player rename", fmt.Sprintf("Renamed from '%s' to '%s'", oldName, newName))
+	auditLog := NewAuditLog(adminId, "Player rename", fmt.Sprintf("Renamed from '%s' to '%s'", oldPlayer.Name, newName))
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert audit log"), err)
@@ -283,7 +289,7 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 		return errors.Join(errors.New("Cannot commit transaction"), err)
 	}
 
-	slog.Info("Player renamed", "oldName", oldName, "newName", newName, "by", adminId)
+	slog.Info("Player renamed", "oldPlayer", oldPlayer, "newName", newName, "by", adminId)
 
 	return nil
 }
@@ -295,19 +301,27 @@ func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
 	}
 	defer tx.Rollback()
 
-	var targetName string
-	err = tx.Get(&targetName, "select name from players where id=$1;", target)
+	var targetPlayer Player
+	err = tx.Get(&targetPlayer, "SELECT * FROM players WHERE id=$1;", target)
 	if err != nil {
 		return errors.Join(errors.New("Cannot get player target name for audit logs"), err)
 	}
 
-	var destName string
-	err = tx.Get(&destName, "select name from players where id=$1;", dest)
+	if targetPlayer.Deleted {
+		return errors.New("Cannot merge as target player is deleted")
+	}
+
+	var destPlayer Player
+	err = tx.Get(&destPlayer, "SELECT * FROM players WHERE id=$1", dest)
 	if err != nil {
 		return errors.Join(errors.New("Cannot get player dest name for audit logs"), err)
 	}
 
-	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s (%s) into %s (%s).", target, targetName, dest, destName))
+	if destPlayer.Deleted {
+		return errors.New("Cannot merge as destination player is deleted")
+	}
+
+	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s (%s) into %s (%s).", target, targetPlayer.Name, dest, destPlayer.Name))
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert player merger audit log"), err)
