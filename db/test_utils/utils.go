@@ -2,16 +2,22 @@ package testutils
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/stretchr/testify/require"
 )
 
 var migrationLock sync.Mutex
 
 func getDb(t *testing.T, tries int) *db.Db {
 	t.Helper()
+
+	if tries > 10 {
+		require.FailNow(t, fmt.Sprintf("Cannot retry anymore due to maximum retries %d", tries))
+	}
 
 	migrationLock.Lock()
 	defer migrationLock.Unlock()
@@ -28,5 +34,6 @@ func GetDb(t *testing.T) *db.Db {
 	t.Helper()
 
 	db := getDb(t, 0)
+	require.NotNil(t, db)
 	return db
 }
