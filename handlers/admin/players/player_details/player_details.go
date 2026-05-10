@@ -101,7 +101,7 @@ func PostPlayerDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWrite
 
 				otherPlayers := make([]model.Player, 0)
 				for _, p := range players {
-					if p.Id != id {
+					if p.Id != id && !p.Deleted {
 						otherPlayers = append(otherPlayers, p)
 					}
 				}

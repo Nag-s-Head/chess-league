@@ -72,6 +72,26 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 		require.Contains(t, rr.Body.String(), "value=\"merge-select\"")
 	})
 
+	t.Run("Merge Button Clicked - Excludes Deleted", func(t *testing.T) {
+		deletedPlayer := model.NewPlayer("Deleted Player")
+		deletedPlayer.Deleted = true
+		require.NoError(t, model.InsertPlayer(db, deletedPlayer))
+
+		form := url.Values{}
+		form.Set("submit", "merge")
+		req := httptest.NewRequest(http.MethodPost, "/admin/players/"+target.Id.String(), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetPathValue("id", target.Id.String())
+		rr := httptest.NewRecorder()
+
+		player_details.PostPlayerDetails(db)(admin)(rr, req)
+
+		require.Equal(t, http.StatusOK, rr.Code)
+		require.Contains(t, rr.Body.String(), "Merge Target")
+		require.NotContains(t, rr.Body.String(), deletedPlayer.Id.String())
+		require.NotContains(t, rr.Body.String(), "Deleted Player")
+	})
+
 	t.Run("Destination Selected", func(t *testing.T) {
 		form := url.Values{}
 		form.Set("submit", "merge-select")
