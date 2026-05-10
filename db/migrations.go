@@ -181,6 +181,9 @@ CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(ga
 		{
 			PreProcess: InternalMigrateLiglicko2ToAddOldStatesToGames,
 		},
+		{
+			Sql: "UPDATE players SET name_normalised=id WHERE deleted=TRUE;",
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR
