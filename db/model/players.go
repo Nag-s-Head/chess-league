@@ -252,22 +252,28 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 	}
 	defer tx.Rollback()
 
-	var oldName string
-	err = tx.Get(&oldName, "SELECT name FROM players WHERE id=$1;", id)
+	var oldPlayer Player
+	err = tx.Get(&oldPlayer, "SELECT * FROM players WHERE id=$1;", id)
 	if err != nil {
 		return errors.Join(errors.New("Cannot get old player name"), err)
+	}
+
+	nameNormalised := normalisation.Normalise(newName)
+
+	if oldPlayer.Deleted {
+		nameNormalised = oldPlayer.Id.String()
 	}
 
 	_, err = tx.
 		Exec("UPDATE players SET name=$1, name_normalised=$2 WHERE id=$3;",
 			newName,
-			normalisation.Normalise(newName),
+			nameNormalised,
 			id)
 	if err != nil {
 		return errors.Join(errors.New("Cannot update player"), err)
 	}
 
-	auditLog := NewAuditLog(adminId, "Player rename", fmt.Sprintf("Renamed from '%s' to '%s'", oldName, newName))
+	auditLog := NewAuditLog(adminId, "Player rename", fmt.Sprintf("Renamed from '%s' to '%s'", oldPlayer.Name, newName))
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert audit log"), err)
@@ -283,7 +289,7 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 		return errors.Join(errors.New("Cannot commit transaction"), err)
 	}
 
-	slog.Info("Player renamed", "oldName", oldName, "newName", newName, "by", adminId)
+	slog.Info("Player renamed", "oldPlayer", oldPlayer, "newName", newName, "by", adminId)
 
 	return nil
 }
