@@ -61,6 +61,7 @@ func TestMergePlayers_NoGames(t *testing.T) {
 	p, err := model.GetPlayer(db, target.Id)
 	require.NoError(t, err)
 	require.True(t, p.Deleted)
+	require.Equal(t, p.Id.String(), p.NameNormalised)
 }
 
 func TestMergePlayers_TargetPlayedDest(t *testing.T) {
@@ -136,4 +137,5 @@ func TestMergePlayers_ManyGames(t *testing.T) {
 	p, err := model.GetPlayer(db, target.Id)
 	require.NoError(t, err)
 	require.True(t, p.Deleted)
+	require.Equal(t, p.Id.String(), p.NameNormalised)
 }

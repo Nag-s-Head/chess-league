@@ -315,7 +315,7 @@ func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
 	noGames := errors.Is(err, sql.ErrNoRows)
 
 	// Update the player to be deleted and tagged as merged
-	_, err = tx.Exec("UPDATE players SET deleted=TRUE, name=name || '-MERGED', name_normalised=$1 WHERE id=$2", uuid.New().String(), target)
+	_, err = tx.Exec("UPDATE players SET deleted=TRUE, name=name || '-MERGED', name_normalised=id WHERE id=$1", target)
 	if err != nil {
 		return errors.Join(errors.New("Cannot set player to deleted with merged status"), err)
 	}
