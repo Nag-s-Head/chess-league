@@ -3,7 +3,9 @@
     <legend class="font-bold text-lg">Merge {{.TargetName}} INTO...</legend>
 
     <div class="flex flex-col gap-2">
-      <label for="merge-player-dest" class="cursor-pointer">Select destination player</label>
+      <label for="merge-player-dest" class="cursor-pointer"
+        >Select destination player</label
+      >
       <select
         id="merge-player-dest"
         name="merge-player-dest"
@@ -12,7 +14,7 @@
       >
         <option value="" disabled selected>Select a player</option>
         {{range .Players}}
-          <option value="{{.Id}}">{{.Name}}</option>
+        <option value="{{.Id}}">{{.Name}}</option>
         {{end}}
       </select>
     </div>

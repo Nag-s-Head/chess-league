@@ -26,7 +26,7 @@ func getDb(t *testing.T, tries int) *db.Db {
 
 	if errors.Is(err, errors.New("Cannot create migrations table")) {
 		t.Log("Migration table createion error - likely due to a race condition. Retrying...")
-		time.Sleep(time.Second/10)
+		time.Sleep(time.Second / 10)
 		return getDb(t, tries+1)
 	}
 	return db
