@@ -15,8 +15,12 @@ nuke-db:
 test: docker-images
 	go test ./... -timeout=60s
 
-format:
+gofmt:
 	gofmt -l -w .
+
+format: gofmt
+	pnpm i
+	pnpm format || true # prettier and go templates do not play that well together. but at least it does some formatting
 
 psql:
 	docker compose exec -it database psql -U magnus -d chess-league

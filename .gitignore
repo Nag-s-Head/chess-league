@@ -33,3 +33,4 @@ go.work.sum
 chess-league
 *.orig
 local/
+node_modules/
