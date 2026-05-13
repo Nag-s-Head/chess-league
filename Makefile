@@ -13,7 +13,6 @@ nuke-db:
 	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
 
 test: docker-images
-	docker compose restart database
 	go test ./... -timeout=60s
 
 format:
