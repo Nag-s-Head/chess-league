@@ -193,6 +193,8 @@ func TestAdminLogout(t *testing.T) {
 }
 
 func TestAdminLogoutNonExistentUser(t *testing.T) {
+	t.Parallel()
+	
 	db := testutils.GetDb(t)
 	defer db.Close()
 
