@@ -50,11 +50,27 @@ func TestSetAndGetPlayers(t *testing.T) {
 				}
 			}
 
-			require.True(t, found, "Cannot find the target player %s", expectedId)
+			require.True(t, found, "Cannot find the target player %s in GetLeaguePlayers", expectedId)
 		}
 
 		require.Len(t, leaguePlayers, len(targetPlayers))
 
 		return nil
 	}))
+
+	players, err := model.GetUiFriendlyLeaguePlayers(db)
+	require.NoError(t, err)
+
+	for _, expectedId := range targetPlayers {
+		found := false
+		for _, player := range players {
+			if player.Id == expectedId {
+				found = true
+				require.True(t, player.InLeague)
+				break
+			}
+		}
+
+		require.True(t, found, "Cannot find the target player %s in GetUiFriendlyLeaguePlayers", expectedId)
+	}
 }

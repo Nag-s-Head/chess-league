@@ -125,3 +125,26 @@ func SetLeaguePlayers(db *db.Db, adminId uuid.UUID, players []uuid.UUID) error {
 
 	return nil
 }
+
+type LeaguePlayerUiFriendly struct {
+	InLeague bool `db:"in_league"`
+	Player
+}
+
+func GetUiFriendlyLeaguePlayers(db *db.Db) ([]LeaguePlayerUiFriendly, error) {
+	var players []LeaguePlayerUiFriendly
+	err := db.GetSqlxDb().Select(&players, `
+		SELECT 
+		  players.*, 
+		  EXISTS(
+		    SELECT 1 FROM league_players WHERE league_players.player_id = players.id
+  		) AS in_league 
+		FROM players
+		ORDER BY players.name ASC;`)
+
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get players"), err)
+	}
+
+	return players, nil
+}
