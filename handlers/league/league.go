@@ -53,7 +53,7 @@ func Render(db *db.Db) (template.HTML, error) {
 		}}
 
 		for i, player := range players {
-			index := i / 4
+			index := i / 3
 			if index >= len(model.Groups) {
 				break
 			}
