@@ -1,0 +1,24 @@
+<h1 class="text-xl font-bold">Team Groupings</h1>
+<p>
+  Sometimes referred to as a league, the groups are what we use to determine who
+  plays who in our inter-pub competitions. They are based off your ELO score,
+  and help to keep players in the different pubs playing others at their skill
+  level.
+</p>
+
+{{range $result := .Groups}}
+<div class="flex flex-col gap-3">
+  <h2 class="text-lg font-bold">Group {{.GroupName}}.</h2>
+  {{range $result := .Players}}
+  <a
+    href="/player/{{.Id}}"
+    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  >
+    <div class="flex flex-row justify-between w-full">
+      <h4 class="text-lg font-bold">{{.Name}}</h4>
+      <p>{{printf "%.0f" .Liglicko2Rating}} ELO</p>
+    </div>
+  </a>
+  {{end}}
+</div>
+{{end}}

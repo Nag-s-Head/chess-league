@@ -12,6 +12,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/Nag-s-Head/chess-league/handlers/admin"
+	"github.com/Nag-s-Head/chess-league/handlers/league"
 	playerdetails "github.com/Nag-s-Head/chess-league/handlers/player_details"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
@@ -80,6 +81,19 @@ func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func League(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := league.Render(db)
+		if err != nil {
+			slog.Error("Cannot render league page", "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		WithLayout(w, body)
+	}
+}
+
 // NewHandler returns a router that handles all site routes.
 func NewHandler(db *db.Db) http.Handler {
 	mux := http.NewServeMux()
@@ -88,6 +102,7 @@ func NewHandler(db *db.Db) http.Handler {
 	mux.HandleFunc("GET /player/{id}", PlayerDetails(db))
 	mux.HandleFunc("GET /test", Test)
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
+	mux.HandleFunc("GET /league", League(db))
 	mux.HandleFunc("GET /rules", Rules)
 	mux.HandleFunc("GET /rules/agree", RulesAgree)
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
