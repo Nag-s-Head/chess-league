@@ -16,7 +16,7 @@ var migrationLock sync.Mutex
 func getDb(t *testing.T, tries int) *db.Db {
 	t.Helper()
 
-	if tries > 20 {
+	if tries > 100 {
 		require.FailNow(t, fmt.Sprintf("Cannot retry anymore due to maximum retries %d", tries))
 	}
 
