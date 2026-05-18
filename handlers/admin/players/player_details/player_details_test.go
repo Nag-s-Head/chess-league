@@ -73,7 +73,7 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 	})
 
 	t.Run("Merge Button Clicked - Excludes Deleted", func(t *testing.T) {
-		deletedPlayer := model.NewPlayer("Deleted Player")
+		deletedPlayer := model.NewPlayer(uuid.NewString() + "Deleted Player")
 		deletedPlayer.Deleted = true
 		require.NoError(t, model.InsertPlayer(db, deletedPlayer))
 

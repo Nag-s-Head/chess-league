@@ -184,6 +184,14 @@ CREATE INDEX idx_audit_log_game_affected_game_ikey ON audit_log_game_affected(ga
 		{
 			Sql: "UPDATE players SET name_normalised=id WHERE deleted=TRUE;",
 		},
+		{
+			Sql: `
+CREATE TABLE league_players (
+  player_id TEXT NOT NULL REFERENCES players(id),
+  UNIQUE(player_id)
+);
+			`,
+		},
 	})
 
 	migrator.Rebinder = sqlx.DOLLAR

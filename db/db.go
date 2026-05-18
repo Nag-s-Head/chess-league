@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -51,4 +52,24 @@ func InternalConnect() (*sqlx.DB, error) {
 		return nil, errors.New("Cannot connect")
 	}
 	return database, nil
+}
+
+func (d *Db) DoTx(fn func(tx *sqlx.Tx) error) error {
+	tx, err := d.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+	err = fn(tx)
+	if err != nil {
+		return errors.Join(errors.New("There was an error whilst executing the transaction"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
 }

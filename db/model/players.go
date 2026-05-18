@@ -101,8 +101,8 @@ func InsertPlayer(db *db.Db, player Player) error {
 	return nil
 }
 
-func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
-	row := db.GetSqlxDb().QueryRowx(
+func GetPlayerTx(tx *sqlx.Tx, id uuid.UUID) (Player, error) {
+	row := tx.QueryRowx(
 		"SELECT * FROM players WHERE id=$1;",
 		id)
 
@@ -113,6 +113,25 @@ func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
 	}
 
 	return player, nil
+}
+
+func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
+	var returnPlayer Player
+	err := db.DoTx(func(tx *sqlx.Tx) error {
+		player, err := GetPlayerTx(tx, id)
+		if err != nil {
+			return err
+		}
+
+		returnPlayer = player
+		return nil
+	})
+
+	if err != nil {
+		return Player{}, errors.Join(errors.New("Cannot get player"), err)
+	}
+
+	return returnPlayer, nil
 }
 
 func SearchPlayerByName(db *db.Db, name string) ([]Player, error) {
