@@ -50,6 +50,10 @@ func Render(db *db.Db) (template.HTML, error) {
 				GroupName: "D",
 				Players:   make([]model.Player, 0),
 			},
+			{
+				GroupName: "E",
+				Players:   make([]model.Player, 0),
+			},
 		}}
 
 		for i, player := range players {
