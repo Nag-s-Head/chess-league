@@ -18,3 +18,11 @@ Want to run a chess league? - use this.
 | OAUTH_CLIENT_SECRET | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
 | APP_BASE_URL        | The base URL of the application, used for OAuth redirects                     | `https://nagsknights.co.uk`                                                                   |
 | TEST_MODE           | When enabled this uses a mocked Oauth implementation                          | `true` or omit to disable                                                                     |
+
+## AI Policy
+
+Whilst AI coding agents have helped to increase the accessibility of development work, it remains very important
+that any code written is of high quality, well tested, and deoes not violate other licences. I think an AI ban is
+a negative and reactive policy, and that proper code review, and disciplined use of AI agents is a good way to
+ensure it is used responibly. So by all means do use any AI use see fit, but be aware that is might cause issues,
+and will work best if you can guide the agent to writing quality code with a good architecture.
