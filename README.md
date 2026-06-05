@@ -6,6 +6,38 @@
 
 Want to run a chess league? - use this.
 
+## Developer Guide
+
+This is a Go application that hosts a web server that serves dynamically generated HTML that Go template
+renders, HTMX is used extensively to keep forms nice and easy to manage, and PostgresQL is used as a
+database, all truth is stored in the database.
+
+### Tooling
+
+You need the following tools instealled to use this project:
+
+- pnpm (for JS parts)
+- go (>= 1.26)
+- GNU make
+- docker
+
+This project uses Docker to create, and tear down production like environments. You can use a non-Docker setup,
+but that is not the intended dev environment.
+
+### Scripts
+
+- To start a local environment that updates when changes are made use the following command:
+  `docker compose up --watch`
+
+- To execute all of the tests use the following command:
+  `make test -j`
+
+- To reset the db use the following command:
+  `make nuke-db`
+
+- To format the codebase use the following command:
+  `make format -j`
+
 ## Environment Variables
 
 | Variable            | Usage                                                                         | Example                                                                                       |
