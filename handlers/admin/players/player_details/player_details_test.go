@@ -186,3 +186,56 @@ func TestPostPlayerDetails_Rename(t *testing.T) {
 		require.Equal(t, newName, p.Name)
 	})
 }
+
+func TestPostPlayerDetails_Delete(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	// Setup admin
+	admin := model.NewAdminUser("admin", uuid.New().String(), "password", "salt")
+	tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+	require.NoError(t, err)
+	require.NoError(t, model.InsertAdminUser(tx, *admin))
+	require.NoError(t, tx.Commit())
+
+	// Setup player
+	player := model.NewPlayer("Delete Me " + uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	t.Run("Delete Button Clicked", func(t *testing.T) {
+		form := url.Values{}
+		form.Set("submit", "delete")
+		req := httptest.NewRequest(http.MethodPost, "/admin/players/"+player.Id.String(), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetPathValue("id", player.Id.String())
+		rr := httptest.NewRecorder()
+
+		player_details.PostPlayerDetails(db)(admin)(rr, req)
+
+		require.Equal(t, http.StatusOK, rr.Code)
+		require.Contains(t, rr.Body.String(), "Tick to confirm that you want to Delete player")
+		require.Contains(t, rr.Body.String(), player.Name)
+		require.Contains(t, rr.Body.String(), "value=\"delete-confirm\"")
+	})
+
+	t.Run("Confirmed", func(t *testing.T) {
+		form := url.Values{}
+		form.Set("submit", "delete-confirm")
+		form.Set("confirm", "confirmed")
+		req := httptest.NewRequest(http.MethodPost, "/admin/players/"+player.Id.String(), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetPathValue("id", player.Id.String())
+		rr := httptest.NewRecorder()
+
+		player_details.PostPlayerDetails(db)(admin)(rr, req)
+
+		require.Equal(t, http.StatusOK, rr.Code)
+		require.Contains(t, rr.Body.String(), "window.location.reload();")
+
+		// Verify deletion in DB
+		p, err := model.GetPlayer(db, player.Id)
+		require.NoError(t, err)
+		require.True(t, p.Deleted)
+	})
+}
