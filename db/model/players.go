@@ -356,12 +356,22 @@ func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
 		return errors.Join(errors.New("Cannot insert player affected audit log (dest)"), err)
 	}
 
-	var ikey int64
-	err = tx.Get(&ikey, "SELECT ikey FROM games WHERE (player_white=$1 OR player_black=$1) ORDER BY played ASC LIMIT 1;", target)
+	var ikey, firstTargetGameIkey int64
+	err = tx.Get(&firstTargetGameIkey, "SELECT ikey FROM games WHERE (player_white=$1 OR player_black=$1) ORDER BY played ASC LIMIT 1;", target)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return errors.Join(errors.New("Cannot get first game from of the target player"), err)
 	}
 	noGames := errors.Is(err, sql.ErrNoRows)
+
+  // The games should be replayed from the first dest game before target joined such that liglicko2 parameters are correct
+	err = tx.Get(&ikey, "SELECT ikey FROM games WHERE (player_white=$1 OR player_black=$1) AND ikey < $2 ORDER BY played DESC LIMIT 1;", dest, firstTargetGameIkey)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return errors.Join(errors.New("Cannot get first game from of the target player"), err)
+	}
+
+	if errors.Is(err, sql.ErrNoRows) {
+		ikey = firstTargetGameIkey
+	}
 
 	// Update the player to be deleted and tagged as merged
 	_, err = tx.Exec("UPDATE players SET deleted=TRUE, name=name || '-MERGED', name_normalised=id WHERE id=$1", target)
