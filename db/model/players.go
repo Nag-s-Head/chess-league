@@ -313,6 +313,47 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 	return nil
 }
 
+func DeletePlayer(db *db.Db, playerId, adminId uuid.UUID) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+	defer tx.Rollback()
+
+	var player Player
+	err = tx.Get(&player, "SELECT * FROM players WHERE id=$1", playerId)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get player to run validation against"), err)
+	}
+
+	if player.Deleted {
+		return errors.New("Cannot delete a player who has already been deleted")
+	}
+
+	name := player.Id.String()
+	_, err = tx.Exec("UPDATE players SET deleted=TRUE, name=$1, name_normalised=$2 WHERE id=$3", name, normalisation.Normalise(name), playerId)
+	if err != nil {
+		return errors.Join(errors.New("Cannot deleted player"), err)
+	}
+
+	auditLog := NewAuditLog(adminId, "Player deletion", fmt.Sprintf("Deleted player %s", player.Name))
+	err = InsertAuditLog(tx, auditLog)
+	if err != nil {
+		return errors.Join(errors.New("Cannot insret audit log"), err)
+	}
+
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, playerId, 0))
+	if err != nil {
+		return errors.Join(errors.New("Cannot insret audit log player affected"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+	return nil
+}
+
 func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
@@ -363,7 +404,7 @@ func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
 	}
 	noGames := errors.Is(err, sql.ErrNoRows)
 
-  // The games should be replayed from the first dest game before target joined such that liglicko2 parameters are correct
+	// The games should be replayed from the first dest game before target joined such that liglicko2 parameters are correct
 	err = tx.Get(&ikey, "SELECT ikey FROM games WHERE (player_white=$1 OR player_black=$1) AND ikey < $2 ORDER BY played DESC LIMIT 1;", dest, firstTargetGameIkey)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return errors.Join(errors.New("Cannot get first game from of the target player"), err)
