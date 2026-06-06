@@ -158,7 +158,6 @@ func TestDeletePlayer(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, g3After.Deleted)
 
-
 		pa_after, err := model.GetPlayer(db, playerA.Id)
 		require.NoError(t, err)
 		require.NotEqual(t, ratingA_before, pa_after.Liglicko2Rating)

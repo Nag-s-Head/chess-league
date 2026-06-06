@@ -186,7 +186,7 @@ func TestAdminLogout(t *testing.T) {
 }
 
 func TestAdminLogoutNonExistentUser(t *testing.T) {
-	
+
 	db := testutils.GetDb(t)
 	defer db.Close()
 
