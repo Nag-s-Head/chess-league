@@ -96,6 +96,8 @@ func TestDeletePlayer(t *testing.T) {
 
 		admin := model.NewAdminUser("admin", uuid.New().String(), "127.0.0.1", "test-agent")
 		tx, err := db.GetSqlxDb().BeginTxx(t.Context(), nil)
+		defer tx.Rollback()
+
 		require.NoError(t, err)
 		require.NoError(t, model.InsertAdminUser(tx, *admin))
 		require.NoError(t, tx.Commit())
@@ -108,16 +110,18 @@ func TestDeletePlayer(t *testing.T) {
 		require.NoError(t, model.InsertPlayer(db, playerB))
 
 		createGame := func(p1, p2 *model.Player, score model.Score) model.Game {
-			tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+			tx2, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 			require.NoError(t, err)
+
+			defer tx2.Rollback()
 
 			ikey, err := model.NextIKey(db)
 			require.NoError(t, err)
 
 			r := httptest.NewRequest(http.MethodGet, "/", nil)
-			g, _, _, err := model.CreateGame(tx, p1, p2, true, ikey, score, r)
+			g, _, _, err := model.CreateGame(tx2, p1, p2, true, ikey, score, r)
 			require.NoError(t, err)
-			require.NoError(t, tx.Commit())
+			require.NoError(t, tx2.Commit())
 
 			*p1, _ = model.GetPlayer(db, p1.Id)
 			*p2, _ = model.GetPlayer(db, p2.Id)
@@ -143,22 +147,21 @@ func TestDeletePlayer(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, dpb.Deleted)
 
-		var g1After model.Game
-		err = db.GetSqlxDb().Get(&g1After, "SELECT * FROM games WHERE ikey=$1", g1.IKey)
+		g1After, err := model.GetGameWithDetails(db, g1.IKey)
 		require.NoError(t, err)
 		require.True(t, g1After.Deleted)
 
-		var g2After model.Game
-		err = db.GetSqlxDb().Get(&g2After, "SELECT * FROM games WHERE ikey=$1", g2.IKey)
+		g2After, err := model.GetGameWithDetails(db, g2.IKey)
 		require.NoError(t, err)
 		require.True(t, g2After.Deleted)
 
-		var g3After model.Game
-		err = db.GetSqlxDb().Get(&g3After, "SELECT * FROM games WHERE ikey=$1", g3.IKey)
+		g3After, err := model.GetGameWithDetails(db, g3.IKey)
 		require.NoError(t, err)
 		require.False(t, g3After.Deleted)
 
-		pa_after, _ := model.GetPlayer(db, playerA.Id)
+
+		pa_after, err := model.GetPlayer(db, playerA.Id)
+		require.NoError(t, err)
 		require.NotEqual(t, ratingA_before, pa_after.Liglicko2Rating)
 	})
 }
