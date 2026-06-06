@@ -12,7 +12,6 @@ import (
 )
 
 func TestNewAdminUser(t *testing.T) {
-	t.Parallel()
 
 	name := uuid.New().String()
 	oauthId := uuid.New().String()
@@ -35,7 +34,6 @@ func TestNewAdminUser(t *testing.T) {
 }
 
 func TestAdminLoginNewUser(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -67,7 +65,6 @@ func TestAdminLoginNewUser(t *testing.T) {
 }
 
 func TestAdminLoginExistingUser(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -106,7 +103,6 @@ func TestAdminLoginExistingUser(t *testing.T) {
 }
 
 func TestAdminGetFromSessionKey(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -123,7 +119,6 @@ func TestAdminGetFromSessionKey(t *testing.T) {
 }
 
 func TestAdminGetFromSessionKeyFails(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -141,7 +136,6 @@ func TestAdminGetFromSessionKeyFails(t *testing.T) {
 }
 
 func TestAdminGetFromSessionKeyExpired(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -168,7 +162,6 @@ func TestAdminGetFromSessionKeyExpired(t *testing.T) {
 }
 
 func TestAdminLogout(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -193,7 +186,6 @@ func TestAdminLogout(t *testing.T) {
 }
 
 func TestAdminLogoutNonExistentUser(t *testing.T) {
-	t.Parallel()
 	
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -204,7 +196,6 @@ func TestAdminLogoutNonExistentUser(t *testing.T) {
 }
 
 func TestGetAdminUsers(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -245,7 +236,6 @@ func TestGetAdminUsers(t *testing.T) {
 }
 
 func TestGetAdminUser(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()

@@ -133,7 +133,6 @@ func TestPostPlayerDetails_Merger(t *testing.T) {
 }
 
 func TestPostPlayerDetails_Rename(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -188,7 +187,6 @@ func TestPostPlayerDetails_Rename(t *testing.T) {
 }
 
 func TestPostPlayerDetails_Delete(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 

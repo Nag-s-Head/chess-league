@@ -14,7 +14,6 @@ import (
 )
 
 func TestDeletePlayer(t *testing.T) {
-	t.Parallel()
 
 	t.Run("No games deleted", func(t *testing.T) {
 		db := testutils.GetDb(t)
@@ -167,7 +166,6 @@ func TestDeletePlayer(t *testing.T) {
 }
 
 func TestDeleteNonExistentPlayer(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 

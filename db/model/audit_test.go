@@ -13,7 +13,6 @@ import (
 )
 
 func TestInsertAuditLog(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -38,7 +37,6 @@ func TestInsertAuditLog(t *testing.T) {
 }
 
 func TestInsertAuditLogPlayerAffected(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -67,7 +65,6 @@ func TestInsertAuditLogPlayerAffected(t *testing.T) {
 }
 
 func TestGetAuditLog(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -104,7 +101,6 @@ func TestGetAuditLog(t *testing.T) {
 }
 
 func TestGetAuditLogsUiFriendly(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -133,7 +129,6 @@ func TestGetAuditLogsUiFriendly(t *testing.T) {
 }
 
 func TestGetAuditLogsUiFriendlyByPlayer(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -164,7 +159,6 @@ func TestGetAuditLogsUiFriendlyByPlayer(t *testing.T) {
 }
 
 func TestGetAuditLogsUiFriendlyByAdmin(t *testing.T) {
-	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -191,7 +185,6 @@ func TestGetAuditLogsUiFriendlyByAdmin(t *testing.T) {
 }
 
 func TestGetAuditLogsUiFriendlyByGame(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -234,7 +227,6 @@ func TestGetAuditLogsUiFriendlyByGame(t *testing.T) {
 }
 
 func TestGetAuditLogWithGameAndPlayer(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()

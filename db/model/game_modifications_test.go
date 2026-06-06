@@ -15,7 +15,6 @@ import (
 )
 
 func TestScore_Switch(t *testing.T) {
-	t.Parallel()
 
 	win := model.Score_Win
 	win.Switch()
@@ -31,7 +30,6 @@ func TestScore_Switch(t *testing.T) {
 }
 
 func TestSwapGameWinner(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -95,7 +93,6 @@ func TestSwapGameWinner(t *testing.T) {
 }
 
 func TestSetGameToDraw(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -152,7 +149,6 @@ func TestSetGameToDraw(t *testing.T) {
 }
 
 func TestSwapGameWinner_NonExistent(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -163,7 +159,6 @@ func TestSwapGameWinner_NonExistent(t *testing.T) {
 }
 
 func TestSetGameToDraw_NonExistent(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()

@@ -14,7 +14,6 @@ import (
 )
 
 func TestDeleteGame(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -89,7 +88,6 @@ func TestDeleteGame(t *testing.T) {
 }
 
 func TestDeleteLatestGame(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -140,7 +138,6 @@ func TestDeleteLatestGame(t *testing.T) {
 }
 
 func TestDeleteGameWithManySubsequent(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -194,7 +191,6 @@ func TestDeleteGameWithManySubsequent(t *testing.T) {
 }
 
 func TestDeleteNonExistentGameFails(t *testing.T) {
-	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
