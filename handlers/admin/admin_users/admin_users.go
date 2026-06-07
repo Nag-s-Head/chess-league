@@ -15,7 +15,7 @@ import (
 var f embed.FS
 var indexTpl *template.Template = utils.GetTemplate(f, "admin_users.html")
 
-func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
+func Render(db db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
 	return func(w http.ResponseWriter, r *http.Request, au *model.AdminUser) (template.HTML, error) {
 		users, err := model.GetAdminUsers(db)
 		if err != nil {

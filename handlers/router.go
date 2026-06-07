@@ -60,7 +60,7 @@ func Test(w http.ResponseWriter, r *http.Request) {
 	WithLayout(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
 }
 
-func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+func PlayerDetails(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := uuid.Parse(idStr)
@@ -81,7 +81,7 @@ func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func League(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+func League(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := league.Render(db)
 		if err != nil {
@@ -95,7 +95,7 @@ func League(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHandler returns a router that handles all site routes.
-func NewHandler(db *db.Db) http.Handler {
+func NewHandler(db db.Db) http.Handler {
 	mux := http.NewServeMux()
 	// {$} matches exactly "/"
 	mux.HandleFunc("GET /{$}", Index(db))

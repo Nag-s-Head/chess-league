@@ -1,4 +1,4 @@
-package db_test
+package psqldb_test
 
 import (
 	"errors"

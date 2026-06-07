@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Nag-s-Head/chess-league/db"
+	psqldb "github.com/Nag-s-Head/chess-league/db/psql_db"
 	"github.com/Nag-s-Head/chess-league/handlers"
 )
 
@@ -15,7 +15,7 @@ func main() {
 	slog.Info("Starting...")
 	slog.Info("Connect to the database...")
 
-	database, err := db.New()
+	database, err := psqldb.New()
 	if err != nil {
 		slog.Error("Could not connect to database - aborting", "err", err)
 		os.Exit(1)

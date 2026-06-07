@@ -40,7 +40,7 @@ func buildPlayerListString(players []*Player) string {
 	return builder.String()
 }
 
-func SetLeaguePlayers(db *db.Db, adminId uuid.UUID, players []uuid.UUID) error {
+func SetLeaguePlayers(db db.Db, adminId uuid.UUID, players []uuid.UUID) error {
 	err := db.DoTx(func(tx *sqlx.Tx) error {
 		existingPlayers, err := GetLeaguePlayers(tx)
 		if err != nil {
@@ -131,7 +131,7 @@ type LeaguePlayerUiFriendly struct {
 	Player
 }
 
-func GetUiFriendlyLeaguePlayers(db *db.Db) ([]LeaguePlayerUiFriendly, error) {
+func GetUiFriendlyLeaguePlayers(db db.Db) ([]LeaguePlayerUiFriendly, error) {
 	var players []LeaguePlayerUiFriendly
 	err := db.GetSqlxDb().Select(&players, `
 		SELECT 

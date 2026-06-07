@@ -1,44 +1,20 @@
-package db
+package migrations
 
 import (
+	"database/sql"
 	"errors"
+	"log/slog"
 	"strings"
 	"unicode"
 
+	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/djpiper28/rpg-book/common/database/migrations"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
-type Db struct {
-	db *sqlx.DB
-}
-
-func New() (*Db, error) {
-	db, err := InternalConnect()
-	if err != nil {
-		return nil, err
-	}
-
-	return From(db)
-}
-
-func InternalFixPlayerNameCapitals(name string) string {
-	parts := strings.Split(name, " ")
-	for i, str := range parts {
-		strBytes := []byte(str)
-		if len(str) > 0 {
-			strBytes[0] = byte(unicode.ToUpper(rune(str[0])))
-		}
-		parts[i] = string(strBytes)
-	}
-
-	return strings.Join(parts, " ")
-}
-
-func From(in *sqlx.DB) (*Db, error) {
-	db := &Db{db: in}
-	migrator := migrations.New([]migrations.Migration{
+func Migrations() *migrations.DbMigrator {
+	return migrations.New([]migrations.Migration{
 		{
 			Sql: `
 -- user is a Postgres keyword this took too long to figure out
@@ -192,21 +168,41 @@ CREATE TABLE league_players (
 );
 			`,
 		},
-	})
+		{
+			PreProcess: func(tx *sqlx.Tx) error {
+				var ikey int64
+				err := tx.Get(&ikey, "SELECT ikey FROM games ORDER BY ikey ASC LIMIT 1;")
+				if err != nil {
+					if errors.Is(err, sql.ErrNoRows) {
+						slog.Info("There are no games to replay - skipping.")
+						return nil
+					}
 
-	migrator.Rebinder = sqlx.DOLLAR
-	err := migrator.Migrate(db)
-	if err != nil {
-		return nil, errors.Join(errors.New("Cannot migrate database"), err)
+					return errors.Join(errors.New("Could not get start point of games to replay from"), err)
+				}
+
+				slog.Info("Replaying games to fix broken cache", "starting_ikey", ikey)
+				games, players, err := model.ReplayFrom(tx, ikey)
+				if err != nil {
+					return errors.Join(errors.New("Cannot replay games"), err)
+				}
+
+				slog.Info("Replay games", "games", len(games), "players", len(players))
+				return nil
+			},
+		},
+	})
+}
+
+func InternalFixPlayerNameCapitals(name string) string {
+	parts := strings.Split(name, " ")
+	for i, str := range parts {
+		strBytes := []byte(str)
+		if len(str) > 0 {
+			strBytes[0] = byte(unicode.ToUpper(rune(str[0])))
+		}
+		parts[i] = string(strBytes)
 	}
 
-	return db, nil
-}
-
-func (d *Db) GetSqlxDb() *sqlx.DB {
-	return d.db
-}
-
-func (d *Db) Close() {
-	d.db.Close()
+	return strings.Join(parts, " ")
 }

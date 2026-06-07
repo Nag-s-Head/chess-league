@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupAdmin(t *testing.T, database *db.Db) model.AdminUser {
+func setupAdmin(t *testing.T, database db.Db) model.AdminUser {
 	admin := model.NewAdminUser("admin", uuid.New().String(), "password", "salt")
 	tx, err := database.GetSqlxDb().BeginTxx(context.Background(), nil)
 	require.NoError(t, err)
@@ -24,7 +24,7 @@ func setupAdmin(t *testing.T, database *db.Db) model.AdminUser {
 	return *admin
 }
 
-func createTestGame(t *testing.T, database *db.Db, white, black *model.Player, score model.Score) int64 {
+func createTestGame(t *testing.T, database db.Db, white, black *model.Player, score model.Score) int64 {
 	tx, err := database.GetSqlxDb().BeginTxx(context.Background(), nil)
 	require.NoError(t, err)
 	defer tx.Rollback()

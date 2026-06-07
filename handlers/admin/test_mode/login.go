@@ -33,7 +33,7 @@ const (
 	submitType = "submit-type"
 )
 
-func LoginPost(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+func LoginPost(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {

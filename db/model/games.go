@@ -106,7 +106,7 @@ func (g GameWithDetails) WinnerName() string {
 	return "Draw"
 }
 
-func GetGamesWithOutcomes(db *db.Db) ([]GameWithOutcome, error) {
+func GetGamesWithOutcomes(db db.Db) ([]GameWithOutcome, error) {
 	var games []GameWithPlayerNames
 	err := db.GetSqlxDb().Select(&games, `
 SELECT g.*, w.name as white_name, b.name as black_name
@@ -126,7 +126,7 @@ ORDER BY g.played DESC;`)
 	return gamesWithOutcomes, nil
 }
 
-func GetGameWithDetails(db *db.Db, ikey int64) (GameWithDetails, error) {
+func GetGameWithDetails(db db.Db, ikey int64) (GameWithDetails, error) {
 	var game GameWithDetails
 	err := db.GetSqlxDb().Get(&game, `
 SELECT g.*, w.name as white_name, b.name as black_name, s.name as submitter_name
@@ -242,7 +242,7 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 	return details
 }
 
-func NextIKey(db *db.Db) (int64, error) {
+func NextIKey(db db.Db) (int64, error) {
 	var ikey int64
 	row := db.GetSqlxDb().QueryRow("SELECT nextval('game_ikey_sequence');")
 	err := row.Scan(&ikey)
@@ -253,7 +253,7 @@ func NextIKey(db *db.Db) (int64, error) {
 	return ikey, nil
 }
 
-func SubmitGame(db *db.Db, whiteName, blackName string, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, int, int, error) {
+func SubmitGame(db db.Db, whiteName, blackName string, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, int, int, error) {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not start transaction"), err)
@@ -292,7 +292,7 @@ func SubmitGame(db *db.Db, whiteName, blackName string, submitterIsWhite bool, i
 	return &game, &white, &black, eloWhite, eloBlack, nil
 }
 
-func GetGamesByPlayer(db *db.Db, playerId uuid.UUID) ([]GameWithPlayerNames, error) {
+func GetGamesByPlayer(db db.Db, playerId uuid.UUID) ([]GameWithPlayerNames, error) {
 	var games []GameWithPlayerNames
 	err := db.GetSqlxDb().Select(&games, `
 SELECT g.*, w.name as white_name, b.name as black_name
@@ -308,7 +308,7 @@ ORDER BY g.played DESC`, playerId)
 	return games, nil
 }
 
-func GetTotalGameCount(db *db.Db) (int, error) {
+func GetTotalGameCount(db db.Db) (int, error) {
 	var count int
 	err := db.GetSqlxDb().Get(&count, "SELECT count(*) FROM games WHERE deleted=false")
 	if err != nil {
@@ -350,7 +350,7 @@ func replayGames(tx *sqlx.Tx, adminId uuid.UUID, ikey int64, auditLogOperation, 
 	return nil
 }
 
-func DeleteGame(db *db.Db, adminId uuid.UUID, ikey int64) error {
+func DeleteGame(db db.Db, adminId uuid.UUID, ikey int64) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot start transaction"), err)
@@ -376,7 +376,7 @@ func DeleteGame(db *db.Db, adminId uuid.UUID, ikey int64) error {
 	return nil
 }
 
-func SwapGameWinner(db *db.Db, adminId uuid.UUID, ikey int64) error {
+func SwapGameWinner(db db.Db, adminId uuid.UUID, ikey int64) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot start transaction"), err)
@@ -410,7 +410,7 @@ func SwapGameWinner(db *db.Db, adminId uuid.UUID, ikey int64) error {
 	return nil
 }
 
-func SetGameToDraw(db *db.Db, adminId uuid.UUID, ikey int64) error {
+func SetGameToDraw(db db.Db, adminId uuid.UUID, ikey int64) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot start transaction"), err)

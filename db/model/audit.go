@@ -132,7 +132,7 @@ type AuditLogUiFriendly struct {
 	AdminName string `db:"admin_name"`
 }
 
-func GetAuditLogsUiFriendly(db *db.Db) ([]AuditLogUiFriendly, error) {
+func GetAuditLogsUiFriendly(db db.Db) ([]AuditLogUiFriendly, error) {
 	logs := make([]AuditLogUiFriendly, 0)
 	rows, err := db.GetSqlxDb().Queryx(`
 		SELECT audit_logs.*, admin_users.name AS admin_name
@@ -157,7 +157,7 @@ func GetAuditLogsUiFriendly(db *db.Db) ([]AuditLogUiFriendly, error) {
 	return logs, nil
 }
 
-func GetAuditLogsUiFriendlyForPlayer(db *db.Db, id uuid.UUID) ([]AuditLogUiFriendly, error) {
+func GetAuditLogsUiFriendlyForPlayer(db db.Db, id uuid.UUID) ([]AuditLogUiFriendly, error) {
 	logs := make([]AuditLogUiFriendly, 0)
 	rows, err := db.GetSqlxDb().Queryx(`
 		SELECT audit_logs.*, admin_users.name AS admin_name
@@ -185,7 +185,7 @@ func GetAuditLogsUiFriendlyForPlayer(db *db.Db, id uuid.UUID) ([]AuditLogUiFrien
 	return logs, nil
 }
 
-func GetAuditLogsUiFriendlyForGame(db *db.Db, ikey int64) ([]AuditLogUiFriendly, error) {
+func GetAuditLogsUiFriendlyForGame(db db.Db, ikey int64) ([]AuditLogUiFriendly, error) {
 	logs := make([]AuditLogUiFriendly, 0)
 	rows, err := db.GetSqlxDb().Queryx(`
 		SELECT audit_logs.*, admin_users.name AS admin_name
@@ -212,7 +212,7 @@ func GetAuditLogsUiFriendlyForGame(db *db.Db, ikey int64) ([]AuditLogUiFriendly,
 	return logs, nil
 }
 
-func GetAuditLogsUiFriendlyForAdmin(db *db.Db, id uuid.UUID) ([]AuditLogUiFriendly, error) {
+func GetAuditLogsUiFriendlyForAdmin(db db.Db, id uuid.UUID) ([]AuditLogUiFriendly, error) {
 	logs := make([]AuditLogUiFriendly, 0)
 	rows, err := db.GetSqlxDb().Queryx(`
 		SELECT audit_logs.*, admin_users.name AS admin_name

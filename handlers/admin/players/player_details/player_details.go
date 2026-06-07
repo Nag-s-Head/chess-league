@@ -27,7 +27,7 @@ type Model struct {
 	AuditLogs template.HTML
 }
 
-func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
+func Render(db db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
 	return func(w http.ResponseWriter, r *http.Request, au *model.AdminUser) (template.HTML, error) {
 		idStr := r.PathValue("id")
 		id, err := uuid.Parse(idStr)
@@ -69,7 +69,7 @@ func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser
 	}
 }
 
-func PostPlayerDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
+func PostPlayerDetails(db db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
 	return func(au *model.AdminUser) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			idStr := r.PathValue("id")

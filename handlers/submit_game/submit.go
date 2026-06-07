@@ -46,7 +46,7 @@ func VerifyMagic(r *http.Request) bool {
 	return r.URL.Query().Get(MagicNumberParam) == magicNumber
 }
 
-func GetLookupResult(db *db.Db, name string, isWhite bool) (PlayerLookupResult, error) {
+func GetLookupResult(db db.Db, name string, isWhite bool) (PlayerLookupResult, error) {
 	nameNormalised := normalisation.Normalise(name)
 	players, err := model.SearchPlayerByName(db, nameNormalised)
 	if err != nil {
@@ -83,7 +83,7 @@ const (
 	blackPlayerName = "black-player-name"
 )
 
-func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
+func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error {
 	player1 := strings.TrimSpace(r.FormValue(playerName))
 	if player1 == "" {
 		return errors.New("Player 1 is not set")
@@ -131,7 +131,7 @@ func doUserLookupSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error
 	return nil
 }
 
-func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
+func doFinalSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error {
 	white := strings.TrimSpace(r.FormValue(whitePlayerName))
 	black := strings.TrimSpace(r.FormValue(blackPlayerName))
 
@@ -206,7 +206,7 @@ func doFinalSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func DoSubmit(db *db.Db, w http.ResponseWriter, r *http.Request) error {
+func DoSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error {
 	if !rules.HasAgreedToRules(r) {
 		return errors.New("You must agree to the rules before submitting a game")
 	}
@@ -236,7 +236,7 @@ type Error struct {
 	Error string
 }
 
-func Register(mux *http.ServeMux, db *db.Db) {
+func Register(mux *http.ServeMux, db db.Db) {
 	mux.HandleFunc(fmt.Sprintf("POST %s/submit", BasePath), func(w http.ResponseWriter, r *http.Request) {
 		err := DoSubmit(db, w, r)
 		if err != nil {
