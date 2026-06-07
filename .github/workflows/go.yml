@@ -27,14 +27,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        run: npm i -g pnpm@10
+
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
           cache: true
 
       - name: Build
-        run: go build -v ./...
+        run: make build
 
       - name: Test
         env:
