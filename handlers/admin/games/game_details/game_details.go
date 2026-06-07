@@ -24,7 +24,7 @@ type Model struct {
 	model.GameWithDetails
 }
 
-func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
+func Render(db db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
 	return func(w http.ResponseWriter, r *http.Request, au *model.AdminUser) (template.HTML, error) {
 		ikeyStr := r.PathValue("ikey")
 		ikey, err := strconv.ParseInt(ikeyStr, 10, 64)
@@ -66,7 +66,7 @@ const (
 	deleted    = "delete"
 )
 
-func PostGameDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
+func PostGameDetails(db db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
 	return func(au *model.AdminUser) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ikeyStr := r.PathValue("ikey")

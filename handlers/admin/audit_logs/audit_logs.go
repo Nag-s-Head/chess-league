@@ -9,7 +9,7 @@ import (
 	adminutils "github.com/Nag-s-Head/chess-league/handlers/admin/admin_utils"
 )
 
-func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
+func Render(db db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
 	return func(w http.ResponseWriter, r *http.Request, au *model.AdminUser) (template.HTML, error) {
 		auditLogs, err := model.GetAuditLogsUiFriendly(db)
 		if err != nil {

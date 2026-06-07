@@ -21,7 +21,7 @@ type PlayerDetails struct {
 	Details model.GamesUiFriendly
 }
 
-func Render(dbCon *db.Db, id uuid.UUID) (template.HTML, error) {
+func Render(dbCon db.Db, id uuid.UUID) (template.HTML, error) {
 	player, err := model.GetPlayer(dbCon, id)
 	if err != nil {
 		return "", err

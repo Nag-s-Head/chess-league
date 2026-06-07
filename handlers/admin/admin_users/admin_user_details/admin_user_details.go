@@ -22,7 +22,7 @@ type Model struct {
 	AuditLogs template.HTML
 }
 
-func Render(db *db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
+func Render(db db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser) (template.HTML, error) {
 	return func(w http.ResponseWriter, r *http.Request, _ *model.AdminUser) (template.HTML, error) {
 		idStr := r.PathValue("id")
 		id, err := uuid.Parse(idStr)

@@ -10,7 +10,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db/model"
 )
 
-func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+func Index(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		players, err := model.GetPlayersByElo(db, false)
 		if err != nil {

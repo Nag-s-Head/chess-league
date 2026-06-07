@@ -44,7 +44,7 @@ func WithLayout(Render PageRenderer, LayoutRender LayoutRenderer) func(http.Resp
 	}
 }
 
-func WithLayoutAndAuthentication(db *db.Db, Render PageRendererWithAuth, LayoutRender LayoutRenderer) func(http.ResponseWriter, *http.Request) {
+func WithLayoutAndAuthentication(db db.Db, Render PageRendererWithAuth, LayoutRender LayoutRenderer) func(http.ResponseWriter, *http.Request) {
 	return auth.WithAuthentication(db, func(user *model.AdminUser) func(w http.ResponseWriter, r *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			tpl, err := Render(w, r, user)
@@ -61,7 +61,7 @@ func WithLayoutAndAuthentication(db *db.Db, Render PageRendererWithAuth, LayoutR
 
 var isTestMode = os.Getenv("TEST_MODE") == "true"
 
-func Register(mux *http.ServeMux, db *db.Db, LayoutRender func(w http.ResponseWriter, body template.HTML)) {
+func Register(mux *http.ServeMux, db db.Db, LayoutRender func(w http.ResponseWriter, body template.HTML)) {
 	if isTestMode {
 		slog.Warn("Test mod is enabled, if this is a production environment then you should turn it off!")
 		mux.HandleFunc(fmt.Sprintf("GET %s/test-mode", BasePath), WithLayout(testmode.Login, LayoutRender))

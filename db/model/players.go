@@ -82,7 +82,7 @@ VALUES (:id, :name, :name_normalised, :elo, :liglicko2_rating, :liglicko2_deviat
 	return nil
 }
 
-func InsertPlayer(db *db.Db, player Player) error {
+func InsertPlayer(db db.Db, player Player) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Could not start transaction"), err)
@@ -115,7 +115,7 @@ func GetPlayerTx(tx *sqlx.Tx, id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
-func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
+func GetPlayer(db db.Db, id uuid.UUID) (Player, error) {
 	var returnPlayer Player
 	err := db.DoTx(func(tx *sqlx.Tx) error {
 		player, err := GetPlayerTx(tx, id)
@@ -134,7 +134,7 @@ func GetPlayer(db *db.Db, id uuid.UUID) (Player, error) {
 	return returnPlayer, nil
 }
 
-func SearchPlayerByName(db *db.Db, name string) ([]Player, error) {
+func SearchPlayerByName(db db.Db, name string) ([]Player, error) {
 	rows, err := db.GetSqlxDb().Queryx(`SELECT * FROM players WHERE name_normalised LIKE $1 ORDER BY name_normalised ASC;`, "%"+normalisation.Normalise(name)+"%")
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot search players by rough name"), err)
@@ -154,7 +154,7 @@ func SearchPlayerByName(db *db.Db, name string) ([]Player, error) {
 	return players, nil
 }
 
-func GetPlayers(db *db.Db) ([]Player, error) {
+func GetPlayers(db db.Db) ([]Player, error) {
 	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players ORDER BY name_normalised ASC;")
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get players"), err)
@@ -184,7 +184,7 @@ func getPlayerById(txx *sqlx.Tx, id uuid.UUID) (Player, error) {
 	return player, nil
 }
 
-func GetPlayersByElo(db *db.Db, showDeleted bool) ([]Player, error) {
+func GetPlayersByElo(db db.Db, showDeleted bool) ([]Player, error) {
 	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players WHERE deleted=FALSE OR deleted=$1 ORDER BY liglicko2_rating DESC, name;", showDeleted)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get players"), err)
@@ -204,7 +204,7 @@ func GetPlayersByElo(db *db.Db, showDeleted bool) ([]Player, error) {
 	return players, nil
 }
 
-func GetPlayersByEloWithGameCount(db *db.Db) ([]PlayerWithGameCount, error) {
+func GetPlayersByEloWithGameCount(db db.Db) ([]PlayerWithGameCount, error) {
 	rows, err := db.GetSqlxDb().Queryx(`
 		SELECT 
 		  players.*, COUNT(games.ikey) AS game_count FROM players 
@@ -254,7 +254,7 @@ func getOrCreatePlayer(tx *sqlx.Tx, name string) (Player, error) {
 	return player, nil
 }
 
-func GetTotalPlayerCount(db *db.Db) (int, error) {
+func GetTotalPlayerCount(db db.Db) (int, error) {
 	var count int
 	err := db.GetSqlxDb().Get(&count, "SELECT count(*) FROM players WHERE deleted=false")
 	if err != nil {
@@ -264,7 +264,7 @@ func GetTotalPlayerCount(db *db.Db) (int, error) {
 	return count, nil
 }
 
-func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) error {
+func RenamePlayer(db db.Db, id uuid.UUID, newName string, adminId uuid.UUID) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot start transaction"), err)
@@ -313,7 +313,7 @@ func RenamePlayer(db *db.Db, id uuid.UUID, newName string, adminId uuid.UUID) er
 	return nil
 }
 
-func DeletePlayer(db *db.Db, playerId, adminId uuid.UUID) error {
+func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot start transaction"), err)
@@ -418,7 +418,7 @@ func DeletePlayer(db *db.Db, playerId, adminId uuid.UUID) error {
 	return nil
 }
 
-func MergePlayers(db *db.Db, target, dest, adminId uuid.UUID) error {
+func MergePlayers(db db.Db, target, dest, adminId uuid.UUID) error {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot start transaction"), err)

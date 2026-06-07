@@ -1,4 +1,4 @@
-package db_test
+package migrations_test
 
 import (
 	"errors"
@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	psqldb "github.com/Nag-s-Head/chess-league/db/psql_db"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -98,7 +98,7 @@ INSERT INTO games (player_white, player_black, score, submitter, played, deleted
 	_, err = scopedConn.Exec(`INSERT INTO migrations(version, date) VALUES (9, NOW());`)
 	require.NoError(t, err)
 
-	migratedDb, err := db.From(scopedConn)
+	migratedDb, err := psqldb.From(scopedConn)
 	require.NoError(t, err)
 	defer migratedDb.Close()
 

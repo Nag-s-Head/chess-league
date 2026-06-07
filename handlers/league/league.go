@@ -25,7 +25,7 @@ type Model struct {
 	Groups []Group
 }
 
-func Render(db *db.Db) (template.HTML, error) {
+func Render(db db.Db) (template.HTML, error) {
 	var tpl template.HTML
 	err := db.DoTx(func(tx *sqlx.Tx) error {
 		players, err := model.GetLeaguePlayers(tx)

@@ -1,4 +1,4 @@
-package db_test
+package migrations_test
 
 import (
 	"fmt"
@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/migrations"
 	"github.com/Nag-s-Head/chess-league/db/model"
+	psqldb "github.com/Nag-s-Head/chess-league/db/psql_db"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
@@ -21,12 +22,12 @@ func TestFrom(t *testing.T) {
 
 func TestPlayerCapitilisationFix1(t *testing.T) {
 	name := "danny piper"
-	require.Equal(t, "Danny Piper", db.InternalFixPlayerNameCapitals(name))
+	require.Equal(t, "Danny Piper", migrations.InternalFixPlayerNameCapitals(name))
 }
 
 func TestPlayerCapitilisationFix2(t *testing.T) {
 	name := "rhys"
-	require.Equal(t, "Rhys", db.InternalFixPlayerNameCapitals(name))
+	require.Equal(t, "Rhys", migrations.InternalFixPlayerNameCapitals(name))
 }
 
 func TestMigrationsOnPrototypeDatabase(t *testing.T) {
@@ -99,7 +100,7 @@ func TestMigrationsOnPrototypeDatabase(t *testing.T) {
 	_, err = sqlDb.Exec(string(bytes))
 	require.NoError(t, err, "Must execute datbase export")
 
-	database, err := db.From(sqlDb)
+	database, err := psqldb.From(sqlDb)
 	require.NoError(t, err)
 	defer database.Close()
 
