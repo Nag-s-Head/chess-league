@@ -29,6 +29,9 @@ but that is not the intended dev environment.
 - To start a local environment that updates when changes are made use the following command:
   `docker compose up --watch`
 
+- To build an executable use the following command:
+  `make build`
+
 - To execute all of the tests use the following command:
   `make test -j`
 

@@ -4,12 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "format": "prettier -w ."
+    "format": "prettier -w .",
+    "build_tailwind": "tailwindcss -i ./tailwind.css -o ./handlers/assets/tailwind.css --build"
   },
   "keywords": [],
   "author": "",
   "license": "",
   "dependencies": {
-    "prettier": "^3.8.3"
+    "@tailwindcss/cli": "^4.3.0",
+    "htmx.org": "^2.0.10",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4.3.0"
   }
 }
