@@ -12,8 +12,14 @@ nuke-db:
 	docker compose down database
 	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
 
-test: docker-images
+generate:
+	go generate ./...
+
+test: docker-images generate
 	go test ./... -timeout=60s
+
+build: generate
+	go build
 
 gofmt:
 	gofmt -l -w .
