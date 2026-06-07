@@ -14,6 +14,7 @@ import (
 )
 
 func TestCreateGameP1White(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -80,6 +81,7 @@ func TestCreateGameP1White(t *testing.T) {
 }
 
 func TestCreateGameP1Black(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -146,6 +148,7 @@ func TestCreateGameP1Black(t *testing.T) {
 }
 
 func TestCreateGameSameIkeyFails(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -172,6 +175,7 @@ func TestCreateGameSameIkeyFails(t *testing.T) {
 }
 
 func TestCreateGameSetsOldStatesCorrectly(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()

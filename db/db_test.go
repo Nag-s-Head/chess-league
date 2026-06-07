@@ -10,6 +10,7 @@ import (
 )
 
 func TestConnect(t *testing.T) {
+	t.Parallel()
 	database := testutils.GetDb(t)
 	defer database.Close()
 
@@ -18,6 +19,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestDoTx(t *testing.T) {
+	t.Parallel()
 
 	database := testutils.GetDb(t)
 	defer database.Close()
@@ -32,6 +34,7 @@ func TestDoTx(t *testing.T) {
 }
 
 func TestDoTxError(t *testing.T) {
+	t.Parallel()
 
 	database := testutils.GetDb(t)
 	defer database.Close()

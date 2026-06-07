@@ -142,6 +142,7 @@ func TestSetAndGetPlayers(t *testing.T) {
 }
 
 func TestBuildPlayerListString(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
 		names    []string

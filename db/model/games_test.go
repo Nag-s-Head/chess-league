@@ -15,6 +15,7 @@ import (
 )
 
 func TestNextIkey(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -29,6 +30,7 @@ func TestNextIkey(t *testing.T) {
 }
 
 func TestMapGamesToUiFriendly(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -48,6 +50,7 @@ func TestMapGamesToUiFriendly(t *testing.T) {
 }
 
 func TestMapGamesToUiFriendlyDrawUsesLiglicko2PerColor(t *testing.T) {
+	t.Parallel()
 
 	player := model.NewPlayer(uuid.New().String())
 	opponent := model.NewPlayer(uuid.New().String())
@@ -74,6 +77,7 @@ func TestMapGamesToUiFriendlyDrawUsesLiglicko2PerColor(t *testing.T) {
 }
 
 func TestGetGame(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()

@@ -11,6 +11,7 @@ import (
 )
 
 func TestNewPlayer(t *testing.T) {
+	t.Parallel()
 	name := uuid.New().String()
 	player := model.NewPlayer(name)
 
@@ -35,6 +36,7 @@ func TestInsertPlayer(t *testing.T) {
 }
 
 func TestInsertLotsOfPlayers(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -46,6 +48,7 @@ func TestInsertLotsOfPlayers(t *testing.T) {
 }
 
 func TestGetPlayer(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -65,6 +68,7 @@ func TestGetPlayer(t *testing.T) {
 }
 
 func TestGetPlayers(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -113,6 +117,7 @@ func TestGetPlayers(t *testing.T) {
 }
 
 func TestGetPlayersShowDeleted(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -163,6 +168,7 @@ func TestNormalise(t *testing.T) {
 }
 
 func TestSearchPlayerByNameSimpleCase(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -183,6 +189,7 @@ func TestSearchPlayerByNameSimpleCase(t *testing.T) {
 }
 
 func TestSearchPlayerByNameManyResults(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 
@@ -211,6 +218,7 @@ func TestSearchPlayerByNameManyResults(t *testing.T) {
 }
 
 func TestRenamePlayer(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 

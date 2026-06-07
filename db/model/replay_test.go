@@ -15,6 +15,7 @@ import (
 )
 
 func TestReplayFromConsistency(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()
@@ -100,6 +101,7 @@ func TestReplayFromConsistency(t *testing.T) {
 }
 
 func TestReplayAfterEdit(t *testing.T) {
+	t.Parallel()
 
 	db := testutils.GetDb(t)
 	defer db.Close()

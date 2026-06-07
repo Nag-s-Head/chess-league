@@ -65,6 +65,7 @@ func TestMergePlayers_NoGames(t *testing.T) {
 }
 
 func TestMergePlayers_DeletedPlayers(t *testing.T) {
+	t.Parallel()
 	db := testutils.GetDb(t)
 	defer db.Close()
 	admin := setupAdmin(t, db)

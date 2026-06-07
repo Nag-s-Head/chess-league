@@ -30,6 +30,7 @@ func TestPlayerCapitilisationFix2(t *testing.T) {
 }
 
 func TestMigrationsOnPrototypeDatabase(t *testing.T) {
+	t.Parallel()
 
 	const (
 		port          = 5444
