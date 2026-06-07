@@ -79,6 +79,12 @@ func PostPlayerDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWrite
 				return
 			}
 
+			player, err := model.GetPlayer(db, id)
+			if err != nil {
+				adminutils.RenderError(w, errors.Join(errors.New("Cannot get player"), err))
+				return
+			}
+
 			err = r.ParseForm()
 			if err != nil {
 				adminutils.RenderError(w, err)
@@ -185,6 +191,18 @@ func PostPlayerDetails(db *db.Db) func(*model.AdminUser) func(http.ResponseWrite
 						`))
 				}
 			case "delete":
+				err = utils.RenderConfirmationPage(w, fmt.Sprintf("Delete player %s", player.Name), "delete-confirm")
+				if err != nil {
+					adminutils.RenderError(w, err)
+					return
+				}
+			case "delete-confirm":
+				err = model.DeletePlayer(db, id, au.Id)
+				if err != nil {
+					adminutils.RenderError(w, err)
+					return
+				}
+				w.Write([]byte("<script>window.location.reload();</script>"))
 			default:
 				adminutils.RenderError(w, fmt.Errorf("%s is not a valid submit type", submitType))
 				return
