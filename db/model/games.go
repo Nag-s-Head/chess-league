@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -308,15 +309,34 @@ ORDER BY g.played DESC`, playerId)
 	return games, nil
 }
 
-func GetGamesByPlayerPair(db db.Db, playerAId uuid.UUID, playerBId uuid.UUID) ([]GameWithPlayerNames, error) {
-	var games []GameWithPlayerNames
-	err := db.GetSqlxDb().Select(&games, `
-SELECT g.*, w.name as white_name, b.name as black_name
-FROM games g
-JOIN players w ON g.player_white = w.id
-JOIN players b ON g.player_black = b.id
-WHERE ((g.player_white=$1 AND g.player_black=$2) OR (g.player_white=$2 AND g.player_black=$1))
-ORDER BY g.played DESC`, playerAId, playerBId)
+func GetGamesByPlayerPairCombs(db db.Db, playerAIds []uuid.UUID, playerBIds []uuid.UUID) ([]Game, error) {
+	if len(playerAIds) == 0 || len(playerBIds) == 0 {
+		slog.Info("Cannot find pair combos", "playerAs", playerAIds, "playerBs", playerBIds)
+		return make([]Game, 0), nil
+	}
+
+	var games []Game
+
+	query := `
+		SELECT g.*
+		FROM games g
+		JOIN players w ON g.player_white = w.id
+		JOIN players b ON g.player_black = b.id
+		WHERE
+			(g.player_white IN (?) AND g.player_black IN (?))
+			OR
+			(g.player_white IN (?) AND g.player_black IN (?))
+		ORDER BY g.played DESC
+	`
+
+	query, args, err := sqlx.In(query, playerAIds, playerBIds, playerBIds, playerAIds)
+	if err != nil {
+		return nil, errors.Join(errors.New("Failed to construct IN query"), err)
+	}
+
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+
+	err = db.GetSqlxDb().Select(&games, query, args...)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get games by player"), err)
 	}

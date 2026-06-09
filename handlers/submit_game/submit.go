@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
@@ -28,7 +27,7 @@ const (
 
 type PlayerConsolidationModel struct {
 	Results 	 []PlayerLookupResult
-	PlayersGames []GameLookupResult
+	PlayersGames []model.Game
 }
 
 type PlayerLookupResult struct {
@@ -37,17 +36,6 @@ type PlayerLookupResult struct {
 	IsWhite        bool
 	Name           string
 	NameNormalised string
-}
-
-type GameLookupResult struct {
-	PlayerWhite     uuid.UUID
-	PlayerBlack     uuid.UUID
-	Score           model.Score
-	Played          time.Time
-	Deleted         bool
-	WhiteName       string
-	BlackName       string
-	SubmitterName   string
 }
 
 var magicNumber string = os.Getenv(MagicNumberEnvVar)
@@ -87,39 +75,25 @@ func GetLookupResult(db db.Db, name string, isWhite bool) (PlayerLookupResult, e
 	}, nil
 }
 
-func GetGamesForPairs(db db.Db, candidatePlayers *[]PlayerLookupResult) ([]GameLookupResult, error) {
-	var allPairs []GameLookupResult
+func GetGamesForPairs(db db.Db, playersA PlayerLookupResult, playersB PlayerLookupResult) ([]model.Game, error) {
+	playerAIds := make([]uuid.UUID, 0)
+	playerBIds := make([]uuid.UUID, 0)
 
-	for _, playerA := range (*candidatePlayers)[0].Players {
-		for _, playerB := range (*candidatePlayers)[1].Players {
-			games, err := model.GetGamesByPlayerPair(db, playerA.Id, playerB.Id)
-
-			if err != nil {
-				return make([]GameLookupResult, 0), errors.Join(errors.New("Cannot find games for pair"), err)
-			}
-
-			for _, game := range games {
-				gDetails, err := model.GetGameWithDetails(db, game.IKey)
-				
-				if err != nil {
-					return make([]GameLookupResult, 0), errors.Join(errors.New("Cannot find game details"), err)
-				}
-
-				allPairs = append(allPairs, GameLookupResult{
-					PlayerWhite:     game.PlayerWhite,
-					PlayerBlack:     game.PlayerBlack,
-					Score:           game.Score,
-					Played:          game.Played,
-					Deleted:         game.Deleted,
-					WhiteName:     	 gDetails.WhiteName,
-					BlackName:     	 gDetails.BlackName,
-					SubmitterName: 	 gDetails.SubmitterName,
-				})
-			}
-		}
+	for _, player := range playersA.Players {
+		playerAIds = append(playerAIds, player.Id)
 	}
 
-	return allPairs, nil
+	for _, player := range playersB.Players {
+		playerBIds = append(playerBIds, player.Id)
+	}
+
+	allGameCombs, err := model.GetGamesByPlayerPairCombs(db, playerAIds, playerBIds) 
+
+	if err != nil {
+		return make([]model.Game, 0), errors.Join(errors.New("Cannot find games for pair"), err)
+	}
+
+	return allGameCombs, nil
 }
 
 const (
@@ -169,8 +143,8 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 	for _, res := range results.Results {
 		allExact = allExact && res.ExactMatch
 	}
-	
-	games, err := GetGamesForPairs(db, &results.Results)
+
+	games, err := GetGamesForPairs(db, results.Results[0], results.Results[1])
 	if err != nil {
 		return errors.Join(errors.New("Cannot lookup games"), err)
 	}
@@ -178,34 +152,9 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 	
 	// Check results and send to the UI
 	var buf bytes.Buffer
+	
+	slog.Info("Stuff", "results", results)
 
-	// TODO: Here, data is fed into the template
-	// type Inventory struct {
-	// 	Material string
-	// 	Count    uint
-	// }
-	// sweaters := Inventory{"wool", 17}
-	// tmpl, err := template.New("test").Parse("{{.Count}} items are made of {{.Material}}")
-	// if err != nil { panic(err) }
-	// err = tmpl.Execute(os.Stdout, sweaters)
-	// if err != nil { panic(err) }
-
-	// PlayerConsolidationModel.Results :: []PlayerLookupResult
-	// PlayerLookupResult.Players :: []Player
-	//
-	// Player struct {
-	// 	Name
-	// 	NameNormalized
-	// }
-	//
-	// GameWithOutcome struct {
-	// 	Ikey            int64
-	// 	PlayerName      string
-	// 	OpponentName    string
-	// 	...
-	// 	}
-	//
-	// GamesUiFriendly.Games :: GameWithOutcome
 	err = resultsTpl.Execute(&buf, results)
 	if err != nil {
 		return errors.Join(errors.New("Cannot execute template"), err)
