@@ -308,7 +308,7 @@ ORDER BY g.played DESC`, playerId)
 	return games, nil
 }
 
-func GetGamesByPlayerPair(db *db.Db, playerAId uuid.UUID, playerBId uuid.UUID) ([]GameWithPlayerNames, error) {
+func GetGamesByPlayerPair(db db.Db, playerAId uuid.UUID, playerBId uuid.UUID) ([]GameWithPlayerNames, error) {
 	var games []GameWithPlayerNames
 	err := db.GetSqlxDb().Select(&games, `
 SELECT g.*, w.name as white_name, b.name as black_name
@@ -324,7 +324,7 @@ ORDER BY g.played DESC`, playerAId, playerBId)
 	return games, nil
 }
 
-func GetTotalGameCount(db *db.Db) (int, error) {
+func GetTotalGameCount(db db.Db) (int, error) {
 	var count int
 	err := db.GetSqlxDb().Get(&count, "SELECT count(*) FROM games WHERE deleted=false")
 	if err != nil {

@@ -87,7 +87,7 @@ func GetLookupResult(db db.Db, name string, isWhite bool) (PlayerLookupResult, e
 	}, nil
 }
 
-func GetGamesForPairs(db *db.Db, candidatePlayers *[]PlayerLookupResult) ([]GameLookupResult, error) {
+func GetGamesForPairs(db db.Db, candidatePlayers *[]PlayerLookupResult) ([]GameLookupResult, error) {
 	var allPairs []GameLookupResult
 
 	for _, playerA := range (*candidatePlayers)[0].Players {
