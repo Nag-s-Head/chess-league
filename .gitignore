@@ -34,3 +34,4 @@ chess-league
 *.orig
 local/
 node_modules/
+pgsql_mock/

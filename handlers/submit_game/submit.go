@@ -9,11 +9,13 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	"github.com/djpiper28/rpg-book/common/normalisation"
+	"github.com/google/uuid"
 )
 
 const (
@@ -25,7 +27,8 @@ const (
 )
 
 type PlayerConsolidationModel struct {
-	Results []PlayerLookupResult
+	Results 	 []PlayerLookupResult
+	PlayersGames []GameLookupResult
 }
 
 type PlayerLookupResult struct {
@@ -34,6 +37,17 @@ type PlayerLookupResult struct {
 	IsWhite        bool
 	Name           string
 	NameNormalised string
+}
+
+type GameLookupResult struct {
+	PlayerWhite     uuid.UUID
+	PlayerBlack     uuid.UUID
+	Score           model.Score
+	Played          time.Time
+	Deleted         bool
+	WhiteName       string
+	BlackName       string
+	SubmitterName   string
 }
 
 var magicNumber string = os.Getenv(MagicNumberEnvVar)
@@ -73,6 +87,41 @@ func GetLookupResult(db db.Db, name string, isWhite bool) (PlayerLookupResult, e
 	}, nil
 }
 
+func GetGamesForPairs(db *db.Db, candidatePlayers *[]PlayerLookupResult) ([]GameLookupResult, error) {
+	var allPairs []GameLookupResult
+
+	for _, playerA := range (*candidatePlayers)[0].Players {
+		for _, playerB := range (*candidatePlayers)[1].Players {
+			games, err := model.GetGamesByPlayerPair(db, playerA.Id, playerB.Id)
+
+			if err != nil {
+				return make([]GameLookupResult, 0), errors.Join(errors.New("Cannot find games for pair"), err)
+			}
+
+			for _, game := range games {
+				gDetails, err := model.GetGameWithDetails(db, game.IKey)
+				
+				if err != nil {
+					return make([]GameLookupResult, 0), errors.Join(errors.New("Cannot find game details"), err)
+				}
+
+				allPairs = append(allPairs, GameLookupResult{
+					PlayerWhite:     game.PlayerWhite,
+					PlayerBlack:     game.PlayerBlack,
+					Score:           game.Score,
+					Played:          game.Played,
+					Deleted:         game.Deleted,
+					WhiteName:     	 gDetails.WhiteName,
+					BlackName:     	 gDetails.BlackName,
+					SubmitterName: 	 gDetails.SubmitterName,
+				})
+			}
+		}
+	}
+
+	return allPairs, nil
+}
+
 const (
 	playerName      = "player-name"
 	playedAs        = "played-as"
@@ -101,7 +150,9 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 	player1White := rawPlayedAs == "white"
 
 	// Lookup the players
-	results := PlayerConsolidationModel{Results: make([]PlayerLookupResult, 0)}
+	// results := PlayerConsolidationModel{Results: make([]PlayerLookupResult, 0)}
+	results := new(PlayerConsolidationModel)
+
 	res, err := GetLookupResult(db, player1, player1White)
 	if err != nil {
 		return errors.Join(errors.New("Cannot lookup player 1"), err)
@@ -118,9 +169,43 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 	for _, res := range results.Results {
 		allExact = allExact && res.ExactMatch
 	}
-
+	
+	games, err := GetGamesForPairs(db, &results.Results)
+	if err != nil {
+		return errors.Join(errors.New("Cannot lookup games"), err)
+	}
+	results.PlayersGames = append(results.PlayersGames, games...)
+	
 	// Check results and send to the UI
 	var buf bytes.Buffer
+
+	// TODO: Here, data is fed into the template
+	// type Inventory struct {
+	// 	Material string
+	// 	Count    uint
+	// }
+	// sweaters := Inventory{"wool", 17}
+	// tmpl, err := template.New("test").Parse("{{.Count}} items are made of {{.Material}}")
+	// if err != nil { panic(err) }
+	// err = tmpl.Execute(os.Stdout, sweaters)
+	// if err != nil { panic(err) }
+
+	// PlayerConsolidationModel.Results :: []PlayerLookupResult
+	// PlayerLookupResult.Players :: []Player
+	//
+	// Player struct {
+	// 	Name
+	// 	NameNormalized
+	// }
+	//
+	// GameWithOutcome struct {
+	// 	Ikey            int64
+	// 	PlayerName      string
+	// 	OpponentName    string
+	// 	...
+	// 	}
+	//
+	// GamesUiFriendly.Games :: GameWithOutcome
 	err = resultsTpl.Execute(&buf, results)
 	if err != nil {
 		return errors.Join(errors.New("Cannot execute template"), err)
