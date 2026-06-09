@@ -2,7 +2,6 @@
   "name": "chess-league",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "format": "prettier -w .",
     "build_tailwind": "tailwindcss -i ./tailwind.css -o ./handlers/assets/tailwind.css --build"
