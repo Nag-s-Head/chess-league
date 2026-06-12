@@ -95,7 +95,7 @@ INSERT INTO games (player_white, player_black, score, submitter, played, deleted
 	)
 	require.NoError(t, err)
 
-	_, err = scopedConn.Exec(`INSERT INTO migrations(version, date) VALUES (9, NOW());`)
+	_, err = scopedConn.Exec(`INSERT INTO migrations(version, date) VALUES (6, NOW());`)
 	require.NoError(t, err)
 
 	migratedDb, err := psqldb.From(scopedConn)

@@ -70,7 +70,7 @@ func New() (*Db, error) {
 
 func From(in *sqlx.DB) (*Db, error) {
 	db := &Db{db: in}
-	migrator := migrations.Migrations()
+	migrator, _ := migrations.Migrations()
 	migrator.Rebinder = sqlx.DOLLAR
 	err := migrator.Migrate(db)
 	if err != nil {
