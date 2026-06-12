@@ -114,6 +114,10 @@
   var player1 = undefined;
   var player2 = undefined;
 
+  const wrapperId = "games-wrapper";
+  const wrapperBaseCss = document.getElementById(wrapperId).className;
+  const wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
+
   function onPlayerSelected(id, isPlayerOne) {
     if (isPlayerOne) {
       player1 = id;
@@ -132,10 +136,12 @@
 
     if (!selectedGame) {
       console.log("No games found for player combo", "player1", player1, "player2", player2)
+      document.getElementById(wrapperId).className = wrapperBaseCss;
       return;
     }
 
     console.log("Found a game for the player combo", "game", selectedGame)
+    document.getElementById(wrapperId).className = wrapperUnhiddenCss;
     // TODO: render the games
   }
 
