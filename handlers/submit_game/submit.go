@@ -26,7 +26,7 @@ const (
 )
 
 type PlayerConsolidationModel struct {
-	Results 	 []PlayerLookupResult
+	Results      []PlayerLookupResult
 	PlayersGames []model.Game
 }
 
@@ -87,7 +87,7 @@ func GetGamesForPairs(db db.Db, playersA PlayerLookupResult, playersB PlayerLook
 		playerBIds = append(playerBIds, player.Id)
 	}
 
-	allGameCombs, err := model.GetGamesByPlayerPairCombs(db, playerAIds, playerBIds) 
+	allGameCombs, err := model.GetGamesByPlayerPairCombs(db, playerAIds, playerBIds)
 
 	if err != nil {
 		return make([]model.Game, 0), errors.Join(errors.New("Cannot find games for pair"), err)
@@ -149,11 +149,9 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 		return errors.Join(errors.New("Cannot lookup games"), err)
 	}
 	results.PlayersGames = append(results.PlayersGames, games...)
-	
+
 	// Check results and send to the UI
 	var buf bytes.Buffer
-	
-	slog.Info("Stuff", "results", results)
 
 	err = resultsTpl.Execute(&buf, results)
 	if err != nil {

@@ -57,15 +57,9 @@
 </div>
 {{end}}
 
-{{range $playersgames := .PlayersGames}}
-<div class="flex flex-col gap-5">
-  <h3 class="text-xl">
-    <span class="font-bold">PlayerA {{.PlayerWhite}}</span>
-    <span class="font-bold">PlayerB {{.PlayerBlack}}</span>
-    <span class="font-bold">Submitter {{.Submitter}}</span>
-  </h3>
+<div class="flex flex-col gap-5 hideen">
+  <h3 class="text-lg font-bold">Previous Games</h3>
 </div>
-{{end}}
 
 <div class="flex flex-row gap-5">
   <button
@@ -87,3 +81,31 @@
     Submit Game
   </button>
 </div>
+
+<script>
+  var players = {
+    {{range $result:= .Results}}
+      {{range $player:= .Players}}
+        {{.Id}}: {
+          "name": {{.Name}},
+          "id": {{.Id}},
+          "rating": {{.Liglicko2Rating}}
+        },
+      {{end}}
+    {{end}}
+      "": {},
+    };
+
+  var games = {
+    {{range $playersgames := .PlayersGames}}
+       {{.IKey}}: {
+         "ikey": {{.IKey}},
+         "playerWhite": {{.PlayerWhite}},
+         "playerBlack": {{.PlayerBlack}},
+         "score": {{.Score}},
+         "played": {{.Played}}
+       },
+    {{end}}
+      0: {},
+    };
+</script>
