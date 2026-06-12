@@ -298,7 +298,7 @@ func RenamePlayer(db db.Db, id uuid.UUID, newName string, adminId uuid.UUID) err
 		return errors.Join(errors.New("Cannot insert audit log"), err)
 	}
 
-	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, id, 0))
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, id))
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert audit log player affected"), err)
 	}
@@ -355,7 +355,7 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 		return errors.Join(errors.New("Cannot insert audit log"), err)
 	}
 
-	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, playerId, 0))
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, playerId))
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert audit log player affected"), err)
 	}
@@ -389,7 +389,7 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 				continue
 			}
 
-			err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+			err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id))
 			if err != nil {
 				return errors.Join(errors.New("Cannot insert audit log player affected"), err)
 			}
@@ -451,12 +451,12 @@ func MergePlayers(db db.Db, target, dest, adminId uuid.UUID) error {
 		return errors.Join(errors.New("Cannot insert player merger audit log"), err)
 	}
 
-	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, target, 0))
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, target))
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert player affected audit log (target)"), err)
 	}
 
-	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, dest, 0))
+	err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, dest))
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert player affected audit log (dest)"), err)
 	}
@@ -546,7 +546,7 @@ func MergePlayers(db db.Db, target, dest, adminId uuid.UUID) error {
 			continue
 		}
 
-		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id))
 		if err != nil {
 			return errors.Join(errors.New("Cannot insert player affected audit log"), err)
 		}

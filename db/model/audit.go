@@ -38,22 +38,20 @@ func InsertAuditLog(tx *sqlx.Tx, auditLog *AuditLog) error {
 type AuditLogPlayerAffected struct {
 	AuditLogId uuid.UUID `db:"audit_log_id"`
 	PlayerId   uuid.UUID `db:"player_id"`
-	EloChange  int       `db:"elo_change"`
 	PlayerName string    `db:"player_name"`
 }
 
-func NewAuditLogPlayerAffected(auditId uuid.UUID, PlayerId uuid.UUID, EloChange int) *AuditLogPlayerAffected {
+func NewAuditLogPlayerAffected(auditId uuid.UUID, PlayerId uuid.UUID) *AuditLogPlayerAffected {
 	return &AuditLogPlayerAffected{
 		AuditLogId: auditId,
 		PlayerId:   PlayerId,
-		EloChange:  EloChange,
 	}
 }
 
 func InsertAuditLogPlayerAffected(tx *sqlx.Tx, playerAffected *AuditLogPlayerAffected) error {
 	_, err := tx.NamedExec(`
-	  INSERT INTO audit_log_player_affected (audit_log_id, player_id, elo_change) 
-		VALUES(:audit_log_id, :player_id, :elo_change);
+	  INSERT INTO audit_log_player_affected (audit_log_id, player_id) 
+		VALUES(:audit_log_id, :player_id);
 	`, playerAffected)
 	return err
 }

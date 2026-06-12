@@ -13,8 +13,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func Migrations() *migrations.DbMigrator {
-	return migrations.New([]migrations.Migration{
+func Migrations() (*migrations.DbMigrator, int) {
+	allMigrations := []migrations.Migration{
 		{
 			Sql: `
 -- user is a Postgres keyword this took too long to figure out
@@ -191,7 +191,11 @@ CREATE TABLE league_players (
 				return nil
 			},
 		},
-	})
+		{
+			Sql: "ALTER TABLE audit_log_player_affected DROP COLUMN elo_change;",
+		},
+	}
+	return migrations.New(allMigrations), len(allMigrations)
 }
 
 func InternalFixPlayerNameCapitals(name string) string {

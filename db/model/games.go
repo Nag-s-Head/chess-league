@@ -341,7 +341,7 @@ func replayGames(tx *sqlx.Tx, adminId uuid.UUID, ikey int64, auditLogOperation, 
 	}
 
 	for _, player := range players {
-		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id))
 		if err != nil {
 			return errors.Join(errors.New("Cannot insert audit log player affected"), err)
 		}

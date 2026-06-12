@@ -62,7 +62,7 @@ func TestInsertAuditLogPlayerAffected(t *testing.T) {
 	require.Equal(t, auditLog.OperationDescription, desc)
 
 	require.NoError(t, model.InsertAuditLog(tx, auditLog))
-	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id, 123)))
+	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id)))
 	require.NoError(t, tx.Commit())
 }
 
@@ -91,7 +91,7 @@ func TestGetAuditLog(t *testing.T) {
 	require.Equal(t, auditLog.OperationDescription, desc)
 
 	require.NoError(t, model.InsertAuditLog(tx, auditLog))
-	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id, 123)))
+	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id)))
 
 	details, err := model.GetAuditLog(tx, auditLog.Id)
 	require.NoError(t, err)
@@ -152,7 +152,7 @@ func TestGetAuditLogsUiFriendlyByPlayer(t *testing.T) {
 
 	auditLog := model.NewAuditLog(admin.Id, name, desc)
 	require.NoError(t, model.InsertAuditLog(tx, auditLog))
-	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id, 123)))
+	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, model.NewAuditLogPlayerAffected(auditLog.Id, player.Id)))
 	require.NoError(t, tx.Commit())
 
 	auditLogs, err := model.GetAuditLogsUiFriendlyForPlayer(db, player.Id)
@@ -272,14 +272,12 @@ func TestGetAuditLogWithGameAndPlayer(t *testing.T) {
 	p1AuditLog := model.AuditLogPlayerAffected{
 		AuditLogId: auditLog.Id,
 		PlayerId:   p1.Id,
-		EloChange:  123,
 	}
 	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, &p1AuditLog))
 
 	p2AuditLog := model.AuditLogPlayerAffected{
 		AuditLogId: auditLog.Id,
 		PlayerId:   p2.Id,
-		EloChange:  456,
 	}
 	require.NoError(t, model.InsertAuditLogPlayerAffected(tx, &p2AuditLog))
 

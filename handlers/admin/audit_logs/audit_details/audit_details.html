@@ -30,11 +30,6 @@
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Player</p>
       <p class="text-xl font-bold">{{.PlayerName}}</p>
-      <p
-        class="text-sm {{if gt .EloChange 0}}text-green-800{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
-      >
-        {{if gt .EloChange 0}}+{{end}}{{.EloChange}} ELO Change
-      </p>
     </div>
   </a>
   {{end}}
