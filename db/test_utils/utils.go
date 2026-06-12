@@ -30,6 +30,8 @@ func getDb(t *testing.T, tries int) db.Db {
 		time.Sleep(time.Second / 10)
 		return getDb(t, tries+1)
 	}
+
+	require.NoError(t, err, "DB should be returned without error")
 	return db
 }
 
@@ -37,6 +39,6 @@ func GetDb(t *testing.T) db.Db {
 	t.Helper()
 
 	db := getDb(t, 0)
-	require.NotNil(t, db)
+	require.NotNil(t, db, "DB must be defined")
 	return db
 }

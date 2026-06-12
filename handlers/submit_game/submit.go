@@ -14,6 +14,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	"github.com/djpiper28/rpg-book/common/normalisation"
+	"github.com/google/uuid"
 )
 
 const (
@@ -25,7 +26,8 @@ const (
 )
 
 type PlayerConsolidationModel struct {
-	Results []PlayerLookupResult
+	Results      []PlayerLookupResult
+	PlayersGames []model.Game
 }
 
 type PlayerLookupResult struct {
@@ -73,6 +75,27 @@ func GetLookupResult(db db.Db, name string, isWhite bool) (PlayerLookupResult, e
 	}, nil
 }
 
+func GetGamesForPairs(db db.Db, playersA PlayerLookupResult, playersB PlayerLookupResult) ([]model.Game, error) {
+	playerAIds := make([]uuid.UUID, 0)
+	playerBIds := make([]uuid.UUID, 0)
+
+	for _, player := range playersA.Players {
+		playerAIds = append(playerAIds, player.Id)
+	}
+
+	for _, player := range playersB.Players {
+		playerBIds = append(playerBIds, player.Id)
+	}
+
+	allGameCombs, err := model.GetGamesByPlayerPairCombs(db, playerAIds, playerBIds)
+
+	if err != nil {
+		return make([]model.Game, 0), errors.Join(errors.New("Cannot find games for pair"), err)
+	}
+
+	return allGameCombs, nil
+}
+
 const (
 	playerName      = "player-name"
 	playedAs        = "played-as"
@@ -101,7 +124,9 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 	player1White := rawPlayedAs == "white"
 
 	// Lookup the players
-	results := PlayerConsolidationModel{Results: make([]PlayerLookupResult, 0)}
+	// results := PlayerConsolidationModel{Results: make([]PlayerLookupResult, 0)}
+	results := new(PlayerConsolidationModel)
+
 	res, err := GetLookupResult(db, player1, player1White)
 	if err != nil {
 		return errors.Join(errors.New("Cannot lookup player 1"), err)
@@ -119,8 +144,15 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 		allExact = allExact && res.ExactMatch
 	}
 
+	games, err := GetGamesForPairs(db, results.Results[0], results.Results[1])
+	if err != nil {
+		return errors.Join(errors.New("Cannot lookup games"), err)
+	}
+	results.PlayersGames = append(results.PlayersGames, games...)
+
 	// Check results and send to the UI
 	var buf bytes.Buffer
+
 	err = resultsTpl.Execute(&buf, results)
 	if err != nil {
 		return errors.Join(errors.New("Cannot execute template"), err)

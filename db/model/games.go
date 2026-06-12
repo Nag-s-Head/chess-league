@@ -2,14 +2,17 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Score string
@@ -302,6 +305,46 @@ JOIN players b ON g.player_black = b.id
 WHERE (g.player_white=$1 OR g.player_black=$1)
 ORDER BY g.played DESC`, playerId)
 	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get games by player"), err)
+	}
+
+	return games, nil
+}
+
+func GetGamesByPlayerPairCombs(db db.Db, playerAIds []uuid.UUID, playerBIds []uuid.UUID) ([]Game, error) {
+	if len(playerAIds) == 0 || len(playerBIds) == 0 {
+		slog.Info("Cannot find pair combos", "playerAs", playerAIds, "playerBs", playerBIds)
+		return make([]Game, 0), nil
+	}
+
+	var games []Game
+	const query = `
+        WITH RankedGames AS (
+            SELECT 
+                g.*,
+                LEAST(g.player_white, g.player_black) AS player_min,
+                GREATEST(g.player_white, g.player_black) AS player_max,
+                ROW_NUMBER() OVER(
+                    PARTITION BY LEAST(g.player_white, g.player_black), GREATEST(g.player_white, g.player_black) 
+                    ORDER BY g.played DESC
+                ) AS rn
+            FROM games g
+            WHERE 
+                (g.player_white = ANY($1) AND g.player_black = ANY($2))
+                OR 
+                (g.player_white = ANY($2) AND g.player_black = ANY($1))
+        )
+        SELECT player_white, player_black, score, submitter, played, ikey -- explicitly list your table columns here
+        FROM RankedGames
+        WHERE rn <= 5
+        ORDER BY player_min, player_max, played DESC;
+    `
+
+	err := db.GetSqlxDb().Select(&games, query, pq.Array(playerAIds), pq.Array(playerBIds))
+	if err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			return []Game{}, nil
+		}
 		return nil, errors.Join(errors.New("Cannot get games by player"), err)
 	}
 

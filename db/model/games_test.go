@@ -106,3 +106,84 @@ func TestGetGame(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, game.IKey, game2.IKey)
 }
+
+func TestGetGamesByPlayerPairCombsNoGamesPlayed(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	games, err := model.GetGamesByPlayerPairCombs(db, []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}, []uuid.UUID{uuid.New(), uuid.New(), uuid.New()})
+	require.NoError(t, err)
+	require.Len(t, games, 0)
+}
+
+func TestGetGamesByPlayerPairCombsSingleGamePlayed(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	p1 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, p1))
+
+	p2 := model.NewPlayer(uuid.New().String())
+	require.NoError(t, model.InsertPlayer(db, p2))
+
+	r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+
+	// Game 1: P1 vs P2, P1 wins
+	ikey, _ := model.NextIKey(db)
+	game, _, _, err := model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+
+	games, err := model.GetGamesByPlayerPairCombs(db, []uuid.UUID{p1.Id, uuid.New(), uuid.New()}, []uuid.UUID{p2.Id, uuid.New(), uuid.New()})
+	require.NoError(t, err)
+	require.Len(t, games, 1)
+	require.Equal(t, games[0].IKey, game.IKey)
+}
+
+func TestGetGamesByPlayerPairCombsManyGames(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	pAIds := make([]uuid.UUID, 0)
+	pBIds := make([]uuid.UUID, 0)
+
+	for range 5 {
+		p1 := model.NewPlayer(uuid.New().String())
+		require.NoError(t, model.InsertPlayer(db, p1))
+
+		pAIds = append(pAIds, p1.Id)
+
+		p2 := model.NewPlayer(uuid.New().String())
+		require.NoError(t, model.InsertPlayer(db, p2))
+
+		pBIds = append(pBIds, p2.Id)
+
+		r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+
+		for range 5 {
+			ikey, _ := model.NextIKey(db)
+			_, _, _, err := model.CreateGame(tx, &p1, &p2, true, ikey, model.Score_Win, r)
+			require.NoError(t, err)
+		}
+	}
+
+	require.NoError(t, tx.Commit())
+
+	games, err := model.GetGamesByPlayerPairCombs(db, pAIds, pBIds)
+	require.NoError(t, err)
+	require.True(t, len(games) > 5)
+}

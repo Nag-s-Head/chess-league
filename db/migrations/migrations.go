@@ -200,6 +200,11 @@ ALTER TABLE audit_log_player_affected ADD COLUMN is_main_target BOOL NOT NULL DE
 ALTER TABLE audit_log_game_affected ADD COLUMN is_main_target BOOL NOT NULL DEFAULT(FALSE);
 			`,
 		},
+		{
+			Sql: `
+CREATE INDEX idx_games_commutative_pairs 
+	ON games (LEAST(player_white, player_black), GREATEST(player_white, player_black), played DESC);`,
+		},
 	}
 	return migrations.New(allMigrations), len(allMigrations)
 }
