@@ -143,6 +143,10 @@
 
       const selectedGames = [];
       for (const ikey in games) {
+        if (ikey == 0) {
+          continue;
+        }
+
         const game = games[ikey];
         if ((game.playerWhite == player1 && game.playerBlack == player2) || (game.playerWhite == player2 && game.playerBlack == player1)) {
           selectedGames.push(game);
