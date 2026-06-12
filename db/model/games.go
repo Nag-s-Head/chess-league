@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Score string
@@ -316,28 +318,33 @@ func GetGamesByPlayerPairCombs(db db.Db, playerAIds []uuid.UUID, playerBIds []uu
 	}
 
 	var games []Game
+	const query = `
+        WITH RankedGames AS (
+            SELECT 
+                g.*,
+                LEAST(g.player_white, g.player_black) AS player_min,
+                GREATEST(g.player_white, g.player_black) AS player_max,
+                ROW_NUMBER() OVER(
+                    PARTITION BY LEAST(g.player_white, g.player_black), GREATEST(g.player_white, g.player_black) 
+                    ORDER BY g.played DESC
+                ) AS rn
+            FROM games g
+            WHERE 
+                (g.player_white = ANY($1) AND g.player_black = ANY($2))
+                OR 
+                (g.player_white = ANY($2) AND g.player_black = ANY($1))
+        )
+        SELECT player_white, player_black, score, submitter, played, ikey -- explicitly list your table columns here
+        FROM RankedGames
+        WHERE rn <= 5
+        ORDER BY player_min, player_max, played DESC;
+    `
 
-	query := `
-		SELECT g.*
-		FROM games g
-		JOIN players w ON g.player_white = w.id
-		JOIN players b ON g.player_black = b.id
-		WHERE
-			(g.player_white IN (?) AND g.player_black IN (?))
-			OR
-			(g.player_white IN (?) AND g.player_black IN (?))
-		ORDER BY g.played DESC
-	`
-
-	query, args, err := sqlx.In(query, playerAIds, playerBIds, playerBIds, playerAIds)
+	err := db.GetSqlxDb().Select(&games, query, pq.Array(playerAIds), pq.Array(playerBIds))
 	if err != nil {
-		return nil, errors.Join(errors.New("Failed to construct IN query"), err)
-	}
-
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
-
-	err = db.GetSqlxDb().Select(&games, query, args...)
-	if err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			return []Game{}, nil
+		}
 		return nil, errors.Join(errors.New("Cannot get games by player"), err)
 	}
 

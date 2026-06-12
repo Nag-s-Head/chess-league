@@ -191,6 +191,11 @@ CREATE TABLE league_players (
 				return nil
 			},
 		},
+		{
+			Sql: `
+CREATE INDEX idx_games_commutative_pairs 
+	ON games (LEAST(player_white, player_black), GREATEST(player_white, player_black), played DESC);`,
+		},
 	})
 }
 
