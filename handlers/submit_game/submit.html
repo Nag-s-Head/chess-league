@@ -160,6 +160,7 @@
       document.getElementById(wrapperId).className = wrapperUnhiddenCss;
 
       const children = [];
+      selectedGames.sort((a, b) => new Date(b.played) - new Date(a.played));
 
       for (const game of selectedGames) {
         const div = document.createElement("div");
