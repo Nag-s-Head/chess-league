@@ -36,38 +36,41 @@ func InsertAuditLog(tx *sqlx.Tx, auditLog *AuditLog) error {
 }
 
 type AuditLogPlayerAffected struct {
-	AuditLogId uuid.UUID `db:"audit_log_id"`
-	PlayerId   uuid.UUID `db:"player_id"`
-	PlayerName string    `db:"player_name"`
+	AuditLogId   uuid.UUID `db:"audit_log_id"`
+	PlayerId     uuid.UUID `db:"player_id"`
+	IsMainTarget bool      `db:"is_main_target"`
+	PlayerName   string    `db:"player_name"`
 }
 
-func NewAuditLogPlayerAffected(auditId uuid.UUID, PlayerId uuid.UUID) *AuditLogPlayerAffected {
+func NewAuditLogPlayerAffected(auditId uuid.UUID, PlayerId uuid.UUID, isMainTarget bool) *AuditLogPlayerAffected {
 	return &AuditLogPlayerAffected{
-		AuditLogId: auditId,
-		PlayerId:   PlayerId,
+		AuditLogId:   auditId,
+		PlayerId:     PlayerId,
+		IsMainTarget: isMainTarget,
 	}
 }
 
 func InsertAuditLogPlayerAffected(tx *sqlx.Tx, playerAffected *AuditLogPlayerAffected) error {
 	_, err := tx.NamedExec(`
-	  INSERT INTO audit_log_player_affected (audit_log_id, player_id) 
-		VALUES(:audit_log_id, :player_id);
+	  INSERT INTO audit_log_player_affected (audit_log_id, player_id, is_main_target)
+		VALUES(:audit_log_id, :player_id, :is_main_target);
 	`, playerAffected)
 	return err
 }
 
 type AuditLogGameAffected struct {
-	AuditLogId uuid.UUID `db:"audit_log_id"`
-	GameIkey   int64     `db:"game_ikey"`
-	WhiteName  string    `db:"white_name"`
-	BlackName  string    `db:"black_name"`
-	Played     time.Time `db:"played"`
+	AuditLogId   uuid.UUID `db:"audit_log_id"`
+	GameIkey     int64     `db:"game_ikey"`
+	IsMainTarget bool      `db:"is_main_target"`
+	WhiteName    string    `db:"white_name"`
+	BlackName    string    `db:"black_name"`
+	Played       time.Time `db:"played"`
 }
 
 func InsertAuditLogGameAffected(tx *sqlx.Tx, gameAffected *AuditLogGameAffected) error {
 	_, err := tx.NamedExec(`
-	  INSERT INTO audit_log_game_affected (audit_log_id, game_ikey) 
-		VALUES(:audit_log_id, :game_ikey);
+	  INSERT INTO audit_log_game_affected (audit_log_id, game_ikey, is_main_target)
+		VALUES(:audit_log_id, :game_ikey, :is_main_target);
 	`, gameAffected)
 	return err
 }
@@ -98,7 +101,8 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 		SELECT a.*, p.name as player_name 
 		FROM audit_log_player_affected a
 		JOIN players p ON a.player_id = p.id
-		WHERE a.audit_log_id=$1;`, id)
+		WHERE a.audit_log_id=$1
+		ORDER BY is_main_target ASC, p.name ASC;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log player affected"), err)
 	}
@@ -110,7 +114,8 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 		JOIN games g ON a.game_ikey = g.ikey
 		JOIN players w ON g.player_white = w.id
 		JOIN players b ON g.player_black = b.id
-		WHERE a.audit_log_id=$1;`, id)
+		WHERE a.audit_log_id=$1
+		ORDER BY is_main_target ASC, g.played ASC;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log game affected"), err)
 	}
@@ -162,7 +167,7 @@ func GetAuditLogsUiFriendlyForPlayer(db db.Db, id uuid.UUID) ([]AuditLogUiFriend
 		FROM audit_logs
 		INNER JOIN admin_users ON admin_users.id = audit_logs.done_by
 		INNER JOIN audit_log_player_affected ON audit_logs.id = audit_log_player_affected.audit_log_id
-		INNER JOIN players ON players.id =  audit_log_player_affected.player_id
+		INNER JOIN players ON players.id = audit_log_player_affected.player_id
 		WHERE players.id = $1
 		ORDER BY created DESC;
 		`, id)
