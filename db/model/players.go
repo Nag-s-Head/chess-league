@@ -445,7 +445,7 @@ func MergePlayers(db db.Db, target, dest, adminId uuid.UUID) error {
 		return errors.New("Cannot merge as destination player is deleted")
 	}
 
-	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s (%s) into %s (%s).", target, targetPlayer.Name, dest, destPlayer.Name))
+	auditLog := NewAuditLog(adminId, "Player merger", fmt.Sprintf("Merging player %s into %s.", targetPlayer.Name, destPlayer.Name))
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert player merger audit log"), err)
