@@ -58,9 +58,9 @@
 </div>
 {{end}}
 
-<div class="flex flex-col gap-5 hidden" id="games-wrapper">
+<div class="flex flex-col gap-5 hidden" id="previous-games-wrapper">
   <h3 class="text-lg font-bold">Previous Games</h3>
-  <div id="game-content"></div>
+  <div id="previous-games"></div>
 </div>
 
 <div class="flex flex-row gap-5">
@@ -114,9 +114,11 @@
   var player1 = undefined;
   var player2 = undefined;
 
-  const wrapperId = "games-wrapper";
+  const wrapperId = "previous-games-wrapper";
   const wrapperBaseCss = document.getElementById(wrapperId).className;
   const wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
+
+  const previousGamesId = "previous-games";
 
   function onPlayerSelected(id, isPlayerOne) {
     if (isPlayerOne) {
@@ -125,24 +127,25 @@
       player2 = id;
     }
 
-    var selectedGame = undefined;
+    const selectedGames = [];
     for (const ikey in games) {
       const game = games[ikey];
       if ((game.playerWhite == player1 && game.playerBlack == player2) || (game.playerWhite == player2 && game.playerBlack == player1)) {
-        selectedGame = game;
-        break;
+        selectedGames.push(game);
       }
     }
 
-    if (!selectedGame) {
+    if (selectedGames.length == 0) {
       console.log("No games found for player combo", "player1", player1, "player2", player2)
       document.getElementById(wrapperId).className = wrapperBaseCss;
+      document.getElementById(previousGamesId).innerHTML = "";
       return;
     }
 
-    console.log("Found a game for the player combo", "game", selectedGame)
+    console.log("Found games for the player combo", "game", selectedGames)
     document.getElementById(wrapperId).className = wrapperUnhiddenCss;
     // TODO: render the games
+    document.getElementById(previousGamesId).innerHTML = JSON.stringify(selectedGames);
   }
 
     {{range $result:= .Results}}
