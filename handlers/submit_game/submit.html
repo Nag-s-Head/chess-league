@@ -181,7 +181,7 @@
         children.push(div);
       }
 
-  document.getElementById(previousGamesId).replaceChildren(...children);
+      document.getElementById(previousGamesId).replaceChildren(...children);
     }
 
       {{range $result:= .Results}}
@@ -189,4 +189,8 @@
         {{if .IsWhite}}player1{{else}}player2{{end}} = {{range .Players}}{{.Id}}{{end}};
       {{end}}
       {{end}}
+
+  if (player1 && player2) {
+    onPlayerSelected(player1, true);
+  }
 </script>
