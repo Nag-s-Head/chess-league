@@ -93,7 +93,7 @@ func SetLeaguePlayers(db db.Db, adminId uuid.UUID, players []uuid.UUID) error {
 		}
 
 		for _, player := range playersAdded {
-			err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+			err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, true))
 			if err != nil {
 				return errors.Join(errors.New("Cannot create audit logs for added players"), err)
 			}
@@ -105,7 +105,7 @@ func SetLeaguePlayers(db db.Db, adminId uuid.UUID, players []uuid.UUID) error {
 		}
 
 		for _, player := range playersRemoved {
-			err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, 0))
+			err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, true))
 			if err != nil {
 				return errors.Join(errors.New("Cannot create audit logs for removed players"), err)
 			}
