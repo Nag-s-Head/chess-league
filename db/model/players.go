@@ -292,7 +292,7 @@ func RenamePlayer(db db.Db, id uuid.UUID, newName string, adminId uuid.UUID) err
 		return errors.Join(errors.New("Cannot update player"), err)
 	}
 
-	auditLog := NewAuditLog(adminId, "Player rename", fmt.Sprintf("Renamed from '%s' to '%s'", oldPlayer.Name, newName))
+	auditLog := NewAuditLog(adminId, "Player rename", fmt.Sprintf("Renamed from '%s' to '%s'.", oldPlayer.Name, newName))
 	err = InsertAuditLog(tx, auditLog)
 	if err != nil {
 		return errors.Join(errors.New("Cannot insert audit log"), err)
