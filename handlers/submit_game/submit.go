@@ -286,103 +286,107 @@ type WsMessage struct {
 	SubmitType  string `json:"submit-type"`
 }
 
+func HandleWs(db db.Db, w http.ResponseWriter, r *http.Request) {
+	_, cancel := context.WithTimeout(r.Context(), time.Minute)
+	defer cancel()
+
+	if !rules.HasAgreedToRules(r) {
+		return
+	}
+
+	if !VerifyMagic(r) {
+		slog.Warn("An attempt to access submit the form without the magic number was made", "ip", model.GetRemoteAddr(r))
+		return
+	}
+
+	const bufSize = 1024
+	upgrader := websocket.Upgrader{
+		HandshakeTimeout:  time.Second,
+		ReadBufferSize:    bufSize,
+		WriteBufferSize:   bufSize,
+		EnableCompression: true,
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		slog.Error("Could start lookup game websocket", "err", err, "ip", model.GetRemoteAddr(r))
+
+		var buf bytes.Buffer
+		err = errorTpl.Execute(&buf, Error{Error: err.Error()})
+		if err != nil {
+			return
+		}
+	}
+
+	defer conn.Close()
+
+	var lastMessage WsMessage
+	for {
+		messageType, messageBytes, err := conn.ReadMessage()
+		if err != nil {
+			slog.Error("Could not recieve from ws", "err", err)
+			return
+		}
+
+		if messageType == websocket.PingMessage {
+			err := conn.WriteMessage(websocket.PongMessage, []byte{})
+			if err != nil {
+				slog.Error("Could not send pong ws message", "err", err)
+				return
+			}
+
+			continue
+		}
+
+		slog.Debug("Recieved a message", "message", string(messageBytes))
+
+		var message WsMessage
+		err = json.Unmarshal(messageBytes, &message)
+		if err != nil {
+			slog.Error("Could not read ws message", "err", err)
+			return
+		}
+
+		if message.SubmitType == "final" {
+			continue
+		}
+
+		// Prevents sending excess data
+		if message == lastMessage {
+			continue
+		}
+		lastMessage = message
+
+		player1 := strings.TrimSpace(message.Player1Name)
+		if player1 == "" {
+			continue
+		}
+
+		player2 := strings.TrimSpace(message.Player2Name)
+		if player2 == "" {
+			continue
+		}
+
+		player1White := message.PlayedAs == "white"
+		res, err := renderUserLookup(db, player1, player2, player1White)
+		if err != nil {
+			slog.Debug("There was an error whilst processing partial form data", "err", err)
+		}
+
+		if res != nil {
+			payload := fmt.Sprintf(`<div class="flex flex-col gap-5 w-full" id="response">%s</div>`, string(res))
+			err := conn.WriteMessage(websocket.TextMessage, []byte(payload))
+			if err != nil {
+				slog.Error("Could not send ws message", "err", err)
+				return
+			}
+		}
+	}
+}
+
 func Register(mux *http.ServeMux, db db.Db) {
 	mux.HandleFunc(fmt.Sprintf("GET %s/submit/ws", BasePath), func(w http.ResponseWriter, r *http.Request) {
-		_, cancel := context.WithTimeout(r.Context(), time.Minute)
-		defer cancel()
-
-		if !rules.HasAgreedToRules(r) {
-			return
-		}
-
-		if !VerifyMagic(r) {
-			slog.Warn("An attempt to access submit the form without the magic number was made", "ip", model.GetRemoteAddr(r))
-			return
-		}
-
-		const bufSize = 1024
-		upgrader := websocket.Upgrader{
-			HandshakeTimeout:  time.Second,
-			ReadBufferSize:    bufSize,
-			WriteBufferSize:   bufSize,
-			EnableCompression: true,
-		}
-
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			slog.Error("Could start lookup game websocket", "err", err, "ip", model.GetRemoteAddr(r))
-
-			var buf bytes.Buffer
-			err = errorTpl.Execute(&buf, Error{Error: err.Error()})
-			if err != nil {
-				return
-			}
-		}
-
-		defer conn.Close()
-
-		var lastMessage WsMessage
-		for {
-			messageType, messageBytes, err := conn.ReadMessage()
-			if err != nil {
-				slog.Error("Could not recieve from ws", "err", err)
-				return
-			}
-
-			if messageType == websocket.PingMessage {
-				err := conn.WriteMessage(websocket.PongMessage, []byte{})
-				if err != nil {
-					slog.Error("Could not send pong ws message", "err", err)
-					return
-				}
-
-				continue
-			}
-
-			slog.Debug("Recieved a message", "message", string(messageBytes))
-
-			var message WsMessage
-			err = json.Unmarshal(messageBytes, &message)
-			if err != nil {
-				slog.Error("Could not read ws message", "err", err)
-				return
-			}
-
-			if message.SubmitType == "final" {
-				continue
-			}
-
-			// Prevents sending excess data
-			if message == lastMessage {
-				continue
-			}
-			lastMessage = message
-
-			player1 := strings.TrimSpace(message.Player1Name)
-			if player1 == "" {
-				continue
-			}
-
-			player2 := strings.TrimSpace(message.Player2Name)
-			if player2 == "" {
-				continue
-			}
-
-			player1White := message.PlayedAs == "white"
-			res, err := renderUserLookup(db, player1, player2, player1White)
-			if err != nil {
-				slog.Debug("There was an error whilst processing partial form data", "err", err)
-			}
-
-			if res != nil {
-				payload := fmt.Sprintf(`<div class="flex flex-col gap-5 w-full" id="response">%s</div>`, string(res))
-				err := conn.WriteMessage(websocket.TextMessage, []byte(payload))
-				if err != nil {
-					slog.Error("Could not send ws message", "err", err)
-					return
-				}
-			}
-		}
+		HandleWs(db, w, r)
 	})
 
 	mux.HandleFunc(fmt.Sprintf("POST %s/submit", BasePath), func(w http.ResponseWriter, r *http.Request) {

@@ -14,6 +14,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 )
 
@@ -380,5 +381,104 @@ func TestSubmit(t *testing.T) {
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
 		require.NoError(t, err)
+	})
+}
+
+func TestWs(t *testing.T) {
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	t.Run("Base case: Successful connection and message exchange", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s; %s=%s",
+			submitgame.MagicNumberCookie, os.Getenv(submitgame.MagicNumberEnvVar),
+			rules.RulesVersionCookie, rules.CurrentRulesVersion))
+
+		conn, resp, err := dialer.Dial(wsURL, header)
+		require.NoError(t, err)
+		defer conn.Close()
+		require.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
+
+		message := struct {
+			Player1Name string `json:"player-name"`
+			Player2Name string `json:"other-player-name"`
+			PlayedAs    string `json:"played-as"`
+			SubmitType  string `json:"submit-type"`
+		}{
+			Player1Name: "Player1",
+			Player2Name: "Player2",
+			PlayedAs:    "white",
+		}
+		err = conn.WriteJSON(message)
+		require.NoError(t, err)
+
+		_, p, err := conn.ReadMessage()
+		require.NoError(t, err)
+		require.Contains(t, string(p), "id=\"response\"")
+	})
+
+	t.Run("Lack of rule cookie", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s",
+			submitgame.MagicNumberCookie, os.Getenv(submitgame.MagicNumberEnvVar)))
+
+		_, resp, err := dialer.Dial(wsURL, header)
+		require.Error(t, err)
+		require.NotEqual(t, http.StatusSwitchingProtocols, resp.StatusCode)
+	})
+
+	t.Run("Lack of magic number", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s",
+			rules.RulesVersionCookie, rules.CurrentRulesVersion))
+
+		_, resp, err := dialer.Dial(wsURL, header)
+		require.Error(t, err)
+		require.NotEqual(t, http.StatusSwitchingProtocols, resp.StatusCode)
+	})
+
+	t.Run("Invalid messages being sent", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s; %s=%s",
+			submitgame.MagicNumberCookie, os.Getenv(submitgame.MagicNumberEnvVar),
+			rules.RulesVersionCookie, rules.CurrentRulesVersion))
+
+		conn, _, err := dialer.Dial(wsURL, header)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		err = conn.WriteMessage(websocket.TextMessage, []byte("invalid json"))
+		require.NoError(t, err)
+
+		_, _, err = conn.ReadMessage()
+		require.Error(t, err) // Should close connection
 	})
 }
