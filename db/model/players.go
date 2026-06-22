@@ -337,10 +337,15 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 	}
 
 	// Handle game deletion
-	var deletedGames []int64
-	err = tx.Select(&deletedGames, "SELECT ikey FROM games WHERE (player_white=$1 OR player_black=$1) ORDER BY ikey ASC;", playerId)
+	var deletedGames []Game
+	err = tx.Select(&deletedGames, "SELECT * FROM games WHERE (player_white=$1 OR player_black=$1) ORDER BY ikey ASC;", playerId)
 	if err != nil {
-		return errors.Join(errors.New("Cannot delete games associated with player"))
+		return errors.Join(errors.New("Cannot select games associated with player"), err)
+	}
+
+	deletedIkeys := make([]int64, len(deletedGames))
+	for i, g := range deletedGames {
+		deletedIkeys[i] = g.IKey
 	}
 
 	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE (player_white=$1 OR player_black=$1);", playerId)
@@ -360,10 +365,10 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 		return errors.Join(errors.New("Cannot insert audit log player affected"), err)
 	}
 
-	for _, ikey := range deletedGames {
+	for _, game := range deletedGames {
 		err := InsertAuditLogGameAffected(tx, &AuditLogGameAffected{
 			AuditLogId: auditLog.Id,
-			GameIkey:   ikey,
+			GameIkey:   game.IKey,
 		})
 
 		if err != nil {
@@ -373,8 +378,45 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 
 	// Only replay games when required
 	if len(deletedGames) > 0 {
+		// To ensure correct replay, we need to reset players who played against the deleted player
+		// to their ratings before the deleted games.
+		// ReplayFrom will load from the DB if not in its map, so we update the DB here.
+		initialRatings := make(map[uuid.UUID]Player)
+		for _, g := range deletedGames {
+			for _, pid := range []uuid.UUID{g.PlayerWhite, g.PlayerBlack} {
+				if pid == playerId {
+					continue
+				}
+				if _, found := initialRatings[pid]; !found {
+					p, _ := getPlayerById(tx, pid)
+					if g.PlayerWhite == pid {
+						p.Liglicko2Rating = g.Liglicko2WhiteOldRating
+						p.Liglicko2Deviation = g.Liglicko2WhiteOldDeviation
+						p.Liglicko2Volatility = g.Liglicko2WhiteOldVolatility
+						p.Liglicko2At = g.Liglicko2WhiteOldAt
+					} else {
+						p.Liglicko2Rating = g.Liglicko2BlackOldRating
+						p.Liglicko2Deviation = g.Liglicko2BlackOldDeviation
+						p.Liglicko2Volatility = g.Liglicko2BlackOldVolatility
+						p.Liglicko2At = g.Liglicko2BlackOldAt
+					}
+					initialRatings[pid] = p
+
+					_, err = tx.NamedExec(`UPDATE players SET 
+						liglicko2_rating=:liglicko2_rating, 
+						liglicko2_deviation=:liglicko2_deviation, 
+						liglicko2_volatility=:liglicko2_volatility, 
+						liglicko2_at=:liglicko2_at 
+						WHERE id=:id`, p)
+					if err != nil {
+						return errors.Join(errors.New("Cannot reset player rating before replay"), err)
+					}
+				}
+			}
+		}
+
 		var ikeyGameToReplayFrom int64
-		err = tx.Get(&ikeyGameToReplayFrom, "SELECT ikey FROM games WHERE ikey<$1 ORDER BY ikey DESC LIMIT 1", deletedGames[0])
+		err = tx.Get(&ikeyGameToReplayFrom, "SELECT ikey FROM games WHERE ikey<$1 ORDER BY ikey DESC LIMIT 1", deletedIkeys[0])
 		if err != nil {
 			return errors.Join(errors.New("Cannot select the last applicable game to replay from"), err)
 		}
@@ -396,7 +438,7 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 		}
 
 		for _, game := range games {
-			if slices.Contains(deletedGames, game.IKey) {
+			if slices.Contains(deletedIkeys, game.IKey) {
 				continue
 			}
 

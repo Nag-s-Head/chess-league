@@ -101,7 +101,7 @@ func ReplayFrom(txx *sqlx.Tx, ikey int64) ([]Game, []*Player, error) {
 	_, err = getOrAddPlayer(txx, affectedPlayers, seedGame.PlayerBlack, &seedGame)
 
 	var affectedGames []Game
-	err = txx.Select(&affectedGames, "SELECT * FROM games WHERE played >= $1 AND deleted = FALSE ORDER BY played ASC;", seedGame.Played)
+	err = txx.Select(&affectedGames, "SELECT * FROM games WHERE played >= $1 AND deleted = FALSE ORDER BY played ASC, ikey ASC;", seedGame.Played)
 	if err != nil {
 		return nil, nil, errors.Join(errors.New("Cannot select affected players"), err)
 	}
