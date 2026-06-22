@@ -58,10 +58,10 @@
 </div>
 {{end}}
 
-<div class="flex flex-col gap-5 hidden" id="previous-games-wrapper">
+<div class="flex flex-col gap3 md:gap-5 hidden" id="previous-games-wrapper">
   <h3 class="text-lg font-bold">Previous Games</h3>
   <div
-    class="flex flex-col items-center gap-3 p-3 border-2 border-gray-300 rounded-lg"
+    class="flex flex-col items-center gap-3 p-1 md:p-3 border-2 border-gray-300 rounded-lg"
     id="previous-games"
   ></div>
 </div>
@@ -71,7 +71,7 @@
     type="submit"
     name="submit-type"
     value="lookup"
-    class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    class="hidden rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
     formnovalidate
   >
     Find Players
@@ -117,20 +117,24 @@
     var player1 = undefined;
     var player2 = undefined;
 
-    const wrapperId = "previous-games-wrapper";
-    const wrapperBaseCss = document.getElementById(wrapperId).className;
-    const wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
+    var wrapperId = "previous-games-wrapper";
+    var wrapperBaseCss = document.getElementById(wrapperId).className;
+    var wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
 
-    const previousGamesId = "previous-games";
+    var previousGamesId = "previous-games";
 
-    const timeFormatter = new Intl.DateTimeFormat(navigator.language, {
+    var timeFormatter = new Intl.DateTimeFormat(navigator.language, {
       dateStyle: "short",
       timeStyle: "short"
     });
 
-    function asP(unsafeContent) {
+    function asP(unsafeContent, css) {
       const p = document.createElement("p");
       p.append(unsafeContent);
+
+      if (css) {
+        p.className = css;
+      }
       return p;
     }
 
@@ -168,13 +172,26 @@
 
       for (const game of selectedGames) {
         const div = document.createElement("div");
-        div.className = "flex flex-row gap-3 justify-between";
+        div.className = "flex flex-row gap-2 md:gap-3 justify-between";
+
+        var scoreCss = "";
+        switch(game.score) {
+          case "1-0":
+            scoreCss = "text-green-800"
+            break;
+          case "0-1":
+            scoreCss = "text-red-500"
+            break;
+          case "1/2-1/2":
+            scoreCss = "text-gray-600"
+            break;
+        }
 
         div.append(
           asP(players[game.playerWhite].name),
           asP("vs."),
           asP(players[game.playerBlack].name),
-          asP(`(${game.score})`),
+          asP(`(${game.score})`, scoreCss),
           asP(timeFormatter.format(new Date(game.played)))
         );
 

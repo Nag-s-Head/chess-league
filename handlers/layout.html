@@ -5,9 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nag's Knights</title>
     <script src="/assets/htmx.js"></script>
+    <script src="/assets/htmx-ws.js"></script>
     <link rel="stylesheet" href="/assets/tailwind.css" />
+    <script>
+      htmx.config.wsReconnectDelay = function (retryCount) {
+        return (1 + retryCount) * 1000;
+      };
+
+      htmx.config.timeout = 5000;
+    </script>
   </head>
-  <body class="bg-gray-50">
+  <body class="bg-gray-50" hx-ext="ws">
     <div class="flex flex-col min-h-screen">
       <header
         class="flex flex-row gap-5 w-full items-center p-2 px-5 bg-rose-600 border-b-2 border-rose-300"

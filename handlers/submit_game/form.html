@@ -1,9 +1,18 @@
 <h1 class="text-xl font-bold">Submit A Game</h1>
 <form
+  id="game-form"
   class="flex flex-col gap-5 w-full"
   hx-post="/submit-game/submit"
   hx-target="#response"
 >
+  <div
+    ws-connect="/submit-game/submit/ws"
+    ws-send
+    hx-trigger="change from:#game-form"
+    hx-on:htmx:ws-close="document.querySelector('button[value=&quot;lookup&quot;]')?classList.remove('hidden')"
+    hx-on:htmx:ws-open="document.querySelector('button[value=&quot;lookup&quot;]')?classList.add('hidden')"
+  ></div>
+
   <ol class="flex flex-col gap-5 p-2 lg:p-5">
     <li>
       <div class="flex flex-row gap-2 justify-between items-center">
