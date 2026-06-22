@@ -117,13 +117,13 @@
     var player1 = undefined;
     var player2 = undefined;
 
-    const wrapperId = "previous-games-wrapper";
-    const wrapperBaseCss = document.getElementById(wrapperId).className;
-    const wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
+    var wrapperId = "previous-games-wrapper";
+    var wrapperBaseCss = document.getElementById(wrapperId).className;
+    var wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
 
-    const previousGamesId = "previous-games";
+    var previousGamesId = "previous-games";
 
-    const timeFormatter = new Intl.DateTimeFormat(navigator.language, {
+    var timeFormatter = new Intl.DateTimeFormat(navigator.language, {
       dateStyle: "short",
       timeStyle: "short"
     });
