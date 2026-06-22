@@ -51,4 +51,10 @@ jobs:
           GITHUB_ORGANISATION: test
           TEST_MODE: true
           APP_BASE_URL: localhost:8080
-        run: go test -parallel=1 ./...
+        run: go test -parallel=1 -coverprofile=coverage.out ./...
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
