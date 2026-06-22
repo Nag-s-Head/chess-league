@@ -291,6 +291,15 @@ func Register(mux *http.ServeMux, db db.Db) {
 		_, cancel := context.WithTimeout(r.Context(), time.Minute)
 		defer cancel()
 
+		if !rules.HasAgreedToRules(r) {
+			return
+		}
+
+		if !VerifyMagic(r) {
+			slog.Warn("An attempt to access submit the form without the magic number was made", "ip", model.GetRemoteAddr(r))
+			return
+		}
+
 		const bufSize = 1024
 		upgrader := websocket.Upgrader{
 			HandshakeTimeout:  time.Second,
