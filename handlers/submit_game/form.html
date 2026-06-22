@@ -9,6 +9,8 @@
     ws-connect="/submit-game/submit/ws"
     ws-send
     hx-trigger="change from:#game-form"
+    hx-on:htmx:ws-close="document.querySelector('button[value=&quot;lookup&quot;]')?classList.remove('hidden')"
+    hx-on:htmx:ws-open="document.querySelector('button[value=&quot;lookup&quot;]')?classList.add('hidden')"
   ></div>
 
   <ol class="flex flex-col gap-5 p-2 lg:p-5">
