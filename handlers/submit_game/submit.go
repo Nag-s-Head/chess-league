@@ -124,7 +124,6 @@ func doUserLookupSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error 
 	player1White := rawPlayedAs == "white"
 
 	// Lookup the players
-	// results := PlayerConsolidationModel{Results: make([]PlayerLookupResult, 0)}
 	results := new(PlayerConsolidationModel)
 
 	res, err := GetLookupResult(db, player1, player1White)
