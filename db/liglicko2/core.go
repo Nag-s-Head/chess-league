@@ -17,8 +17,8 @@ const (
 	MaxRating     = 4000.0
 	DefaultRating = 1500.0
 
-	MinVolatility     = 0.03
-	MaxVolatility     = 0.12
+	MinVolatility     = 0.01
+	MaxVolatility     = 0.1
 	DefaultVolatility = 0.09
 
 	MinDeviation     = 45.0
