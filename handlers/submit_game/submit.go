@@ -183,12 +183,12 @@ func doFinalSubmit(db db.Db, w http.ResponseWriter, r *http.Request) error {
 
 	ikeyCookie, err := r.Cookie(IKeyCookie)
 	if err != nil {
-		return errors.Join(errors.New("Could not find ikey cookie"), err)
+		return errors.Join(errors.New("Could not find ikey cookie, PLEASE REFRESH the page"), err)
 	}
 
 	ikey, err := strconv.ParseInt(ikeyCookie.Value, 10, 64)
 	if err != nil {
-		return errors.New("Could not read ikey cookie, please refresh the page")
+		return errors.New("Could not read ikey cookie, PLEASE REFRESH the page")
 	}
 
 	var score model.Score
