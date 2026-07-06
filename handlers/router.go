@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
-	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/Nag-s-Head/chess-league/handlers/admin"
 	"github.com/Nag-s-Head/chess-league/handlers/assets"
 	"github.com/Nag-s-Head/chess-league/handlers/league"
@@ -28,12 +27,6 @@ var layoutTmpl *template.Template = utils.GetTemplate(f, "layout.html")
 type Layout struct {
 	Body    template.HTML
 	IsAdmin bool
-}
-
-type IndexData struct {
-	Players      []model.Player
-	TotalGames   int
-	TotalPlayers int
 }
 
 // WithLayout wraps the provided body HTML in the global layout and writes it to w.
