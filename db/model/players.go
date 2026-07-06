@@ -22,7 +22,7 @@ const (
 	StartingLiglicko2Deviation  = 500.0
 	StartingLiglicko2Volatility = 0.09
 )
-const MinimumStableRatingDeviation = 100.0
+const MinimumStableRatingDeviation = 120.0
 
 type Player struct {
 	Id             uuid.UUID `db:"id"`
