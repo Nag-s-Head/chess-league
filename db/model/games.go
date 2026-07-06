@@ -201,12 +201,16 @@ func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameW
 func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) GamesUiFriendly {
 	details := GamesUiFriendly{
 		Games:      make([]GameWithOutcome, 0),
-		TotalGames: len(games),
+		TotalGames: 0,
 	}
 
 	var whiteGames, whiteWins, blackGames, blackWins int
 	for _, g := range games {
+		if g.Deleted {
+			continue
+		}
 
+		details.TotalGames++
 		isWhite := g.PlayerWhite == playerId
 		if isWhite {
 			whiteGames++
