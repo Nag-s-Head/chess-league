@@ -10,6 +10,13 @@ import (
 	"github.com/Nag-s-Head/chess-league/db/model"
 )
 
+type IndexData struct {
+	Players                      []model.Player
+	TotalGames                   int
+	TotalPlayers                 int
+	MinimumStableRatingDeviation float64
+}
+
 func Index(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		players, err := model.GetPlayersByElo(db, false)
@@ -28,9 +35,10 @@ func Index(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		data := IndexData{
-			Players:      players,
-			TotalGames:   gameCount,
-			TotalPlayers: playerCount,
+			Players:                      players,
+			TotalGames:                   gameCount,
+			TotalPlayers:                 playerCount,
+			MinimumStableRatingDeviation: model.MinimumStableRatingDeviation,
 		}
 
 		var buf bytes.Buffer
