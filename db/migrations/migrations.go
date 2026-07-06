@@ -182,7 +182,7 @@ CREATE TABLE league_players (
 				}
 
 				slog.Info("Replaying games to fix broken cache", "starting_ikey", ikey)
-				games, players, err := model.ReplayFrom(tx, ikey)
+				games, players, err := model.ReplayFrom(tx, ikey, nil)
 				if err != nil {
 					return errors.Join(errors.New("Cannot replay games"), err)
 				}

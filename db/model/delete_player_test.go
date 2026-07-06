@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
@@ -136,9 +135,7 @@ func TestDeletePlayer(t *testing.T) {
 		createGame(&playerC, &playerD, model.Score_Draw)
 
 		g1 := createGame(&playerA, &deletedPlayer, model.Score_Win)
-		time.Sleep(time.Millisecond)
 		g2 := createGame(&deletedPlayer, &playerB, model.Score_Win)
-		time.Sleep(time.Millisecond)
 		g3 := createGame(&playerA, &playerB, model.Score_Win)
 
 		ratingA_before := playerA.Liglicko2Rating

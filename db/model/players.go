@@ -378,17 +378,17 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 
 	// Only replay games when required
 	if len(deletedGames) > 0 {
-		// To ensure correct replay, we need to reset players who played against the deleted player
-		// to their ratings before the deleted games.
-		// ReplayFrom will load from the DB if not in its map, so we update the DB here.
-		initialRatings := make(map[uuid.UUID]Player)
+		initialPlayers := make(map[uuid.UUID]*Player)
 		for _, g := range deletedGames {
 			for _, pid := range []uuid.UUID{g.PlayerWhite, g.PlayerBlack} {
 				if pid == playerId {
 					continue
 				}
-				if _, found := initialRatings[pid]; !found {
-					p, _ := getPlayerById(tx, pid)
+				if _, found := initialPlayers[pid]; !found {
+					p, err := getPlayerById(tx, pid)
+					if err != nil {
+						return errors.Join(errors.New("Cannot get player to initialize replay"), err)
+					}
 					if g.PlayerWhite == pid {
 						p.Liglicko2Rating = g.Liglicko2WhiteOldRating
 						p.Liglicko2Deviation = g.Liglicko2WhiteOldDeviation
@@ -400,17 +400,7 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 						p.Liglicko2Volatility = g.Liglicko2BlackOldVolatility
 						p.Liglicko2At = g.Liglicko2BlackOldAt
 					}
-					initialRatings[pid] = p
-
-					_, err = tx.NamedExec(`UPDATE players SET 
-						liglicko2_rating=:liglicko2_rating, 
-						liglicko2_deviation=:liglicko2_deviation, 
-						liglicko2_volatility=:liglicko2_volatility, 
-						liglicko2_at=:liglicko2_at 
-						WHERE id=:id`, p)
-					if err != nil {
-						return errors.Join(errors.New("Cannot reset player rating before replay"), err)
-					}
+					initialPlayers[pid] = &p
 				}
 			}
 		}
@@ -421,7 +411,7 @@ func DeletePlayer(db db.Db, playerId, adminId uuid.UUID) error {
 			return errors.Join(errors.New("Cannot select the last applicable game to replay from"), err)
 		}
 
-		games, players, err := ReplayFrom(tx, ikeyGameToReplayFrom)
+		games, players, err := ReplayFrom(tx, ikeyGameToReplayFrom, initialPlayers)
 		if err != nil {
 			return errors.Join(errors.New("Cannot replay games"), err)
 		}
@@ -564,7 +554,7 @@ func MergePlayers(db db.Db, target, dest, adminId uuid.UUID) error {
 		return errors.Join(errors.New("Cannot delete games where the player played against themselves"), err)
 	}
 
-	games, players, err := ReplayFrom(tx, ikey)
+	games, players, err := ReplayFrom(tx, ikey, nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot replay games to calculate new ELOs"), err)
 	}
