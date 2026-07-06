@@ -102,7 +102,7 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 		FROM audit_log_player_affected a
 		JOIN players p ON a.player_id = p.id
 		WHERE a.audit_log_id=$1
-		ORDER BY is_main_target ASC, p.name ASC;`, id)
+		ORDER BY is_main_target ASC, p.name ASC, p.id ASC;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log player affected"), err)
 	}
@@ -115,7 +115,7 @@ func GetAuditLog(tx *sqlx.Tx, id uuid.UUID) (*DetailedAuditLog, error) {
 		JOIN players w ON g.player_white = w.id
 		JOIN players b ON g.player_black = b.id
 		WHERE a.audit_log_id=$1
-		ORDER BY is_main_target ASC, g.played ASC;`, id)
+		ORDER BY is_main_target ASC, g.played ASC, g.ikey ASC;`, id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get audit log game affected"), err)
 	}
