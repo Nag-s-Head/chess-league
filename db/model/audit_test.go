@@ -247,10 +247,10 @@ func TestGetAuditLogWithGameAndPlayer(t *testing.T) {
 	admin := model.NewAdminUser("bob", uuid.New().String(), "uwu", "uwu")
 	require.NoError(t, model.InsertAdminUser(tx, *admin))
 
-	p1 := model.NewPlayer(uuid.New().String())
+	p1 := model.NewPlayer("a" + uuid.New().String())
 	require.NoError(t, model.InsertPlayerTx(tx, p1))
 
-	p2 := model.NewPlayer(uuid.New().String())
+	p2 := model.NewPlayer("z" + uuid.New().String())
 	require.NoError(t, model.InsertPlayerTx(tx, p2))
 
 	ikey, err := model.NextIKey(db)
