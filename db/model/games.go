@@ -206,31 +206,29 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 
 	var whiteGames, whiteWins, blackGames, blackWins int
 	for _, g := range games {
-		if g.Deleted {
-			continue
-		}
-
-		details.TotalGames++
-		isWhite := g.PlayerWhite == playerId
-		if isWhite {
-			whiteGames++
-			if g.Score == Score_Win {
-				details.Wins++
-				whiteWins++
-			} else if g.Score == Score_Loss {
-				details.Losses++
+		if !g.Deleted {
+			details.TotalGames++
+			isWhite := g.PlayerWhite == playerId
+			if isWhite {
+				whiteGames++
+				if g.Score == Score_Win {
+					details.Wins++
+					whiteWins++
+				} else if g.Score == Score_Loss {
+					details.Losses++
+				} else {
+					details.Draws++
+				}
 			} else {
-				details.Draws++
-			}
-		} else {
-			blackGames++
-			if g.Score == Score_Loss {
-				details.Wins++
-				blackWins++
-			} else if g.Score == Score_Win {
-				details.Losses++
-			} else {
-				details.Draws++
+				blackGames++
+				if g.Score == Score_Loss {
+					details.Wins++
+					blackWins++
+				} else if g.Score == Score_Win {
+					details.Losses++
+				} else {
+					details.Draws++
+				}
 			}
 		}
 
