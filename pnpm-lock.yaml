@@ -19,7 +19,7 @@ importers:
         version: 2.0.10
       prettier:
         specifier: ^3.8.3
-        version: 3.9.3
+        version: 3.9.4
       tailwindcss:
         specifier: ^4.3.0
         version: 4.3.2
@@ -350,8 +350,8 @@ packages:
     resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
 
-  prettier@3.9.3:
-    resolution: {integrity: sha512-HWmu+K+zvHNpaMfSnYeqdqrDbR16cuIXaPx8WoHaviQkDJh1/0BNtOZmHVQI5jc3wXv0H1yXc9wjvFdXh+n3hQ==}
+  prettier@3.9.4:
+    resolution: {integrity: sha512-yWG/o/4oJfo036EKAfK6ACAoDOfHeRHx4tuxkfBZiauURiaSmYwlpOr5LQqKtIkRD2z1PLteme2WoxEnj4tHTg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -623,7 +623,7 @@ snapshots:
 
   picomatch@2.3.2: {}
 
-  prettier@3.9.3: {}
+  prettier@3.9.4: {}
 
   source-map-js@1.2.1: {}
 
