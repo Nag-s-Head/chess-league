@@ -61,7 +61,7 @@ func CalculateLiglicko2(a, b *Player, outcome Outcome, playedAt time.Time) (floa
 	return deltaA, deltaB, nil
 }
 
-func ReplayFrom(txx *sqlx.Tx, ikey int64) ([]Game, []*Player, error) {
+func ReplayFrom(txx *sqlx.Tx, ikey int64, initialPlayers map[uuid.UUID]*Player) ([]Game, []*Player, error) {
 	getOrAddPlayer := func(txx *sqlx.Tx, players map[uuid.UUID]*Player, id uuid.UUID, game *Game) (*Player, error) {
 		player, found := players[id]
 		if !found {
@@ -90,7 +90,10 @@ func ReplayFrom(txx *sqlx.Tx, ikey int64) ([]Game, []*Player, error) {
 	}
 
 	var seedGame Game
-	affectedPlayers := make(map[uuid.UUID]*Player)
+	affectedPlayers := initialPlayers
+	if affectedPlayers == nil {
+		affectedPlayers = make(map[uuid.UUID]*Player)
+	}
 	err := txx.Get(&seedGame, "SELECT * FROM games WHERE ikey = $1;", ikey)
 	if err != nil {
 		return nil, nil, errors.Join(errors.New("Cannot get seed game to start replays from"), err)

@@ -62,7 +62,7 @@ func TestReplayFromConsistency(t *testing.T) {
 	defer tx.Rollback()
 
 	// Replay starting from the first game
-	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.IKey)
+	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.IKey, nil)
 	require.NoError(t, err)
 
 	// Find our players in the affected list
@@ -141,7 +141,7 @@ func TestReplayAfterEdit(t *testing.T) {
 	_, err = tx.Exec("UPDATE games SET score = $1 WHERE ikey = $2", model.Score_Draw, ikey1)
 	require.NoError(t, err)
 
-	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.IKey)
+	affectedGames, affectedPlayers, err := model.ReplayFrom(tx, g1.IKey, nil)
 	require.NoError(t, err)
 
 	var g1Final, g2Final *model.Game

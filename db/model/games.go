@@ -362,7 +362,7 @@ func GetTotalGameCount(db db.Db) (int, error) {
 }
 
 func replayGames(tx *sqlx.Tx, adminId uuid.UUID, ikey int64, auditLogOperation, auditLogMessage string) error {
-	games, players, err := ReplayFrom(tx, ikey)
+	games, players, err := ReplayFrom(tx, ikey, nil)
 	if err != nil {
 		return errors.Join(errors.New("Cannot replay games to calculate new ratings"), err)
 	}
