@@ -148,7 +148,7 @@ func PostPlayerDetails(db db.Db) func(*model.AdminUser) func(http.ResponseWriter
 					adminutils.RenderError(w, err)
 					return
 				}
-				w.Write([]byte(fmt.Sprintf("<input type='hidden' name='merge-player-dest' value='%s'>", destIdStr)))
+				w.Write([]byte(fmt.Sprintf("<input type='hidden' name='merge-player-dest' value='%s'>", destId.String())))
 			case "merge-confirm":
 				if !utils.IsConfirmed(r) {
 					adminutils.RenderError(w, errors.New("Not confirmed"))
