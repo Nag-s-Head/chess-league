@@ -48,13 +48,13 @@
           {{ if .IsAdmin }}
           <a href="/admin"
             ><h1 class="text-3xl xl:text-4xl text-white text-wrap">
-              <span class="font-bold"> Nag&apos;s Knights </span> - Admin Portal
+              <span class="font-bold"> {{.Theme.AppName}} </span> - Admin Portal
             </h1></a
           >
           {{ else }}
           <a href="/"
             ><h1 class="text-3xl xl:text-4xl font-bold text-white">
-              Nag&apos;s Knights
+              {{.Theme.AppName}}
             </h1></a
           >
           {{ end}}

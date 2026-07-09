@@ -18,7 +18,7 @@ var magicNumber string = os.Getenv(submitgame.MagicNumberEnvVar)
 // probably long enough to submit a game
 const maxAge = 3 * 60 * 60
 
-func SubmitGame(db db.Db) func(w http.ResponseWriter, r *http.Request) {
+func SubmitGame(db db.Db, WithLayout LayoutFn) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		magic := ""
 		cookie, err := r.Cookie(submitgame.MagicNumberCookie)

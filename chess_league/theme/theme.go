@@ -1,4 +1,4 @@
-package chess_league
+package theme 
 
 type ColourHex string // hex code (with hash) i.e: #ffffff, #a000ff
 
@@ -12,6 +12,7 @@ const (
 
 type Theme struct {
 	AppName            string
+	VenueName          string
 	PrimaryColour      ColourHex
 	SecondaryColour    ColourHex
 	TitleBarTextColour string
@@ -28,6 +29,8 @@ func DefaultTheme() Theme {
 		TitleBarTextColour: "#ffffff",
 		AppIcon:            appIcon,
 		AppIconType:        appIconType,
+		AppName:            "Chess League",
+		VenueName:          "our club",
 	}
 }
 
