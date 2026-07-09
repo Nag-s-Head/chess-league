@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Nag-s-Head/chess-league/chess_league/theme"
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/Nag-s-Head/chess-league/handlers"
@@ -23,7 +23,7 @@ func TestIndex(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
 	w := httptest.NewRecorder()
-	handlers.Index(db, withLayout)(w, r)
+	handlers.Index(db, theme.DefaultTheme())(w, r)
 
 	body, err := io.ReadAll(w.Result().Body)
 	require.NoError(t, err)

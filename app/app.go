@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Nag-s-Head/chess-league/chess_league/theme"
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	psqldb "github.com/Nag-s-Head/chess-league/db/psql_db"
 	"github.com/Nag-s-Head/chess-league/handlers"
 )

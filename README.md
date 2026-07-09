@@ -6,6 +6,56 @@
 
 Want to run a chess league? - use this.
 
+## Setup
+
+You can use `docker compose up` to create a test environment to experiemnt with, or you can following this guide to create a styled version of the app.
+
+0. Setup a Postgres database
+1. Setup a Github organisation and a PAT (see Environment Variable section for recommendations)
+1. Setup An Oauth2 provider
+1. Setup the environment variables, see below
+1. Create a project main file called main.go with the following code
+1. Change the code to set the name of your app, and the theme
+1. Run your app and it will be styled
+
+```go
+package main
+
+import (
+	"os"
+
+	chess_league "github.com/Nag-s-Head/chess-league/app"
+)
+
+func main() {
+	app := chess_league.New()
+	app.Addr = "0.0.0.0:8080"
+	if os.Getenv("APP_BASE_URL") == "" {
+		os.Setenv("APP_BASE_URL", app.Addr)
+	}
+
+	app.Theme.AppName = "Chess League"
+	app.Theme.VenueName = "Our Club"
+	app.Theme.PrimaryColour = "#300090"
+	app.Theme.SecondaryColour = "#300050"
+	app.Theme.TitleBarTextColour = "#ffffff"
+	app.Run()
+}
+```
+
+### Environment Variables
+
+| Variable            | Usage                                                                         | Example                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| DATABASE_URL        | The full URL of the Postgres database                                         | `user=magnus password=bong-cloud dbname=chess-league host=database port=5432 sslmode=disable` |
+| MAGIC_NUMBER        | The magic number that clients need to submit a game                           | 3743289472-does-not-actually-need-to-be-a-number                                              |
+| GITHUB_ORGANISATION | The full name of the organisation                                             | `Nag-s-Head`, as seen in our repo's URL `https://github.com/Nag-s-Head/chess-league`          |
+| GITHUB_API_KEY      | A personal access token to allow read of the private org members              | `github_pat_...`                                                                              |
+| OAUTH_CLIENT_ID     | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
+| OAUTH_CLIENT_SECRET | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
+| APP_BASE_URL        | The base URL of the application, used for OAuth redirects                     | `https://nagsknights.co.uk`                                                                   |
+| TEST_MODE           | When enabled this uses a mocked Oauth implementation                          | `true` or omit to disable                                                                     |
+
 ## Developer Guide
 
 This is a Go application that hosts a web server that serves dynamically generated HTML that Go template
@@ -40,19 +90,6 @@ but that is not the intended dev environment.
 
 - To format the codebase use the following command:
   `make format -j`
-
-## Environment Variables
-
-| Variable            | Usage                                                                         | Example                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| DATABASE_URL        | The full URL of the Postgres database                                         | `user=magnus password=bong-cloud dbname=chess-league host=database port=5432 sslmode=disable` |
-| MAGIC_NUMBER        | The magic number that clients need to submit a game                           | 3743289472-does-not-actually-need-to-be-a-number                                              |
-| GITHUB_ORGANISATION | The full name of the organisation                                             | `Nag-s-Head`, as seen in our repo's URL `https://github.com/Nag-s-Head/chess-league`          |
-| GITHUB_API_KEY      | A personal access token to allow read of the private org members              | `github_pat_...`                                                                              |
-| OAUTH_CLIENT_ID     | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
-| OAUTH_CLIENT_SECRET | Used for admin portal authentication, created under Github developer settings | `1234...`                                                                                     |
-| APP_BASE_URL        | The base URL of the application, used for OAuth redirects                     | `https://nagsknights.co.uk`                                                                   |
-| TEST_MODE           | When enabled this uses a mocked Oauth implementation                          | `true` or omit to disable                                                                     |
 
 ## AI Policy
 

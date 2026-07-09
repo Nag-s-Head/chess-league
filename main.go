@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Nag-s-Head/chess-league/chess_league"
+	chess_league "github.com/Nag-s-Head/chess-league/app"
 )
 
 func main() {

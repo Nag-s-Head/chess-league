@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Nag-s-Head/chess-league/chess_league/theme"
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/handlers/admin"
 	"github.com/Nag-s-Head/chess-league/handlers/assets"

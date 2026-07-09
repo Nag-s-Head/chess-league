@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Nag-s-Head/chess-league/chess_league/theme"
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
 )
