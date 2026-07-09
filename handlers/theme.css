@@ -5,3 +5,7 @@
 .border-secondary {
   border-color: {{.SecondaryColour}};
 }
+
+.titlebar-text {
+  color: {{.TitleBarTextColour}};
+}
