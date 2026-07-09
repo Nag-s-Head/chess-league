@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/Nag-s-Head/chess-league/handlers"
@@ -14,13 +15,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var withLayout handlers.LayoutFn = handlers.WithLayout(theme.DefaultTheme())
+
 func TestIndex(t *testing.T) {
 	db := testutils.GetDb(t)
 	defer db.Close()
 
 	r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
 	w := httptest.NewRecorder()
-	handlers.Index(db)(w, r)
+	handlers.Index(db, theme.DefaultTheme())(w, r)
 
 	body, err := io.ReadAll(w.Result().Body)
 	require.NoError(t, err)
@@ -40,7 +43,7 @@ func TestPlayerDetails(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/player/"+player.Id.String(), strings.NewReader(""))
 		r.SetPathValue("id", player.Id.String())
 		w := httptest.NewRecorder()
-		handlers.PlayerDetails(db)(w, r)
+		handlers.PlayerDetails(db, withLayout)(w, r)
 
 		require.Equal(t, http.StatusOK, w.Code)
 		require.Contains(t, w.Body.String(), "Test Player")
@@ -50,7 +53,7 @@ func TestPlayerDetails(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/player/not-a-uuid", strings.NewReader(""))
 		r.SetPathValue("id", "not-a-uuid")
 		w := httptest.NewRecorder()
-		handlers.PlayerDetails(db)(w, r)
+		handlers.PlayerDetails(db, withLayout)(w, r)
 
 		require.Equal(t, http.StatusBadRequest, w.Code)
 	})
@@ -60,7 +63,7 @@ func TestPlayerDetails(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/player/"+id, strings.NewReader(""))
 		r.SetPathValue("id", id)
 		w := httptest.NewRecorder()
-		handlers.PlayerDetails(db)(w, r)
+		handlers.PlayerDetails(db, withLayout)(w, r)
 
 		require.Equal(t, http.StatusInternalServerError, w.Code)
 	})

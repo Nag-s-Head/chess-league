@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
 )
@@ -15,9 +16,10 @@ type IndexData struct {
 	TotalGames                   int
 	TotalPlayers                 int
 	MinimumStableRatingDeviation float64
+	Theme                        theme.Theme
 }
 
-func Index(db db.Db) func(w http.ResponseWriter, r *http.Request) {
+func Index(db db.Db, theme theme.Theme) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		players, err := model.GetPlayersByElo(db, false)
 		if err != nil {
@@ -49,6 +51,6 @@ func Index(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		WithLayout(w, template.HTML(buf.String()))
+		WithLayout(theme)(w, template.HTML(buf.String()))
 	}
 }
