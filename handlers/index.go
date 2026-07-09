@@ -41,6 +41,7 @@ func Index(db db.Db, theme theme.Theme) func(w http.ResponseWriter, r *http.Requ
 			TotalGames:                   gameCount,
 			TotalPlayers:                 playerCount,
 			MinimumStableRatingDeviation: model.MinimumStableRatingDeviation,
+			Theme:                        theme,
 		}
 
 		var buf bytes.Buffer
