@@ -89,7 +89,7 @@ func League(db db.Db) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHandler returns a router that handles all site routes.
-func NewHandler(db db.Db) http.Handler {
+func NewHandler(db db.Db, themeCss []byte) http.Handler {
 	mux := http.NewServeMux()
 	// {$} matches exactly "/"
 	mux.HandleFunc("GET /{$}", Index(db))
@@ -102,7 +102,7 @@ func NewHandler(db db.Db) http.Handler {
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
 	submitgame.Register(mux, db)
 	admin.Register(mux, db, WithLayoutAdmin)
-	assets.Register(mux)
+	assets.Register(mux, themeCss)
 
 	slog.Info(fmt.Sprintf("To submit a game use %s/%s?%s=%s",
 		os.Getenv("APP_BASE_URL"),

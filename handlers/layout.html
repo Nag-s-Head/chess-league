@@ -7,6 +7,7 @@
     <script src="/assets/htmx.js"></script>
     <script src="/assets/htmx-ws.js"></script>
     <link rel="stylesheet" href="/assets/tailwind.css" />
+    <link rel="stylesheet" href="/assets/theme.css" />
     <script>
       htmx.config.wsReconnectDelay = function (retryCount) {
         return (1 + retryCount) * 1000;
@@ -18,7 +19,7 @@
   <body class="bg-gray-50" hx-ext="ws">
     <div class="flex flex-col min-h-screen">
       <header
-        class="flex flex-row gap-5 w-full items-center p-2 px-5 bg-rose-600 border-b-2 border-rose-300"
+        class="flex flex-row gap-5 w-full items-center p-2 px-5 bg-primary border-b-2 border-secondary"
       >
         <div class="flex flex-row gap-2 w-full items-center">
           <svg

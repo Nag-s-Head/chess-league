@@ -63,7 +63,7 @@ var isTestMode = os.Getenv("TEST_MODE") == "true"
 
 func Register(mux *http.ServeMux, db db.Db, LayoutRender func(w http.ResponseWriter, body template.HTML)) {
 	if isTestMode {
-		slog.Warn("Test mod is enabled, if this is a production environment then you should turn it off!")
+		slog.Warn("Test mode is enabled, if this is a production environment then you should turn it off!")
 		mux.HandleFunc(fmt.Sprintf("GET %s/test-mode", BasePath), WithLayout(testmode.Login, LayoutRender))
 		mux.HandleFunc(fmt.Sprintf("POST %s/test-mode", BasePath), testmode.LoginPost(db))
 	}

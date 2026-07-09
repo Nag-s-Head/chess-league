@@ -5,5 +5,9 @@ import (
 )
 
 func main() {
-	chess_league.New().Run()
+	app := chess_league.New()
+	app.Theme.AppName = "Nag's Knights"
+	app.Theme.PrimaryColour = "#ec003f"
+	app.Theme.SecondaryColour = "#ffa1ad"
+	app.Run()
 }
