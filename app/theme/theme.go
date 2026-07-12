@@ -1,4 +1,12 @@
-package theme 
+package theme
+
+import (
+	"fmt"
+	"html/template"
+	"net/http"
+
+	"github.com/Nag-s-Head/chess-league/handlers/assets"
+)
 
 type ColourHex string // hex code (with hash) i.e: #ffffff, #a000ff
 
@@ -58,4 +66,29 @@ func DefaultIcon() ([]byte, AppIconType) {
     />
   </g>
 </svg>`), AppIconType_Svg
+}
+
+// This has no file extension as content-type headers are used instead
+const AppIconPath = "/assets/icon"
+
+func (t *Theme) AppIconImageHTML() template.HTML {
+	return template.HTML(fmt.Sprintf(`<img src="%s" alt="App icon" />`, AppIconPath))
+}
+
+func (t *Theme) AppIconImageHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var mimeType string
+		switch t.AppIconType {
+		case AppIconType_Svg:
+			mimeType = "image/svg+xml"
+		case AppIconType_Jpg:
+			mimeType = "image/jpeg"
+		case AppIconType_Png:
+			mimeType = "image/png"
+		default:
+			panic(fmt.Errorf("Invalid app icon type %d", t.AppIconType))
+		}
+
+		assets.ServeAsset(t.AppIcon, mimeType)(w, r)
+	}
 }
