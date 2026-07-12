@@ -39,6 +39,14 @@ func main() {
 	app.Theme.PrimaryColour = "#300090"
 	app.Theme.SecondaryColour = "#300050"
 	app.Theme.TitleBarTextColour = "#ffffff"
+    app.Theme.AppIconType = theme.AppIconType_Png
+
+    icon, err := os.ReadFile("./knight.png")
+    if err != nil {
+		slog.Error("Cannot read the file")
+		os.Exit(1)
+    }
+    app.Theme.AppIcon = icon
 	app.Run()
 }
 ```
