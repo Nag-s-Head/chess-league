@@ -32,6 +32,7 @@ type Layout struct {
 	Body    template.HTML
 	IsAdmin bool
 	Theme   theme.Theme
+	AppIcon template.HTML
 }
 
 func generateThemeCss(theme theme.Theme) ([]byte, error) {
@@ -50,6 +51,7 @@ func withLayout(w http.ResponseWriter, body template.HTML, isAdmin bool, theme t
 		Body:    body,
 		IsAdmin: isAdmin,
 		Theme:   theme,
+		AppIcon: theme.AppIconImageHTML(),
 	})
 	if err != nil {
 		slog.Error("Cannot execute layout template", "err", err)
@@ -114,25 +116,26 @@ func League(db db.Db, WithLayout LayoutFn) func(w http.ResponseWriter, r *http.R
 }
 
 // NewHandler returns a router that handles all site routes.
-func NewHandler(db db.Db, theme theme.Theme) (http.Handler, error) {
-	themeCss, err := generateThemeCss(theme)
+func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
+	themeCss, err := generateThemeCss(t)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot generate theme css"), err)
 	}
 
 	mux := http.NewServeMux()
-	layoutFn := WithLayout(theme)
+	layoutFn := WithLayout(t)
 	// {$} matches exactly "/"
-	mux.HandleFunc("GET /{$}", Index(db, theme))
+	mux.HandleFunc("GET /{$}", Index(db, t))
 	mux.HandleFunc("GET /player/{id}", PlayerDetails(db, layoutFn))
 	mux.HandleFunc("GET /test", Test(layoutFn))
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy(layoutFn))
 	mux.HandleFunc("GET /league", League(db, layoutFn))
 	mux.HandleFunc("GET /rules", Rules(layoutFn))
 	mux.HandleFunc("GET /rules/agree", RulesAgree)
+	mux.HandleFunc(fmt.Sprintf("GET %s", theme.AppIconPath), t.AppIconImageHandler())
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db, layoutFn))
 	submitgame.Register(mux, db)
-	admin.Register(mux, db, WithLayoutAdmin(theme))
+	admin.Register(mux, db, WithLayoutAdmin(t))
 	assets.Register(mux, themeCss)
 
 	slog.Info(fmt.Sprintf("To submit a game use %s/%s?%s=%s",
