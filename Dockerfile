@@ -1,4 +1,4 @@
-FROM golang:1.26.4-trixie AS initial
+FROM golang:1.26.5-trixie AS initial
 
 FROM initial AS with_go_mod
 COPY ./go.mod .
