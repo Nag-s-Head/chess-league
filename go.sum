@@ -36,6 +36,10 @@ github.com/djpiper28/rpg-book v0.0.2 h1:SFROiOMQg7NPXvbSlWbX9XufAKrssn42EhH+wfaO
 github.com/djpiper28/rpg-book v0.0.2/go.mod h1:LayjgztQRO2UwISVs5q8LxOGZH81gPdZAzB2fg7nVSM=
 github.com/djpiper28/rpg-book v0.0.3 h1:6rPrRK+wwwj87N1rh/7WA5lcdzb67vR9/dWnZHAhPmQ=
 github.com/djpiper28/rpg-book v0.0.3/go.mod h1:LayjgztQRO2UwISVs5q8LxOGZH81gPdZAzB2fg7nVSM=
+github.com/djpiper28/rpg-book v0.0.4 h1:Qc6h/na01W9Zq/o6+gZnzDhnXDNE8TegMA1sWkRVt6E=
+github.com/djpiper28/rpg-book v0.0.4/go.mod h1:LayjgztQRO2UwISVs5q8LxOGZH81gPdZAzB2fg7nVSM=
+github.com/djpiper28/rpg-book v0.0.5 h1:3pqZvLoSMhO0y1OfTee6KuMCw+rOMyN/K1nk2jV6anc=
+github.com/djpiper28/rpg-book v0.0.5/go.mod h1:LayjgztQRO2UwISVs5q8LxOGZH81gPdZAzB2fg7nVSM=
 github.com/fogleman/gg v1.3.0 h1:/7zJX8F6AaYQc57WQCyN9cAIz+4bCJGO9B+dyW29am8=
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/go-logfmt/logfmt v0.6.0 h1:wGYYu3uicYdqXVgoYbvnkrPVXkuLM1p1ifugDMEdRi4=

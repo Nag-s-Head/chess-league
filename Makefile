@@ -12,6 +12,9 @@ nuke-db:
 	docker compose down database
 	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
 
+psql:
+	docker exec -it -u postgres nagsknightschessleaguetestserver-database-1 bash -c "PG_PASSWORD=bond-bloud psql -U magnus -d chess-league"
+
 generate:
 	go generate ./...
 
