@@ -36,3 +36,6 @@ local/
 node_modules/
 pgsql_mock/
 sonar-project.properties
+
+testdata/
+cpu.prof

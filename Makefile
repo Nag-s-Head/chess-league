@@ -21,6 +21,9 @@ generate:
 test: docker-images generate
 	go test ./... -timeout=60s
 
+fuzz: docker-images generate
+	go test -fuzz FuzzSearch ./db/search/
+
 build: generate
 	go build
 

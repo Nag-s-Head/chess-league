@@ -74,7 +74,7 @@ func SearchPlayers(db db.Db, query string) ([]model.Player, error) {
 
 	defer tx.Rollback()
 
-	var players []model.Player
+	players := make([]model.Player, 0)
 	err = tx.Select(&players, query, args...)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot execute query SQL"), err)
