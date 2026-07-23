@@ -4,31 +4,14 @@ permissions:
   contents: read
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
-
-permissions:
-  contents: read
+    branches: ["main"]
+  push:
+    branches: ["*"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_USER: magnus
-          POSTGRES_PASSWORD: bong-cloud
-          POSTGRES_DB: chess-league
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -48,13 +31,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: make build -j
 
       - name: Test
-        env:
-          DATABASE_URL: "user=magnus password=bong-cloud dbname=chess-league host=localhost port=5432 sslmode=disable"
-          MAGIC_NUMBER: test-123
-          GITHUB_ORGANISATION: test
-          TEST_MODE: true
-          APP_BASE_URL: localhost:8080
-        run: go test -parallel=1 -coverprofile=coverage.out ./...
+        run: make test -j
