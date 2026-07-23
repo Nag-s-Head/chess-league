@@ -5,8 +5,7 @@ permissions:
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: ["main"]
   push:
     branches: ["*"]
 
@@ -36,4 +35,3 @@ jobs:
         env:
           FUZZTIME: 5m
         run: make fuzz -j
-
