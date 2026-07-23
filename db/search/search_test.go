@@ -34,7 +34,7 @@ func TestSearchPlayers(t *testing.T) {
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Sophie"+uuid.NewString())))
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Anne"+uuid.NewString())))
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Charlotte"+uuid.NewString())))
-	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("John Major"+uuid.NewString())))
+	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Andy Burnham"+uuid.NewString())))
 
 	beryl := model.NewPlayer("Beryl" + uuid.NewString())
 	beryl.Deleted = true
@@ -117,9 +117,9 @@ func FuzzSearch(f *testing.F) {
 	f.Add("rating~999")
 
 	f.Add("deviation=123")
-	f.Add("name=John Major")
-	f.Add("name~John Major")
-	f.Add(`name~"John Major"`)
+	f.Add("name=Andy Burnham")
+	f.Add("name~Andy Burnham")
+	f.Add(`name~"Andy Burnham"`)
 
 	f.Add(`deleted=false and (name_norm=greg OR name_norm="chas") and (rating>600 and rating<1600)`)
 	f.Add(`(name_norm=greg OR name_norm="chas") and rating>600 and rating<1600`)
@@ -154,7 +154,7 @@ func FuzzSearch(f *testing.F) {
 		require.NoError(t, model.InsertPlayer(dbInstance, model.NewPlayer("Sophie"+uuid.NewString())))
 		require.NoError(t, model.InsertPlayer(dbInstance, model.NewPlayer("Anne"+uuid.NewString())))
 		require.NoError(t, model.InsertPlayer(dbInstance, model.NewPlayer("Charlotte"+uuid.NewString())))
-		require.NoError(t, model.InsertPlayer(dbInstance, model.NewPlayer("John Major"+uuid.NewString())))
+		require.NoError(t, model.InsertPlayer(dbInstance, model.NewPlayer("Andy Burnham"+uuid.NewString())))
 
 		return dbInstance
 	}
