@@ -31,7 +31,7 @@ const MaxEloChanges = 10
 
 const (
 	imageHeight                        = 70
-	pixelsPerEntry                     = 30
+	pixelsPerEntry                     = 25
 	lineThickness                      = 3
 	backgroundColourMultiplier float32 = 0.8
 )
