@@ -127,6 +127,7 @@ func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
 	// {$} matches exactly "/"
 	mux.HandleFunc("GET /{$}", Index(db, t))
 	mux.HandleFunc("GET /player/{id}", PlayerDetails(db, layoutFn))
+	mux.HandleFunc("GET /player/{id}/elo-chart", playerdetails.ServeChart(db))
 	mux.HandleFunc("GET /test", Test(layoutFn))
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy(layoutFn))
 	mux.HandleFunc("GET /league", League(db, layoutFn))

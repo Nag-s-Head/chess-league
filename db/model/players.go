@@ -11,6 +11,7 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/liglicko2"
+	elo_charts "github.com/Nag-s-Head/chess-league/img/elo_charts"
 	"github.com/djpiper28/rpg-book/common/normalisation"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -591,4 +592,73 @@ func MergePlayers(db db.Db, target, dest, adminId uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func PlayerEloChart(db db.Db, id uuid.UUID) ([]byte, error) {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot create transaction"), err)
+	}
+	defer tx.Rollback()
+
+	games := make([]Game, 0)
+	err = tx.Select(&games, `
+		SELECT
+		  liglicko2_white, liglicko2_black, player_white, player_black
+		FROM
+			games
+		WHERE
+		  (
+		      (games.player_white=$1)
+		    OR
+		      (games.player_black=$1)
+	   	)
+		  AND 
+		    deleted=false
+		ORDER BY
+		  games.played DESC
+		LIMIT $2;
+		`,
+		id,
+		elo_charts.MaxEloChanges)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot get latest games for player"), err)
+	}
+
+	player, err := GetPlayerTx(tx, id)
+	if err != nil {
+		return nil, errors.Join(errors.New("cannot get player"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	params := elo_charts.Params{
+		Changes: make([]elo_charts.EloChange, 0),
+		EndElo:  int(player.Liglicko2Rating),
+	}
+
+	for _, game := range games {
+		var eloChange int
+		if game.PlayerWhite == id {
+			eloChange = int(game.Liglicko2White)
+		} else {
+			eloChange = int(game.Liglicko2Black)
+		}
+
+		params.Changes = append(params.Changes, elo_charts.EloChange{
+			Delta: eloChange,
+		})
+	}
+
+	// They are in desc order at the moment, the chart takes asc order
+	slices.Reverse(games)
+
+	img, err := elo_charts.Render(params)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot render chart"), err)
+	}
+	return img, nil
 }
