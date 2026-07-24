@@ -1,7 +1,10 @@
 package games_test
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -37,14 +40,36 @@ func TestRender(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, _, _, err = model.CreateGame(tx, &player1, &player2, true, ikey2, model.Score_Win, &http.Request{
+	_, _, _, err = model.CreateGame(tx, &player1, &player2, true, ikey2, model.Score_Draw, &http.Request{
 		RemoteAddr: "0.0.0.0",
 	})
 	require.NoError(t, err)
 	require.NoError(t, tx.Commit())
 
-	tpl, err := games.Render(db)(nil, nil, model.NewAdminUser("bob", "bob", "0.0.0.0", "bob"))
-	require.NoError(t, err)
-	require.NotNil(t, tpl)
-	require.True(t, strings.Contains(string(tpl), "ELO"))
+	t.Run("No Search", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/mocked-url", strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		tpl, err := games.Render(db)(w, r, model.NewAdminUser("bob", "bob", "0.0.0.0", "bob"))
+		require.NoError(t, err)
+		require.Contains(t, tpl, player1.Name)
+		require.Contains(t, tpl, player2.Name)
+	})
+
+	t.Run("Invalid Search", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?q=%s", url.QueryEscape("(((")), strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		_, err := games.Render(db)(w, r, model.NewAdminUser("bob", "bob", "0.0.0.0", "bob"))
+		require.Error(t, err)
+
+		t.Run("Search", func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?q=%s", url.QueryEscape("score=1-0")), strings.NewReader(""))
+			w := httptest.NewRecorder()
+
+			tpl, err := games.Render(db)(w, r, model.NewAdminUser("bob", "bob", "0.0.0.0", "bob"))
+			require.NoError(t, err)
+			require.NotContains(t, string(tpl), "Draw")
+		})
+	})
 }
