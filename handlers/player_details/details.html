@@ -5,9 +5,12 @@
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="p-4 bg-gray-100 rounded-lg">
-      <p class="text-sm text-gray-500">Current Elo</p>
-      <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
+    <div class="bg-gray-100 rounded-lg flex flex-col md:flex-row gap-4 justify-between">
+      <div class="flex flex-col gap-4 p-4">
+        <p class="text-sm text-gray-500">Current Elo</p>
+        <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
+      </div>
+      <img src="/player/{{.Player.Id}}/elo-chart" />
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Games Played</p>

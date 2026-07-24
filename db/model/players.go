@@ -603,15 +603,22 @@ func PlayerEloChart(db db.Db, id uuid.UUID) ([]byte, error) {
 
 	games := make([]Game, 0)
 	err = tx.Select(&games, `
-		SELECT FROM
+		SELECT
+		  liglicko2_white, liglicko2_black, player_white, player_black
+		FROM
 			games
 		WHERE
-		  (games.player_white=$1) OR (games.player_black=$2)
+		  (
+		      (games.player_white=$1)
+		    OR
+		      (games.player_black=$1)
+	   	)
+		  AND 
+		    deleted=false
 		ORDER BY
 		  games.played DESC
-		LIMIT $3;
+		LIMIT $2;
 		`,
-		id,
 		id,
 		elo_charts.MaxEloChanges)
 	if err != nil {
