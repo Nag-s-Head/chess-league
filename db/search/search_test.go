@@ -27,7 +27,7 @@ func TestSearchPlayers(t *testing.T) {
 	// Search uses log debug for queries, this makes it far easier to reason with test failures
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Dave"+uuid.NewString())))
+	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Dariuz"+uuid.NewString())))
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Chas"+uuid.NewString())))
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Danny"+uuid.NewString())))
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Greg"+uuid.NewString())))
@@ -42,17 +42,17 @@ func TestSearchPlayers(t *testing.T) {
 	require.NoError(t, model.InsertPlayer(db, beryl))
 
 	t.Run("Default Search", func(t *testing.T) {
-		players, err := search.SearchPlayers(db, "dave")
+		players, err := search.SearchPlayers(db, "dariuz")
 		require.NoError(t, err)
 		require.NotEmpty(t, players)
-		require.Contains(t, players[0].Name, "Dave")
+		require.Contains(t, players[0].Name, "Dariuz")
 	})
 
 	t.Run("Default Search Fuzzy", func(t *testing.T) {
-		players, err := search.SearchPlayers(db, "dav")
+		players, err := search.SearchPlayers(db, "daa")
 		require.NoError(t, err)
 		require.NotEmpty(t, players)
-		require.Contains(t, players[0].Name, "Dave")
+		require.Contains(t, players[0].Name, "Dariuz")
 	})
 
 	t.Run("Test Rating Alias", func(t *testing.T) {
