@@ -39,12 +39,12 @@ func SearchPlayers(db db.Db, query string) ([]model.Player, error) {
 			"name": "players.name",
 		},
 		BooleanColumns: map[string]string{
-			"deleted": "deleted",
+			"deleted": "players.deleted",
 		},
 		NumberColumns: map[string]string{
-			"rating":     "liglicko2_rating",
-			"deviation":  "liglicko2_deviation",
-			"volatility": "liglicko2_volatility",
+			"rating":     "players.liglicko2_rating",
+			"deviation":  "players.liglicko2_deviation",
+			"volatility": "players.liglicko2_volatility",
 		},
 		CustomColumns: map[string]sqlsearch.CustomColumn{
 			"name_norm": playerNameNormMapper{},
