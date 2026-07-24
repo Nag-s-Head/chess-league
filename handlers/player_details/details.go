@@ -10,7 +10,6 @@ import (
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
-	"github.com/Nag-s-Head/chess-league/handlers/assets"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
 	elo_charts "github.com/Nag-s-Head/chess-league/img/elo_charts"
 	"github.com/google/uuid"
