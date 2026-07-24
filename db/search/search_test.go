@@ -38,7 +38,7 @@ func TestSearchPlayers(t *testing.T) {
 
 	beryl := model.NewPlayer("Beryl" + uuid.NewString())
 	beryl.Deleted = true
-	beryl.Liglicko2Rating = 1900
+	beryl.Liglicko2Rating = 3900
 	require.NoError(t, model.InsertPlayer(db, beryl))
 
 	t.Run("Default Search", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestSearchPlayers(t *testing.T) {
 	})
 
 	t.Run("Test Rating Alias", func(t *testing.T) {
-		players, err := search.SearchPlayers(db, "rating>=1900")
+		players, err := search.SearchPlayers(db, "rating>=3900")
 		require.NoError(t, err)
 		require.NotEmpty(t, players)
 		require.Contains(t, players[0].Name, "Beryl")
