@@ -653,6 +653,9 @@ func PlayerEloChart(db db.Db, id uuid.UUID) ([]byte, error) {
 		})
 	}
 
+	// They are in desc order at the moment, the chart takes asc order
+	slices.Reverse(games)
+
 	img, err := elo_charts.Render(params)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot render chart"), err)
