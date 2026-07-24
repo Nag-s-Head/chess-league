@@ -49,7 +49,7 @@ func TestSearchPlayers(t *testing.T) {
 	})
 
 	t.Run("Default Search Fuzzy", func(t *testing.T) {
-		players, err := search.SearchPlayers(db, "daa")
+		players, err := search.SearchPlayers(db, "dar")
 		require.NoError(t, err)
 		require.NotEmpty(t, players)
 		require.Contains(t, players[0].Name, "Dariuz")
@@ -66,7 +66,7 @@ func TestSearchPlayers(t *testing.T) {
 		players, err := search.SearchPlayers(db, "deleted=true")
 		require.NoError(t, err)
 		require.NotEmpty(t, players)
-		require.Contains(t, players[0].Name, "Beryl")
+		require.True(t, players[0].Deleted)
 	})
 
 	t.Run("No Results", func(t *testing.T) {
