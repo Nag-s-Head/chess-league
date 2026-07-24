@@ -23,7 +23,8 @@ test: docker-images generate
 
 FUZZTIME ?= 1m
 fuzz: docker-images generate
-	go test -run=^FuzzSearch$$ -fuzz FuzzSearch -fuzztime=$(FUZZTIME) ./db/search/
+	go test -run=^FuzzSearchPlayer$$ -fuzz FuzzSearchPlayer -fuzztime=$(FUZZTIME) ./db/search/
+	go test -run=^FuzzSearchGame$$ -fuzz FuzzSearchGame -fuzztime=$(FUZZTIME) ./db/search/
 
 build: generate
 	go build

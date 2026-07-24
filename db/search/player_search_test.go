@@ -1,8 +1,6 @@
 package search_test
 
 import (
-	"database/sql"
-	"errors"
 	"log/slog"
 	"strings"
 	"sync"
@@ -14,7 +12,6 @@ import (
 	"github.com/Nag-s-Head/chess-league/db/search"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,9 +20,6 @@ func TestSearchPlayers(t *testing.T) {
 
 	db := testutils.GetDb(t)
 	defer db.Close()
-
-	// Search uses log debug for queries, this makes it far easier to reason with test failures
-	slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Dariuz"+uuid.NewString())))
 	require.NoError(t, model.InsertPlayer(db, model.NewPlayer("Chas"+uuid.NewString())))
@@ -89,7 +83,7 @@ func TestSearchPlayers(t *testing.T) {
 	})
 }
 
-func FuzzSearch(f *testing.F) {
+func FuzzSearchPlayer(f *testing.F) {
 	// Search uses log debug for queries, this makes it far easier to reason with test failures
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
@@ -169,18 +163,6 @@ func FuzzSearch(f *testing.F) {
 			return
 		}
 
-		pqErr, _ := errors.AsType[*pq.Error](err)
-		if pqErr != nil ||
-			errors.Is(err, sql.ErrNoRows) ||
-			errors.Is(err, sql.ErrTxDone) ||
-			strings.Contains(err.Error(), "sql:") {
-
-			// Cases where the SQL error is fine
-			if strings.Contains(err.Error(), "invalid input syntax for type") {
-				return
-			}
-
-			require.FailNow(t, "Unexpected pg error", err)
-		}
+		assertQueryResultAfterFuzz(t, err)
 	})
 }
