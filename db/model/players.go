@@ -601,7 +601,7 @@ func PlayerEloChart(db db.Db, id uuid.UUID) ([]byte, error) {
 	}
 	defer tx.Rollback()
 
-	var games []Game
+	games := make([]Game, 0)
 	err = tx.Select(&games, `
 		SELECT FROM
 			games

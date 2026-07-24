@@ -1,7 +1,9 @@
 package elo_charts_test
 
 import (
+	"bytes"
 	"fmt"
+	"image"
 	"os"
 	"testing"
 
@@ -12,11 +14,14 @@ import (
 func doTest(t *testing.T, params elo_charts.Params) {
 	t.Helper()
 
-	bytes, err := elo_charts.Render(params)
+	img, err := elo_charts.Render(params)
+	require.NoError(t, err)
+
+	_, _, err = image.Decode(bytes.NewBuffer(img))
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("%s_test.png", t.Name())
-	err = os.WriteFile(filename, bytes, 0666)
+	err = os.WriteFile(filename, img, 0666)
 	require.NoError(t, err)
 
 	t.Logf("Saved as %s", filename)

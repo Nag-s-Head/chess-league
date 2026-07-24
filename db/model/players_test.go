@@ -1,12 +1,15 @@
 package model_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/djpiper28/rpg-book/common/normalisation"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
@@ -243,4 +246,47 @@ func TestRenamePlayer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newName, player.Name)
 	require.Equal(t, normalisation.Normalise(newName), player.NameNormalised)
+}
+
+func TestPlayerEloChartNewJoiner(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	player := model.NewPlayer("Adam" + uuid.NewString())
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	img, err := model.PlayerEloChart(db, player.Id)
+	require.NoError(t, err)
+	require.NotNil(t, img)
+}
+
+func TestPlayerEloChart(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	player := model.NewPlayer("Adam" + uuid.NewString())
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	for range 10 {
+		player2 := model.NewPlayer("Greg" + uuid.NewString())
+		require.NoError(t, model.InsertPlayer(db, player2))
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
+
+		require.NoError(t, db.DoTx(func(tx *sqlx.Tx) error {
+			r := httptest.NewRequest(http.MethodGet, "/mocked-url", nil)
+			_, _, _, err := model.CreateGame(tx, &player, &player2, true, ikey, model.Score_Draw, r)
+			require.NoError(t, err)
+			return nil
+		}))
+	}
+
+	img, err := model.PlayerEloChart(db, player.Id)
+	require.NoError(t, err)
+	require.NotNil(t, img)
 }
