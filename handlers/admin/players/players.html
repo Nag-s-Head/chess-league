@@ -1,5 +1,29 @@
+<script>
+function searchPlayers(event) {
+  event.preventDefault();
+  const url = new URL(window.location.href);
+  const text = document.getElementById("search").value;
+  url.searchParams.set("q", text);
+  window.location.replace(url.toString());
+}
+</script>
 <h1 class="text-xl font-bold">Players</h1>
-{{range $result := .}}
+<form class="flex flex-row gap-3" onsubmit="searchPlayers(event)">
+  <input
+    id="search"
+    type="search"
+    placeholder="Search players"
+    class="rounded-lg border-2 border-gray-500 bg-gray-300 p-1 px-2 flex-1"
+    value="{{.Query}}"
+  ></input>
+  <button
+    class="rounded-lg bg-blue-700 p-1 px-3 text-white font-bold"
+    type="submit"
+  >
+    Search
+  </button>
+</form>
+{{range $result := .Players}}
 <a
   href="/admin/players/{{.Id}}"
   class="flex flex-col gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}"

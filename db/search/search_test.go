@@ -125,7 +125,7 @@ func FuzzSearch(f *testing.F) {
 	f.Add(`(name_norm=greg OR name_norm="chas") and rating>600 and rating<1600`)
 
 	// Here are some of the fun cases fuzzing raised that have since been fixed
-  f.Add("(((((((((((((((((( 0")
+	f.Add("(((((((((((((((((( 0")
 
 	var isSetup bool
 	var lock sync.Mutex
