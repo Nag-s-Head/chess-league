@@ -1,4 +1,4 @@
-name: Go CI
+name: fuzz
 
 permissions:
   contents: read
@@ -17,8 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/workflows/shared/setup
 
-      - name: Build
-        run: make build -j
-
       - name: Test
-        run: make test -j
+        shell: bash
+        env:
+          FUZZTIME: 5m
+        run: make fuzz -j

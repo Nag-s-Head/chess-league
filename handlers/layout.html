@@ -22,8 +22,7 @@
         class="flex flex-row gap-5 w-full items-center p-2 px-5 bg-primary border-b-2 border-secondary"
       >
         <div class="flex flex-row gap-2 w-full items-center">
-          {{ .AppIcon }}
-          {{ if .IsAdmin }}
+          {{ .AppIcon }} {{ if .IsAdmin }}
           <a href="/admin"
             ><h1 class="text-3xl xl:text-4xl titlebar-text text-wrap">
               <span class="font-bold"> {{.Theme.AppName}} </span> - Admin Portal

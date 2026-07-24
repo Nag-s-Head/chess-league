@@ -12,11 +12,18 @@ nuke-db:
 	docker compose down database
 	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
 
+psql:
+	docker exec -it -u postgres nagsknightschessleaguetestserver-database-1 bash -c "PG_PASSWORD=bond-bloud psql -U magnus -d chess-league"
+
 generate:
 	go generate ./...
 
 test: docker-images generate
 	go test ./... -timeout=60s
+
+FUZZTIME ?= 1m
+fuzz: docker-images generate
+	go test -run=^FuzzSearch$$ -fuzz FuzzSearch -fuzztime=$(FUZZTIME) ./db/search/
 
 build: generate
 	go build
