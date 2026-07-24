@@ -1,4 +1,4 @@
-package ele_charts
+package elo_charts
 
 import (
 	"bytes"

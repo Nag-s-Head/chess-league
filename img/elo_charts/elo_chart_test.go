@@ -1,4 +1,4 @@
-package ele_charts_test
+package elo_charts_test
 
 import (
 	"fmt"
