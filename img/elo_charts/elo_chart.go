@@ -23,7 +23,6 @@ type Params struct {
 
 type eloStats struct {
 	min, max int
-	mean     int
 }
 
 const ContentType = "image/png"
@@ -76,14 +75,14 @@ func renderPoint(img draw.Image, xStart, lastElo, currentElo int, stats eloStats
 			c = eloLossBaseColour
 		}
 
+		fillStart := y + lineThickness
 		src := image.NewUniform(c)
 		draw.Draw(img,
-			image.Rect(x, y, x+1, clamp(y+lineThickness)),
+			image.Rect(x, y, x+1, clamp(fillStart)),
 			src,
 			image.Point{},
 			draw.Over)
 
-		fillStart := y + lineThickness
 		fillHeight := imageHeight - fillStart
 		for i := imageHeight - 1; i >= y+lineThickness; i-- {
 			currentStep := i - fillStart
@@ -111,7 +110,7 @@ func Render(params Params) ([]byte, error) {
 		width = pixelsPerEntry
 	}
 
-	img := image.NewRGBA(image.Rect(0, 0, width, imageHeight+lineThickness))
+	img := image.NewRGBA(image.Rect(0, 0, width, imageHeight))
 
 	stats := eloStats{
 		min: params.EndElo,
@@ -119,14 +118,11 @@ func Render(params Params) ([]byte, error) {
 	}
 
 	if len(params.Changes) > 0 {
-		total := 0
 		currentElo := params.EndElo
 		for i := len(params.Changes) - 1; i >= 0; i-- {
 			entry := &params.Changes[i]
 			currentElo += entry.Delta
 			entry.currentElo = currentElo
-
-			total += currentElo
 
 			if currentElo > stats.max {
 				stats.max = currentElo
@@ -134,8 +130,6 @@ func Render(params Params) ([]byte, error) {
 				stats.min = currentElo
 			}
 		}
-
-		stats.mean = total / len(params.Changes)
 	}
 
 	lastElo := 0
