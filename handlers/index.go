@@ -31,7 +31,11 @@ func Index(db db.Db, theme theme.Theme) func(w http.ResponseWriter, r *http.Requ
 			slog.Warn("Could not get game count", "err", err)
 		}
 
-		playerCount := len(players)
+		playerCount, err := model.GetTotalPlayerCount(db)
+		if err != nil {
+			slog.Warn("Could not get player count", "err", err)
+		}
+
 		data := IndexData{
 			Players:                      players,
 			TotalGames:                   gameCount,
