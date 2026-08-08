@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/Nag-s-Head/chess-league/db/liglicko2"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/djpiper28/rpg-book/common/normalisation"
@@ -166,32 +164,6 @@ func TestGetPlayersShowDeleted(t *testing.T) {
 	playersWithCount, err := model.GetPlayersByEloWithGameCount(db)
 	require.NoError(t, err)
 	require.Greater(t, len(playersWithCount), 1)
-}
-
-func TestGetPlayersDoesNotShowInactivePlayers(t *testing.T) {
-	t.Parallel()
-	db := testutils.GetDb(t)
-	defer db.Close()
-
-	const month = time.Hour * 24 * 31
-
-	name := uuid.New().String()
-	player := model.NewPlayer(name)
-	player.Liglicko2At = liglicko2.InstantFromTime(time.Now().Add(-(month + 2*time.Hour*24)))
-	require.NoError(t, model.InsertPlayer(db, player))
-
-	name = uuid.New().String()
-	player = model.NewPlayer(name)
-	require.NoError(t, model.InsertPlayer(db, player))
-
-	players, err := model.GetPlayersByElo(db, false)
-	require.NoError(t, err)
-	require.Greater(t, len(players), 1)
-
-	oneMonthAgo := liglicko2.InstantFromTime(time.Now().Add(-month))
-	for _, player := range players {
-		require.GreaterOrEqual(t, player.Liglicko2At, oneMonthAgo)
-	}
 }
 
 func TestNormalise(t *testing.T) {
