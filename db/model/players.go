@@ -187,7 +187,14 @@ func getPlayerById(txx *sqlx.Tx, id uuid.UUID) (Player, error) {
 }
 
 func GetPlayersByElo(db db.Db, showDeleted bool) ([]Player, error) {
-	rows, err := db.GetSqlxDb().Queryx("SELECT * FROM players WHERE deleted=FALSE OR deleted=$1 ORDER BY liglicko2_rating DESC, name;", showDeleted)
+	rows, err := db.GetSqlxDb().Queryx(`
+	SELECT * 
+	FROM players 
+	WHERE 
+	  (deleted=FALSE OR deleted=$1) 
+		  AND
+		liglicko2_at >= EXTRACT(EPOCH FROM (CURRENT_DATE - interval '31 days')) / (24 * 60 * 60)
+	ORDER BY liglicko2_rating DESC, name;`, showDeleted)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get players"), err)
 	}
