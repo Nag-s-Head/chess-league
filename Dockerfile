@@ -1,7 +1,7 @@
 FROM golang:1.26.5-trixie AS initial
 
 FROM initial AS with_go_mod
-COPY ./go.mod .
+COPY ./go.mod ./go.sum ./
 RUN go mod download
 
 FROM with_go_mod AS build
