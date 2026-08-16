@@ -8,9 +8,33 @@ export MAGIC_NUMBER
 docker-images:
 	docker compose up -d --build
 
-test: docker-images
-	docker compose restart database # Makes sure the db is empty
+nuke-db:
+	docker compose down database
+	docker container rm nagsknightschessleaguetestserver-database-1 || docker compose up database -d
+
+psql:
+	docker exec -it -u postgres nagsknightschessleaguetestserver-database-1 bash -c "PG_PASSWORD=bond-bloud psql -U magnus -d chess-league"
+
+generate:
+	go generate ./...
+
+test: docker-images generate
 	go test ./... -timeout=60s
 
-format:
+FUZZTIME ?= 1m
+fuzz: docker-images generate
+	go test -run=^FuzzSearchPlayer$$ -fuzz FuzzSearchPlayer -fuzztime=$(FUZZTIME) ./db/search/
+	go test -run=^FuzzSearchGame$$ -fuzz FuzzSearchGame -fuzztime=$(FUZZTIME) ./db/search/
+
+build: generate
+	go build
+
+gofmt:
 	gofmt -l -w .
+
+format: gofmt
+	pnpm i
+	pnpm format || true # prettier and go templates do not play that well together. but at least it does some formatting
+
+psql:
+	docker compose exec -it database psql -U magnus -d chess-league

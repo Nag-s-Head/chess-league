@@ -12,16 +12,12 @@
     </p>
   </div>
   {{if .Player.Deleted}}
-  <div class="p-4 bg-gray-100 rounded-lg">
-    <p class="text-xl font-bold bg-red-300">DELETED</p>
+  <div class="p-4 bg-red-700 rounded-lg">
+    <p class="text-xl font-bold text-white">DELETED</p>
   </div>
   {{end}}
   <div class="p-4 bg-gray-100 rounded-lg">
-    <p class="text-sm text-gray-500">Current Elo</p>
-    <p class="text-2xl font-bold">{{.Player.Elo}}</p>
-  </div>
-  <div class="p-4 bg-gray-100 rounded-lg">
-    <p class="text-sm text-gray-500">Current liglicko2</p>
+    <p class="text-sm text-gray-500">Current ELO</p>
     <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
   </div>
   <div class="p-4 bg-gray-100 rounded-lg">
@@ -54,26 +50,34 @@
 >
   <div class="flex flex-col gap-5" id="response">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-      <div class="flex flex-col gap-5">
-        <button
-          type="submit"
-          name="submit"
-           value="rename"
-          class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+      <button
+        type="submit"
+        name="submit"
+        value="rename"
+        class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
         >
           Rename
-       </button>
-      </div>
-      <div class="flex flex-col gap-5">
-        <button
-          type="submit"
-          name="submit"
-          value="delete"
-          class="rounded-lg p-2 px-5 bg-red-500 max-w-100 text-white font-bold"
-        >
-          Delete
-        </button>
-      </div>
+      </button>
+      {{if .Player.Deleted}}
+      <p>Player is deleted, actions are limited.</p>
+      {{else}}
+      <button
+        type="submit"
+        name="submit"
+        value="merge"
+        class="rounded-lg p-2 px-5 bg-gray-500 max-w-100 text-white font-bold"
+      >
+        Merge Player Into
+      </button>
+      <button
+        type="submit"
+        name="submit"
+        value="delete"
+        class="rounded-lg p-2 px-5 bg-red-500 max-w-100 text-white font-bold"
+      >
+        Delete
+      </button>
+      {{end}}
     </div>
   </div>
 </form>
@@ -82,11 +86,11 @@
 {{range $result := .Details.Games}}
   <a
     href="/admin/games/{{.Ikey}}"
-    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}"
   >
     <div class="flex flex-row justify-between w-full">
       <tr class="border-b border-gray-200">
-        <td class="py-2">{{.OpponentName}}</td>
+      <td class="py-2">{{.OpponentName}}{{if .Deleted}} <span class="font-bold">(deleted)</span>{{end}}</td>
         <td class="py-2">
           <span
             class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
@@ -96,16 +100,9 @@
         </td>
         <td class="py-2">
           <span
-            class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
-          >
-            {{if gt .EloChange 0}}+{{end}}{{.EloChange}} ELO
-          </span>
-        </td>
-        <td class="py-2">
-          <span
             class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
           >
-            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}} liglicko2
+            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}} ELO 
           </span>
         </td>
         <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>

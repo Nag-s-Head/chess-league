@@ -8,7 +8,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/db/model"
 )
 
-func Logout(db *db.Db) func(http.ResponseWriter, *http.Request) {
+func Logout(db db.Db) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 

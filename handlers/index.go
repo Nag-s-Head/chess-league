@@ -6,13 +6,22 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/Nag-s-Head/chess-league/db/model"
 )
 
-func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+type IndexData struct {
+	Players                      []model.Player
+	TotalGames                   int
+	TotalPlayers                 int
+	MinimumStableRatingDeviation float64
+	Theme                        theme.Theme
+}
+
+func Index(db db.Db, theme theme.Theme) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		players, err := model.GetPlayersByElo(db)
+		players, err := model.GetPlayersByElo(db, false)
 		if err != nil {
 			slog.Warn("Could not get leaderboard", "err", err)
 		}
@@ -28,9 +37,11 @@ func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		data := IndexData{
-			Players:      players,
-			TotalGames:   gameCount,
-			TotalPlayers: playerCount,
+			Players:                      players,
+			TotalGames:                   gameCount,
+			TotalPlayers:                 playerCount,
+			MinimumStableRatingDeviation: model.MinimumStableRatingDeviation,
+			Theme:                        theme,
 		}
 
 		var buf bytes.Buffer
@@ -41,6 +52,6 @@ func Index(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		WithLayout(w, template.HTML(buf.String()))
+		WithLayout(theme)(w, template.HTML(buf.String()))
 	}
 }

@@ -1,0 +1,11 @@
+.bg-primary {
+  background-color: {{.PrimaryColour}};
+}
+
+.border-secondary {
+  border-color: {{.SecondaryColour}};
+}
+
+.titlebar-text {
+  color: {{.TitleBarTextColour}};
+}

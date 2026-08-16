@@ -1,0 +1,24 @@
+name: fuzz
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: ["*"]
+  push:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/workflows/shared/setup
+
+      - name: Test
+        shell: bash
+        env:
+          FUZZTIME: 5m
+        run: make fuzz -j

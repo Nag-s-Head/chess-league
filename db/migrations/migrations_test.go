@@ -1,4 +1,4 @@
-package db_test
+package migrations_test
 
 import (
 	"fmt"
@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Nag-s-Head/chess-league/db"
+	"github.com/Nag-s-Head/chess-league/db/migrations"
+	"github.com/Nag-s-Head/chess-league/db/model"
+	psqldb "github.com/Nag-s-Head/chess-league/db/psql_db"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
@@ -20,12 +22,12 @@ func TestFrom(t *testing.T) {
 
 func TestPlayerCapitilisationFix1(t *testing.T) {
 	name := "danny piper"
-	require.Equal(t, "Danny Piper", db.InternalFixPlayerNameCapitals(name))
+	require.Equal(t, "Danny Piper", migrations.InternalFixPlayerNameCapitals(name))
 }
 
 func TestPlayerCapitilisationFix2(t *testing.T) {
 	name := "rhys"
-	require.Equal(t, "Rhys", db.InternalFixPlayerNameCapitals(name))
+	require.Equal(t, "Rhys", migrations.InternalFixPlayerNameCapitals(name))
 }
 
 func TestMigrationsOnPrototypeDatabase(t *testing.T) {
@@ -98,7 +100,34 @@ func TestMigrationsOnPrototypeDatabase(t *testing.T) {
 	_, err = sqlDb.Exec(string(bytes))
 	require.NoError(t, err, "Must execute datbase export")
 
-	database, err := db.From(sqlDb)
+	database, err := psqldb.From(sqlDb)
 	require.NoError(t, err)
 	defer database.Close()
+
+	t.Run("Test migrations ran", func(t *testing.T) {
+		var migrationVersion int
+		err = database.GetSqlxDb().Get(&migrationVersion, `SELECT version FROM migrations ORDER BY version DESC LIMIT 1;`)
+		require.NoError(t, err)
+		require.GreaterOrEqual(t, migrationVersion, 10)
+	})
+
+	t.Run("Test liglicko2 states where set", func(t *testing.T) {
+		var games []model.Game
+		err = database.GetSqlxDb().Select(&games, "SELECT * FROM games;")
+		require.NoError(t, err)
+
+		for _, game := range games {
+			require.NotZero(t, game.Liglicko2Black)
+			require.NotZero(t, game.Liglicko2BlackOldAt)
+			require.NotZero(t, game.Liglicko2BlackOldDeviation)
+			require.NotZero(t, game.Liglicko2BlackOldVolatility)
+			require.NotZero(t, game.Liglicko2BlackOldRating)
+
+			require.NotZero(t, game.Liglicko2White)
+			require.NotZero(t, game.Liglicko2WhiteOldAt)
+			require.NotZero(t, game.Liglicko2WhiteOldDeviation)
+			require.NotZero(t, game.Liglicko2WhiteOldVolatility)
+			require.NotZero(t, game.Liglicko2WhiteOldRating)
+		}
+	})
 }

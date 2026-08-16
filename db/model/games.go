@@ -2,13 +2,17 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/Nag-s-Head/chess-league/db"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Score string
@@ -19,23 +23,57 @@ const (
 	Score_Draw Score = "1/2-1/2"
 )
 
+func (s Score) Outcome() Outcome {
+	switch s {
+	case Score_Win:
+		return 1.0
+	case Score_Draw:
+		return 0.5
+	case Score_Loss:
+		return 0.0
+	}
+
+	panic("Invalid score detected")
+}
+
+func (s *Score) Switch() {
+	switch *s {
+	case Score_Win:
+		*s = Score_Loss
+	case Score_Draw:
+	case Score_Loss:
+		*s = Score_Win
+	}
+}
+
 type Game struct {
-	PlayerWhite uuid.UUID `db:"player_white"`
-	PlayerBlack uuid.UUID `db:"player_black"`
-	Score       Score     `db:"score"`
-	Submitter   uuid.UUID `db:"submitter"`
-	Played      time.Time `db:"played"`
-	Deleted     bool      `db:"deleted"`
-	EloGiven    int       `db:"elo_given"`
-	EloTaken    int       `db:"elo_taken"`
+	PlayerWhite     uuid.UUID `db:"player_white"`
+	PlayerBlack     uuid.UUID `db:"player_black"`
+	Score           Score     `db:"score"`
+	Submitter       uuid.UUID `db:"submitter"`
+	Played          time.Time `db:"played"`
+	Deleted         bool      `db:"deleted"`
+	SubmitIp        string    `db:"submit_ip"`
+	SubmitUserAgent string    `db:"submit_user_agent"`
+	IKey            int64     `db:"ikey"`
+
+	DEPRECATEDEloGiven int `db:"elo_given"` // Deprecated: for use with old elo system
+	DEPRECATEDEloTaken int `db:"elo_taken"` // Deprecated: for use with old elo system
+
 	// Liglicko2White and Liglicko2Black are per-game liglicko2 deltas for each side.
 	// They preserve sign, so draws between uneven players can still show non-zero
 	// changes.
-	Liglicko2White  float64 `db:"liglicko2_white"`
-	Liglicko2Black  float64 `db:"liglicko2_black"`
-	SubmitIp        string  `db:"submit_ip"`
-	SubmitUserAgent string  `db:"submit_user_agent"`
-	IKey            int64   `db:"ikey"`
+	Liglicko2White              float64 `db:"liglicko2_white"`
+	Liglicko2WhiteOldRating     float64 `db:"liglicko2_white_old_rating"`
+	Liglicko2WhiteOldVolatility float64 `db:"liglicko2_white_old_volatility"`
+	Liglicko2WhiteOldDeviation  float64 `db:"liglicko2_white_old_deviation"`
+	Liglicko2WhiteOldAt         float64 `db:"liglicko2_white_old_at"`
+
+	Liglicko2Black              float64 `db:"liglicko2_black"`
+	Liglicko2BlackOldRating     float64 `db:"liglicko2_black_old_rating"`
+	Liglicko2BlackOldVolatility float64 `db:"liglicko2_black_old_volatility"`
+	Liglicko2BlackOldDeviation  float64 `db:"liglicko2_black_old_deviation"`
+	Liglicko2BlackOldAt         float64 `db:"liglicko2_black_old_at"`
 }
 
 type GameWithPlayerNames struct {
@@ -50,11 +88,28 @@ type GameWithOutcome struct {
 	OpponentName    string
 	Outcome         string
 	Played          time.Time
+	Deleted         bool
 	EloChange       int
 	Liglicko2Change float64
 }
 
-func GetGamesWithOutcomes(db *db.Db) ([]GameWithOutcome, error) {
+type GameWithDetails struct {
+	Game
+	WhiteName     string `db:"white_name"`
+	BlackName     string `db:"black_name"`
+	SubmitterName string `db:"submitter_name"`
+}
+
+func (g GameWithDetails) WinnerName() string {
+	if g.Score == Score_Win {
+		return g.WhiteName
+	} else if g.Score == Score_Loss {
+		return g.BlackName
+	}
+	return "Draw"
+}
+
+func GetGamesWithOutcomes(db db.Db) ([]GameWithOutcome, error) {
 	var games []GameWithPlayerNames
 	err := db.GetSqlxDb().Select(&games, `
 SELECT g.*, w.name as white_name, b.name as black_name
@@ -74,6 +129,22 @@ ORDER BY g.played DESC;`)
 	return gamesWithOutcomes, nil
 }
 
+func GetGameWithDetails(db db.Db, ikey int64) (GameWithDetails, error) {
+	var game GameWithDetails
+	err := db.GetSqlxDb().Get(&game, `
+SELECT g.*, w.name as white_name, b.name as black_name, s.name as submitter_name
+FROM games g
+JOIN players w ON g.player_white = w.id
+JOIN players b ON g.player_black = b.id
+JOIN players s ON g.submitter = s.id
+WHERE g.ikey = $1;`, ikey)
+	if err != nil {
+		return GameWithDetails{}, errors.Join(errors.New("Cannot get game details"), err)
+	}
+
+	return game, nil
+}
+
 type GamesUiFriendly struct {
 	Wins, Draws, Losses         int
 	TotalGames                  int
@@ -84,8 +155,9 @@ type GamesUiFriendly struct {
 
 func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameWithOutcome {
 	gw := GameWithOutcome{
-		Played: g.Played,
-		Ikey:   g.IKey,
+		Played:  g.Played,
+		Deleted: g.Deleted,
+		Ikey:    g.IKey,
 	}
 
 	isWhite := g.PlayerWhite == playerId
@@ -94,11 +166,11 @@ func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameW
 		gw.PlayerName = g.WhiteName
 		if g.Score == Score_Win {
 			gw.Outcome = "Win"
-			gw.EloChange = g.EloGiven
+			gw.EloChange = g.DEPRECATEDEloGiven
 			gw.Liglicko2Change = g.Liglicko2White
 		} else if g.Score == Score_Loss {
 			gw.Outcome = "Loss"
-			gw.EloChange = g.EloTaken
+			gw.EloChange = g.DEPRECATEDEloTaken
 			gw.Liglicko2Change = g.Liglicko2White
 		} else {
 			gw.Outcome = "Draw"
@@ -110,11 +182,11 @@ func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameW
 		gw.PlayerName = g.BlackName
 		if g.Score == Score_Loss {
 			gw.Outcome = "Win"
-			gw.EloChange = g.EloGiven
+			gw.EloChange = g.DEPRECATEDEloGiven
 			gw.Liglicko2Change = g.Liglicko2Black
 		} else if g.Score == Score_Win {
 			gw.Outcome = "Loss"
-			gw.EloChange = g.EloTaken
+			gw.EloChange = g.DEPRECATEDEloTaken
 			gw.Liglicko2Change = g.Liglicko2Black
 		} else {
 			gw.Outcome = "Draw"
@@ -129,32 +201,34 @@ func (g *GameWithPlayerNames) MapGameToGameWithOutcome(playerId uuid.UUID) GameW
 func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) GamesUiFriendly {
 	details := GamesUiFriendly{
 		Games:      make([]GameWithOutcome, 0),
-		TotalGames: len(games),
+		TotalGames: 0,
 	}
 
 	var whiteGames, whiteWins, blackGames, blackWins int
 	for _, g := range games {
-
-		isWhite := g.PlayerWhite == playerId
-		if isWhite {
-			whiteGames++
-			if g.Score == Score_Win {
-				details.Wins++
-				whiteWins++
-			} else if g.Score == Score_Loss {
-				details.Losses++
+		if !g.Deleted {
+			details.TotalGames++
+			isWhite := g.PlayerWhite == playerId
+			if isWhite {
+				whiteGames++
+				if g.Score == Score_Win {
+					details.Wins++
+					whiteWins++
+				} else if g.Score == Score_Loss {
+					details.Losses++
+				} else {
+					details.Draws++
+				}
 			} else {
-				details.Draws++
-			}
-		} else {
-			blackGames++
-			if g.Score == Score_Loss {
-				details.Wins++
-				blackWins++
-			} else if g.Score == Score_Win {
-				details.Losses++
-			} else {
-				details.Draws++
+				blackGames++
+				if g.Score == Score_Loss {
+					details.Wins++
+					blackWins++
+				} else if g.Score == Score_Win {
+					details.Losses++
+				} else {
+					details.Draws++
+				}
 			}
 		}
 
@@ -173,7 +247,7 @@ func MapGamesToUserFriendly(playerId uuid.UUID, games []GameWithPlayerNames) Gam
 	return details
 }
 
-func NextIKey(db *db.Db) (int64, error) {
+func NextIKey(db db.Db) (int64, error) {
 	var ikey int64
 	row := db.GetSqlxDb().QueryRow("SELECT nextval('game_ikey_sequence');")
 	err := row.Scan(&ikey)
@@ -184,86 +258,7 @@ func NextIKey(db *db.Db) (int64, error) {
 	return ikey, nil
 }
 
-func CreateGame(tx *sqlx.Tx, submitter, opponent *Player, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (Game, int, int, error) {
-	if submitter.Id == opponent.Id {
-		return Game{}, 0, 0, errors.New("Both players are the same")
-	}
-
-	game := Game{
-		Score:           score,
-		Submitter:       submitter.Id,
-		Played:          time.Now(),
-		Deleted:         false,
-		SubmitIp:        r.RemoteAddr,
-		SubmitUserAgent: r.UserAgent(),
-		IKey:            ikey,
-	}
-
-	var pWhite, pBlack *Player
-	if submitterIsWhite {
-		pWhite = submitter
-		pBlack = opponent
-	} else {
-		pWhite = opponent
-		pBlack = submitter
-	}
-
-	var outcome Outcome
-	switch score {
-	case Score_Win:
-		outcome = Outcome_Win
-	case Score_Loss:
-		outcome = Outcome_Loss
-	case Score_Draw:
-		outcome = Outcome_Draw
-	}
-
-	eloWhite, eloBlack := CalculateElo(pWhite, pBlack, outcome)
-	liglicko2White, liglicko2Black, err := CalculateLiglicko2(pWhite, pBlack, outcome, game.Played)
-	if err != nil {
-		return Game{}, 0, 0, errors.Join(errors.New("Could not calculate liglicko2"), err)
-	}
-	game.PlayerWhite = pWhite.Id
-	game.PlayerBlack = pBlack.Id
-
-	if eloWhite > eloBlack {
-		game.EloGiven = eloWhite
-		game.EloTaken = eloBlack
-	} else {
-		game.EloGiven = eloBlack
-		game.EloTaken = eloWhite
-	}
-
-	game.Liglicko2White = liglicko2White
-	game.Liglicko2Black = liglicko2Black
-
-	_, err = tx.NamedExec(`
-INSERT INTO games (player_white, player_black, score, submitter, played, deleted, elo_given, elo_taken, liglicko2_white, liglicko2_black, submit_ip, submit_user_agent, ikey)
-VALUES (:player_white, :player_black, :score, :submitter, :played, :deleted, :elo_given, :elo_taken, :liglicko2_white, :liglicko2_black, :submit_ip, :submit_user_agent, :ikey);
-  	`, game)
-
-	if err != nil {
-		return Game{}, 0, 0, errors.Join(errors.New("Cannot insert game"), err)
-	}
-
-	_, err = tx.NamedExec(`UPDATE players 
-SET elo=:elo, liglicko2_rating=:liglicko2_rating, liglicko2_deviation=:liglicko2_deviation, liglicko2_volatility=:liglicko2_volatility, liglicko2_at=:liglicko2_at
-WHERE id=:id`, pWhite)
-	if err != nil {
-		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of white player"), err)
-	}
-
-	_, err = tx.NamedExec(`UPDATE players 
-SET elo=:elo, liglicko2_rating=:liglicko2_rating, liglicko2_deviation=:liglicko2_deviation, liglicko2_volatility=:liglicko2_volatility, liglicko2_at=:liglicko2_at
-WHERE id=:id`, pBlack)
-	if err != nil {
-		return Game{}, 0, 0, errors.Join(errors.New("Cannot set elo of black player"), err)
-	}
-
-	return game, eloWhite, eloBlack, nil
-}
-
-func SubmitGame(db *db.Db, whiteName, blackName string, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, int, int, error) {
+func SubmitGame(db db.Db, whiteName, blackName string, submitterIsWhite bool, ikey int64, score Score, r *http.Request) (*Game, *Player, *Player, int, int, error) {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return nil, nil, nil, 0, 0, errors.Join(errors.New("Could not start transaction"), err)
@@ -302,14 +297,14 @@ func SubmitGame(db *db.Db, whiteName, blackName string, submitterIsWhite bool, i
 	return &game, &white, &black, eloWhite, eloBlack, nil
 }
 
-func GetGamesByPlayer(db *db.Db, playerId uuid.UUID) ([]GameWithPlayerNames, error) {
+func GetGamesByPlayer(db db.Db, playerId uuid.UUID) ([]GameWithPlayerNames, error) {
 	var games []GameWithPlayerNames
 	err := db.GetSqlxDb().Select(&games, `
 SELECT g.*, w.name as white_name, b.name as black_name
 FROM games g
 JOIN players w ON g.player_white = w.id
 JOIN players b ON g.player_black = b.id
-WHERE (g.player_white=$1 OR g.player_black=$1) AND g.deleted=false
+WHERE (g.player_white=$1 OR g.player_black=$1)
 ORDER BY g.played DESC`, playerId)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get games by player"), err)
@@ -318,7 +313,47 @@ ORDER BY g.played DESC`, playerId)
 	return games, nil
 }
 
-func GetTotalGameCount(db *db.Db) (int, error) {
+func GetGamesByPlayerPairCombs(db db.Db, playerAIds []uuid.UUID, playerBIds []uuid.UUID) ([]Game, error) {
+	if len(playerAIds) == 0 || len(playerBIds) == 0 {
+		slog.Info("Cannot find pair combos", "playerAs", playerAIds, "playerBs", playerBIds)
+		return make([]Game, 0), nil
+	}
+
+	var games []Game
+	const query = `
+        WITH RankedGames AS (
+            SELECT 
+                g.*,
+                LEAST(g.player_white, g.player_black) AS player_min,
+                GREATEST(g.player_white, g.player_black) AS player_max,
+                ROW_NUMBER() OVER(
+                    PARTITION BY LEAST(g.player_white, g.player_black), GREATEST(g.player_white, g.player_black) 
+                    ORDER BY g.played DESC
+                ) AS rn
+            FROM games g
+            WHERE 
+                (g.player_white = ANY($1) AND g.player_black = ANY($2))
+                OR 
+                (g.player_white = ANY($2) AND g.player_black = ANY($1))
+        )
+        SELECT player_white, player_black, score, submitter, played, ikey -- explicitly list your table columns here
+        FROM RankedGames
+        WHERE rn <= 5
+        ORDER BY player_min, player_max, played DESC;
+    `
+
+	err := db.GetSqlxDb().Select(&games, query, pq.Array(playerAIds), pq.Array(playerBIds))
+	if err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			return []Game{}, nil
+		}
+		return nil, errors.Join(errors.New("Cannot get games by player"), err)
+	}
+
+	return games, nil
+}
+
+func GetTotalGameCount(db db.Db) (int, error) {
 	var count int
 	err := db.GetSqlxDb().Get(&count, "SELECT count(*) FROM games WHERE deleted=false")
 	if err != nil {
@@ -326,4 +361,123 @@ func GetTotalGameCount(db *db.Db) (int, error) {
 	}
 
 	return count, nil
+}
+
+func replayGames(tx *sqlx.Tx, adminId uuid.UUID, ikey int64, auditLogOperation, auditLogMessage string) error {
+	games, players, err := ReplayFrom(tx, ikey, nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games to calculate new ratings"), err)
+	}
+
+	auditLog := NewAuditLog(adminId, auditLogOperation, auditLogMessage)
+	err = InsertAuditLog(tx, auditLog)
+	if err != nil {
+		return errors.Join(errors.New("Cannot insert audit log"), err)
+	}
+
+	for _, game := range games {
+		err = InsertAuditLogGameAffected(tx, &AuditLogGameAffected{
+			AuditLogId:   auditLog.Id,
+			GameIkey:     game.IKey,
+			IsMainTarget: true,
+		})
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert audit log game affected"), err)
+		}
+	}
+
+	for _, player := range players {
+		err = InsertAuditLogPlayerAffected(tx, NewAuditLogPlayerAffected(auditLog.Id, player.Id, false))
+		if err != nil {
+			return errors.Join(errors.New("Cannot insert audit log player affected"), err)
+		}
+	}
+
+	return nil
+}
+
+func DeleteGame(db db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set the game as deleted"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Game Deletion", fmt.Sprintf("Deleted game %d", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
+}
+
+func SwapGameWinner(db db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	var game Game
+	err = tx.Get(&game, "SELECT * FROM games WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get the game"), err)
+	}
+
+	game.Score.Switch()
+
+	_, err = tx.Exec("UPDATE games SET score=$1 WHERE ikey=$2;", game.Score, ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot change the game winner"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Swap Game Winner", fmt.Sprintf("Swapped winner for game %d", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
+}
+
+func SetGameToDraw(db db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE games SET score=$1 WHERE ikey=$2;", Score_Draw, ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set the game as deleted"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Game Set To Draw", fmt.Sprintf("Set game %d to be a draw", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
 }

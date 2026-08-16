@@ -49,7 +49,7 @@ func InsertAdminUser(tx *sqlx.Tx, user AdminUser) error {
 	return nil
 }
 
-func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminUser, error) {
+func AdminLogin(db db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminUser, error) {
 	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
 	if err != nil {
 		return nil, errors.Join(errors.New("Could not begin transaction"), err)
@@ -95,7 +95,7 @@ func AdminLogin(db *db.Db, name, oauthId, lastIp, LastUserAgent string) (*AdminU
 	return &user, nil
 }
 
-func AdminLogout(db *db.Db, id uuid.UUID) error {
+func AdminLogout(db db.Db, id uuid.UUID) error {
 	_, err := db.GetSqlxDb().Exec("UPDATE admin_users SET session_key = NULL WHERE id = $1;", id)
 	if err != nil {
 		return errors.Join(errors.New("Could not log the user out"), err)
@@ -106,7 +106,7 @@ func AdminLogout(db *db.Db, id uuid.UUID) error {
 
 const MaxSessionKeyAge = time.Hour
 
-func AdminGetFromSessionKey(db *db.Db, key string) (*AdminUser, error) {
+func AdminGetFromSessionKey(db db.Db, key string) (*AdminUser, error) {
 	if key == "" {
 		return nil, errors.New("Session key cannot be empty")
 	}
@@ -129,7 +129,7 @@ func AdminGetFromSessionKey(db *db.Db, key string) (*AdminUser, error) {
 	return &user, nil
 }
 
-func GetAdminUsers(db *db.Db) ([]AdminUser, error) {
+func GetAdminUsers(db db.Db) ([]AdminUser, error) {
 	rows, err := db.GetSqlxDb().Queryx("SELECT id, name, oauth_id, created, last_login, last_ip, last_user_agent FROM admin_users ORDER BY name ASC;")
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get admin users"), err)
@@ -149,7 +149,7 @@ func GetAdminUsers(db *db.Db) ([]AdminUser, error) {
 	return users, nil
 }
 
-func GetAdminUser(db *db.Db, id uuid.UUID) (*AdminUser, error) {
+func GetAdminUser(db db.Db, id uuid.UUID) (*AdminUser, error) {
 	rows, err := db.GetSqlxDb().Queryx("SELECT id, name, oauth_id, created, last_login, last_ip, last_user_agent FROM admin_users WHERE id = $1;", id)
 	if err != nil {
 		return nil, errors.Join(errors.New("Cannot get admin users"), err)

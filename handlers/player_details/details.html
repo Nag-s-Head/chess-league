@@ -1,17 +1,23 @@
 <div class="flex flex-col gap-5">
-  <div class="flex flex-row justify-between items-center">
+<div class="flex flex-row justify-between items-center">
     <h1 class="text-2xl font-bold">{{.Player.Name}}</h1>
     <a href="/" class="text-blue-600 hover:underline">Back</a>
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="p-4 bg-gray-100 rounded-lg">
-      <p class="text-sm text-gray-500">Current Elo</p>
-      <p class="text-2xl font-bold">{{.Player.Elo}}</p>
+    <div class="bg-gray-100 rounded-lg flex flex-col lg:flex-row gap-3 justify-between">
+      <div class="flex flex-col gap-4 p-4">
+        <p class="text-sm text-gray-500">Current Elo</p>
+        <p class="text-2xl font-bold">{{printf "%.0f" .Player.Liglicko2Rating}}</p>
+      </div>
+      <img class="rounded-b-lg" src="/player/{{.Player.Id}}/elo-chart" />
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Games Played</p>
-      <p class="text-2xl font-bold">{{.Details.TotalGames}}</p>
+      <p>
+        <p class="text-2xl font-bold">{{.Details.TotalGames}}</p>
+        Since {{.Player.JoinTime.Format "Jan 02, 2006"}}
+      </p>
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Win Rate</p>
@@ -30,7 +36,6 @@
       <p class="text-2xl font-bold">{{printf "%.1f" .Details.BlackWinRate}}%</p>
     </div>
   </div>
-
   <div class="flex flex-col gap-2">
     <h2 class="text-xl font-bold">Game History</h2>
     <div class="overflow-x-auto">
@@ -39,14 +44,14 @@
           <tr class="border-b-2 border-gray-300">
             <th class="py-2">Against</th>
             <th class="py-2">Result</th>
-            <th class="py-2">Elo</th>
+            <th class="py-2">ELO</th>
             <th class="py-2">Date</th>
           </tr>
         </thead>
         <tbody>
           {{range .Details.Games}}
-          <tr class="border-b border-gray-200">
-            <td class="py-2">{{.OpponentName}}</td>
+          <tr class="border-b border-gray-200 {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}">
+            <td class="py-2">{{.OpponentName}}{{if .Deleted}} <span class="font-bold">(deleted)</span>{{end}}</td>
             <td class="py-2">
               <span
                 class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
@@ -56,9 +61,9 @@
             </td>
             <td class="py-2">
               <span
-                class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
+                class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
               >
-                {{if gt .EloChange 0}}+{{end}}{{.EloChange}}
+                {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}}
               </span>
             </td>
             <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>
@@ -66,6 +71,7 @@
           {{end}}
         </tbody>
       </table>
+    </div>
     </div>
   </div>
 </div>

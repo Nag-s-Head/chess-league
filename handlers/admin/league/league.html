@@ -1,0 +1,33 @@
+<h1 class="text-xl font-bold">Manage League</h1>
+
+<form class="flex flex-col gap-5 w-full" hx-post="" hx-target="#response">
+  <div class="flex flex-col gap-5" id="response">
+    <p>Select all of the players in the league.</p>
+    {{range $result := .}}
+    <div class="flex flex-row gap-3 items-center">
+      <input
+        type="checkbox"
+        id="player-{{.Id}}"
+        name="player-{{.Id}}"
+        value="playing"
+        class="w-6 h-6 rounded bg-gray-300 cursor-pointer accent-green-800"
+        {{if
+        .InLeague}}
+        checked
+        {{end}}
+      />
+      <label for="player-{{.Id}}" class="cursor-pointer text-lg font-bold"
+        >{{.Name}}</label
+      >
+    </div>
+    {{end}}
+    <button
+      type="submit"
+      name="submit"
+      value="submit"
+      class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    >
+      Save
+    </button>
+  </div>
+</form>

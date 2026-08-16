@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -9,10 +10,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/Nag-s-Head/chess-league/app/theme"
 	"github.com/Nag-s-Head/chess-league/db"
-	"github.com/Nag-s-Head/chess-league/db/model"
 	"github.com/Nag-s-Head/chess-league/handlers/admin"
 	"github.com/Nag-s-Head/chess-league/handlers/assets"
+	"github.com/Nag-s-Head/chess-league/handlers/league"
 	playerdetails "github.com/Nag-s-Head/chess-league/handlers/player_details"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
@@ -27,19 +29,17 @@ var layoutTmpl *template.Template = utils.GetTemplate(f, "layout.html")
 type Layout struct {
 	Body    template.HTML
 	IsAdmin bool
-}
-
-type IndexData struct {
-	Players      []model.Player
-	TotalGames   int
-	TotalPlayers int
+	Theme   theme.Theme
+	AppIcon template.HTML
 }
 
 // WithLayout wraps the provided body HTML in the global layout and writes it to w.
-func withLayout(w http.ResponseWriter, body template.HTML, isAdmin bool) {
+func withLayout(w http.ResponseWriter, body template.HTML, isAdmin bool, theme theme.Theme) {
 	err := layoutTmpl.Execute(w, Layout{
 		Body:    body,
 		IsAdmin: isAdmin,
+		Theme:   theme,
+		AppIcon: theme.AppIconImageHTML(),
 	})
 	if err != nil {
 		slog.Error("Cannot execute layout template", "err", err)
@@ -47,20 +47,29 @@ func withLayout(w http.ResponseWriter, body template.HTML, isAdmin bool) {
 	}
 }
 
-func WithLayoutAdmin(w http.ResponseWriter, body template.HTML) {
-	withLayout(w, body, true)
+type LayoutFn func(w http.ResponseWriter, body template.HTML)
+
+func WithLayoutAdmin(theme theme.Theme) LayoutFn {
+	return func(w http.ResponseWriter, body template.HTML) {
+		withLayout(w, body, true, theme)
+	}
 }
 
-func WithLayout(w http.ResponseWriter, body template.HTML) {
-	withLayout(w, body, false)
+func WithLayout(theme theme.Theme) LayoutFn {
+	return func(w http.ResponseWriter, body template.HTML) {
+
+		withLayout(w, body, false, theme)
+	}
 }
 
-func Test(w http.ResponseWriter, r *http.Request) {
-	msg := fmt.Sprintf("alive and well at %s", time.Now().UTC())
-	WithLayout(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
+func Test(WithLayout LayoutFn) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := fmt.Sprintf("alive and well at %s", time.Now().UTC())
+		WithLayout(w, template.HTML(fmt.Sprintf("<p>%s</p>", msg)))
+	}
 }
 
-func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
+func PlayerDetails(db db.Db, WithLayout LayoutFn) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := uuid.Parse(idStr)
@@ -81,20 +90,40 @@ func PlayerDetails(db *db.Db) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func League(db db.Db, WithLayout LayoutFn) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := league.Render(db)
+		if err != nil {
+			slog.Error("Cannot render league page", "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		WithLayout(w, body)
+	}
+}
+
 // NewHandler returns a router that handles all site routes.
-func NewHandler(db *db.Db) http.Handler {
+func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
 	mux := http.NewServeMux()
+	layoutFn := WithLayout(t)
 	// {$} matches exactly "/"
-	mux.HandleFunc("GET /{$}", Index(db))
-	mux.HandleFunc("GET /player/{id}", PlayerDetails(db))
-	mux.HandleFunc("GET /test", Test)
-	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy)
-	mux.HandleFunc("GET /rules", Rules)
+	mux.HandleFunc("GET /{$}", Index(db, t))
+	mux.HandleFunc("GET /player/{id}", PlayerDetails(db, layoutFn))
+	mux.HandleFunc("GET /player/{id}/elo-chart", playerdetails.ServeChart(db))
+	mux.HandleFunc("GET /test", Test(layoutFn))
+	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy(layoutFn))
+	mux.HandleFunc("GET /league", League(db, layoutFn))
+	mux.HandleFunc("GET /rules", Rules(layoutFn))
 	mux.HandleFunc("GET /rules/agree", RulesAgree)
-	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db))
+	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db, layoutFn))
 	submitgame.Register(mux, db)
-	admin.Register(mux, db, WithLayoutAdmin)
+	admin.Register(mux, db, WithLayoutAdmin(t))
 	assets.Register(mux)
+	err := t.Register(mux)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot register theme"), err)
+	}
 
 	slog.Info(fmt.Sprintf("To submit a game use %s/%s?%s=%s",
 		os.Getenv("APP_BASE_URL"),
@@ -102,5 +131,5 @@ func NewHandler(db *db.Db) http.Handler {
 		submitgame.MagicNumberParam,
 		magicNumber))
 
-	return mux
+	return mux, nil
 }

@@ -1,19 +1,40 @@
 package assets
 
 import (
+	"embed"
+	"log/slog"
 	"net/http"
-
-	"github.com/Nag-s-Head/chess-league/handlers/utils"
 )
 
-func serveAsset(data []byte) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write(data)
-		w.Header().Set("Content-Type", "image/jpeg")
-		utils.WithCacheControl(w, utils.AgeWeek)
+//go:generate pnpm i
+//go:generate cp ../../node_modules/htmx.org/dist/htmx.min.js .
+//go:generate cp ../../node_modules/htmx-ext-ws/dist/ws.min.js .
+//go:generate pnpm build_tailwind
+
+//go:embed htmx.min.js
+//go:embed ws.min.js
+//go:embed tailwind.css
+//go:embed favicon.ico
+var fs embed.FS
+
+func readFile(name string) []byte {
+	bytes, err := fs.ReadFile(name)
+	if err != nil {
+		slog.Error("Cannot read embedded file", "err", err)
+		panic(err)
 	}
+
+	return bytes
 }
 
+var htmxBytes []byte = readFile("htmx.min.js")
+var htmxWsBytes []byte = readFile("ws.min.js") // This is aliases to htmx-ws.js to make it clearer that it is the htmx extension
+var tailwindBytes []byte = readFile("tailwind.css")
+var faviconBytes []byte = readFile("favicon.ico")
+
 func Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /assets/wide_shot.jpg", serveAsset(wideShot))
+	mux.HandleFunc("GET /assets/htmx.js", ServeAsset(htmxBytes, "application/javascript"))
+	mux.HandleFunc("GET /assets/htmx-ws.js", ServeAsset(htmxWsBytes, "application/javascript"))
+	mux.HandleFunc("GET /assets/tailwind.css", ServeAsset(tailwindBytes, "text/css"))
+	mux.HandleFunc("GET /favicon.ico", ServeAsset(faviconBytes, "image/x-icon"))
 }

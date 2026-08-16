@@ -14,6 +14,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/handlers/rules"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 )
 
@@ -70,7 +71,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Test render of player lookup", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=win", name), strings.NewReader(""))
 		r.AddCookie(&http.Cookie{
 			Name:  submitgame.MagicNumberCookie,
 			Value: os.Getenv(submitgame.MagicNumberEnvVar),
@@ -90,7 +91,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Test render of player lookup, no magic number", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=white", name), strings.NewReader(""))
+		r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/mocked-url?player-name=%s&played-as=white&other-player-name=not_found&winner=win", name), strings.NewReader(""))
 
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
@@ -104,7 +105,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		ikey, err := model.NextIKey(db)
@@ -142,6 +144,7 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
+		form.Set("played-as", "white")
 		form.Set("winner", "draw")
 		form.Set("submit-type", "final")
 
@@ -181,7 +184,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
@@ -208,7 +212,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		r := httptest.NewRequest(http.MethodPost, "/mocked-url", strings.NewReader(form.Encode()))
@@ -276,7 +281,8 @@ func TestSubmit(t *testing.T) {
 		form := url.Values{}
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", whiteName)
-		form.Set("winner", "white")
+		form.Set("played-as", "white")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		ikey, err := model.NextIKey(db)
@@ -325,7 +331,7 @@ func TestSubmit(t *testing.T) {
 		form.Set("other-player-name", whiteName)
 		form.Set("white-player-name", whiteName)
 		form.Set("black-player-name", blackName)
-		form.Set("winner", "black")
+		form.Set("winner", "win")
 		form.Set("submit-type", "final")
 
 		ikey, err := model.NextIKey(db)
@@ -360,7 +366,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("Empty magic cookie but valid URL param should work", func(t *testing.T) {
-		url := fmt.Sprintf("/mocked-url?%s=%s&player-name=%s&played-as=white&other-player-name=not_found&winner=white",
+		url := fmt.Sprintf("/mocked-url?%s=%s&player-name=%s&played-as=white&other-player-name=not_found&winner=win",
 			submitgame.MagicNumberParam, os.Getenv(submitgame.MagicNumberEnvVar), name)
 		r := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
 		r.AddCookie(&http.Cookie{
@@ -375,5 +381,104 @@ func TestSubmit(t *testing.T) {
 		w := httptest.NewRecorder()
 		err = submitgame.DoSubmit(db, w, r)
 		require.NoError(t, err)
+	})
+}
+
+func TestWs(t *testing.T) {
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	t.Run("Base case: Successful connection and message exchange", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s; %s=%s",
+			submitgame.MagicNumberCookie, os.Getenv(submitgame.MagicNumberEnvVar),
+			rules.RulesVersionCookie, rules.CurrentRulesVersion))
+
+		conn, resp, err := dialer.Dial(wsURL, header)
+		require.NoError(t, err)
+		defer conn.Close()
+		require.Equal(t, http.StatusSwitchingProtocols, resp.StatusCode)
+
+		message := struct {
+			Player1Name string `json:"player-name"`
+			Player2Name string `json:"other-player-name"`
+			PlayedAs    string `json:"played-as"`
+			SubmitType  string `json:"submit-type"`
+		}{
+			Player1Name: "Player1",
+			Player2Name: "Player2",
+			PlayedAs:    "white",
+		}
+		err = conn.WriteJSON(message)
+		require.NoError(t, err)
+
+		_, p, err := conn.ReadMessage()
+		require.NoError(t, err)
+		require.Contains(t, string(p), "id=\"response\"")
+	})
+
+	t.Run("Lack of rule cookie", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s",
+			submitgame.MagicNumberCookie, os.Getenv(submitgame.MagicNumberEnvVar)))
+
+		_, resp, err := dialer.Dial(wsURL, header)
+		require.Error(t, err)
+		require.NotEqual(t, http.StatusSwitchingProtocols, resp.StatusCode)
+	})
+
+	t.Run("Lack of magic number", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s",
+			rules.RulesVersionCookie, rules.CurrentRulesVersion))
+
+		_, resp, err := dialer.Dial(wsURL, header)
+		require.Error(t, err)
+		require.NotEqual(t, http.StatusSwitchingProtocols, resp.StatusCode)
+	})
+
+	t.Run("Invalid messages being sent", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			submitgame.HandleWs(db, w, r)
+		}))
+		defer server.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+		dialer := websocket.Dialer{}
+		header := http.Header{}
+		header.Add("Cookie", fmt.Sprintf("%s=%s; %s=%s",
+			submitgame.MagicNumberCookie, os.Getenv(submitgame.MagicNumberEnvVar),
+			rules.RulesVersionCookie, rules.CurrentRulesVersion))
+
+		conn, _, err := dialer.Dial(wsURL, header)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		err = conn.WriteMessage(websocket.TextMessage, []byte("invalid json"))
+		require.NoError(t, err)
+
+		_, _, err = conn.ReadMessage()
+		require.Error(t, err) // Should close connection
 	})
 }

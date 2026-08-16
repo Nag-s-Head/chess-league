@@ -19,18 +19,19 @@ const (
 	Outcome_Draw = 0.5
 )
 
+// Deprecated: for use with old elo system
 // Updates player A, and B's ELO based on the outcome, see Outcome_XXX.
 // The outcome describes player a, so if it is Outcome_Win then
 func CalculateElo(a, b *Player, outcome Outcome) (int, int) {
 	outcomeF := float64(outcome)
-	pb := p(a.Elo, b.Elo)
-	pa := p(b.Elo, a.Elo)
+	pb := p(a.DEPRECATEDElo, b.DEPRECATEDElo)
+	pa := p(b.DEPRECATEDElo, a.DEPRECATEDElo)
 
 	deltaA := int(math.Round(K * (outcomeF - pa)))
-	a.Elo += deltaA
+	a.DEPRECATEDElo += deltaA
 
 	deltaB := int(math.Round(K * ((1 - outcomeF) - pb)))
-	b.Elo += deltaB
+	b.DEPRECATEDElo += deltaB
 
 	return deltaA, deltaB
 }

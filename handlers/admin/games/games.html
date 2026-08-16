@@ -1,12 +1,36 @@
+<script>
+function searchGames(event) {
+  event.preventDefault();
+  const url = new URL(window.location.href);
+  const text = document.getElementById("search").value;
+  url.searchParams.set("q", text);
+  window.location.replace(url.toString());
+}
+</script>
 <h1 class="text-xl font-bold">Games</h1>
+<form class="flex flex-row gap-3" onsubmit="searchGames(event)">
+  <input
+    id="search"
+    type="search"
+    placeholder="Search games"
+    class="rounded-lg border-2 border-gray-500 bg-gray-300 p-1 px-2 flex-1"
+    value="{{.Query}}"
+  ></input>
+  <button
+    class="rounded-lg bg-blue-700 p-1 px-3 text-white font-bold"
+    type="submit"
+  >
+    Search
+  </button>
+</form>
 
-{{range $result := .}}
+{{range $result := .Games}}
   <a
     href="/admin/games/{{.Ikey}}"
-    class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}"
   >
     <div class="flex flex-row justify-between w-full">
-      <tr class="border-b border-gray-200">
+    <tr class="border-b border-gray-200 {{if .Deleted}}bg-red-300 hover:bg-red-100{{end}}">
         <td class="py-2">
           <p>
             <span class="font-bold">{{.PlayerName}}</span> vs. <span class="font-bold">{{.OpponentName}}</span>
@@ -14,23 +38,16 @@
         </td>
         <td class="py-2">
           <span
-            class="{{if eq .Outcome "Win"}}text-green-800 font-bold{{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
+            class="{{if eq .Outcome "Win"}}text-green-800 font-bold {{else if eq .Outcome "Loss"}}text-red-700{{else}}text-gray-600{{end}}"
           >
             {{.Outcome}}
           </span>
         </td>
         <td class="py-2">
           <span
-            class="{{if gt .EloChange 0}}text-green-800 font-bold{{else if lt .EloChange 0}}text-red-700{{else}}text-gray-500{{end}}"
-          >
-            {{if gt .EloChange 0}}+{{end}}{{.EloChange}} ELO
-          </span>
-        </td>
-        <td class="py-2">
-          <span
             class="{{if gt .Liglicko2Change 0.0}}text-green-800 font-bold{{else if lt .Liglicko2Change 0.0}}text-red-700{{else}}text-gray-500{{end}}"
           >
-            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}} liglicko2
+            {{if gt .Liglicko2Change 0.0}}+{{end}}{{printf "%.0f" .Liglicko2Change}} ELO 
           </span>
         </td>
         <td class="py-2 text-sm text-gray-500">{{.Played.Format "Jan 02, 2006, 15:04pm"}}</td>

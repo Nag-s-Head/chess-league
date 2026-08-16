@@ -3,8 +3,8 @@
   {{if .ExactMatch}}
   <h3 class="text-xl">
     <span class="font-bold">Found {{.Name}}</span> ({{if
-    .IsWhite}}white{{else}}black{{end}} player) {{range
-    .Players}}{{.Elo}}{{end}} ELO.
+    .IsWhite}}white{{else}}black{{end}} player) {{range .Players}}{{printf
+    "%.0f" .Liglicko2Rating}}{{end}} ELO.
   </h3>
 
   <input
@@ -31,10 +31,11 @@
           name="{{if $result.IsWhite}}white{{else}}black{{end}}-player-name"
           value="{{.Name}}"
           required
+          onchange="onPlayerSelected({{.Id}}, {{if $result.IsWhite}}true{{else}}false{{end}});"
         />
         <div class="flex flex-row justify-between w-full">
           <h4 class="text-lg font-bold">{{.Name}}</h4>
-          <p>{{.Elo}} ELO</p>
+          <p>{{printf "%.0f" .Liglicko2Rating}} ELO</p>
         </div>
       </label>
       {{end}}
@@ -57,12 +58,21 @@
 </div>
 {{end}}
 
+<div class="flex flex-col gap3 md:gap-5 hidden" id="previous-games-wrapper">
+  <h3 class="text-lg font-bold">Previous Games</h3>
+  <div
+    class="flex flex-col items-center gap-3 p-1 md:p-3 border-2 border-gray-300 rounded-lg"
+    id="previous-games"
+  ></div>
+</div>
+
 <div class="flex flex-row gap-5">
   <button
     type="submit"
     name="submit-type"
     value="lookup"
-    class="rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    class="hidden rounded-lg p-2 px-5 bg-green-800 max-w-100 text-white font-bold"
+    formnovalidate
   >
     Find Players
   </button>
@@ -76,3 +86,128 @@
     Submit Game
   </button>
 </div>
+
+<script>
+    var players = {
+      {{range $result:= .Results}}
+        {{range $player:= .Players}}
+          {{.Id}}: {
+            "name": {{.Name}},
+            "id": {{.Id}},
+            "rating": {{.Liglicko2Rating}}
+          },
+        {{end}}
+      {{end}}
+        "": {},
+      };
+
+    var games = {
+      {{range $playersgames := .PlayersGames}}
+         {{.IKey}}: {
+           "ikey": {{.IKey}},
+           "playerWhite": {{.PlayerWhite}},
+           "playerBlack": {{.PlayerBlack}},
+           "score": {{.Score}},
+           "played": {{.Played}}
+         },
+      {{end}}
+        0: {},
+      };
+
+    var player1 = undefined;
+    var player2 = undefined;
+
+    var wrapperId = "previous-games-wrapper";
+    var wrapperBaseCss = document.getElementById(wrapperId).className;
+    var wrapperUnhiddenCss = document.getElementById(wrapperId).className.replaceAll("hidden", "");
+
+    var previousGamesId = "previous-games";
+
+    var timeFormatter = new Intl.DateTimeFormat(navigator.language, {
+      dateStyle: "short",
+      timeStyle: "short"
+    });
+
+    function asP(unsafeContent, css) {
+      const p = document.createElement("p");
+      p.append(unsafeContent);
+
+      if (css) {
+        p.className = css;
+      }
+      return p;
+    }
+
+    function onPlayerSelected(id, isPlayerOne) {
+      if (isPlayerOne) {
+        player1 = id;
+      } else {
+        player2 = id;
+      }
+
+      const selectedGames = [];
+      for (const ikey in games) {
+        if (ikey == 0) {
+          continue;
+        }
+
+        const game = games[ikey];
+        if ((game.playerWhite == player1 && game.playerBlack == player2) || (game.playerWhite == player2 && game.playerBlack == player1)) {
+          selectedGames.push(game);
+        }
+      }
+
+      if (selectedGames.length == 0) {
+        console.log("No games found for player combo", "player1", player1, "player2", player2)
+        document.getElementById(wrapperId).className = wrapperBaseCss;
+        document.getElementById(previousGamesId).innerHTML = "";
+        return;
+      }
+
+      console.log("Found games for the player combo", "game", selectedGames)
+      document.getElementById(wrapperId).className = wrapperUnhiddenCss;
+
+      const children = [];
+      selectedGames.sort((a, b) => new Date(b.played) - new Date(a.played));
+
+      for (const game of selectedGames) {
+        const div = document.createElement("div");
+        div.className = "flex flex-row gap-2 md:gap-3 justify-between";
+
+        var scoreCss = "";
+        switch(game.score) {
+          case "1-0":
+            scoreCss = "text-green-800"
+            break;
+          case "0-1":
+            scoreCss = "text-red-500"
+            break;
+          case "1/2-1/2":
+            scoreCss = "text-gray-600"
+            break;
+        }
+
+        div.append(
+          asP(players[game.playerWhite].name),
+          asP("vs."),
+          asP(players[game.playerBlack].name),
+          asP(`(${game.score})`, scoreCss),
+          asP(timeFormatter.format(new Date(game.played)))
+        );
+
+        children.push(div);
+      }
+
+      document.getElementById(previousGamesId).replaceChildren(...children);
+    }
+
+      {{range $result:= .Results}}
+      {{if .ExactMatch}}
+        {{if .IsWhite}}player1{{else}}player2{{end}} = {{range .Players}}{{.Id}}{{end}};
+      {{end}}
+      {{end}}
+
+  if (player1 && player2) {
+    onPlayerSelected(player1, true);
+  }
+</script>

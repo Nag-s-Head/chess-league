@@ -1,12 +1,17 @@
 package model_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/Nag-s-Head/chess-league/db/liglicko2"
 	"github.com/Nag-s-Head/chess-league/db/model"
 	testutils "github.com/Nag-s-Head/chess-league/db/test_utils"
 	"github.com/djpiper28/rpg-book/common/normalisation"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +24,7 @@ func TestNewPlayer(t *testing.T) {
 	require.Equal(t, name, player.Name)
 	require.Equal(t, name, player.NameNormalised)
 	require.NotEmpty(t, player.JoinTime)
-	require.Equal(t, model.StartingElo, player.Elo)
+	require.Equal(t, model.StartingElo, player.DEPRECATEDElo)
 	require.Equal(t, model.StartingLiglicko2Rating, player.Liglicko2Rating)
 	require.Equal(t, model.StartingLiglicko2Deviation, player.Liglicko2Deviation)
 	require.Equal(t, model.StartingLiglicko2Volatility, player.Liglicko2Volatility)
@@ -81,13 +86,112 @@ func TestGetPlayers(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, len(players), 1)
 
-	players, err = model.GetPlayersByElo(db)
+	found := false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayers results")
+
+	players, err = model.GetPlayersByElo(db, false)
 	require.NoError(t, err)
 	require.Greater(t, len(players), 1)
+
+	found = false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayersByElo results")
 
 	playersWithCount, err := model.GetPlayersByEloWithGameCount(db)
 	require.NoError(t, err)
 	require.Greater(t, len(playersWithCount), 1)
+
+	for _, player := range players {
+		require.False(t, player.Deleted)
+	}
+}
+
+func TestGetPlayersShowDeleted(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	name := uuid.New().String()
+	player := model.NewPlayer(name)
+	player.Deleted = true
+	player.NameNormalised = player.Id.String()
+
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	players, err := model.GetPlayers(db)
+	require.NoError(t, err)
+	require.Greater(t, len(players), 1)
+
+	found := false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayers results")
+
+	players, err = model.GetPlayersByElo(db, true)
+	require.NoError(t, err)
+	require.Greater(t, len(players), 1)
+
+	found = false
+	for _, p := range players {
+		if p.Id == player.Id {
+			found = true
+			require.Equal(t, player.Name, p.Name)
+			require.Equal(t, player.Deleted, p.Deleted)
+			break
+		}
+	}
+	require.True(t, found, "Player not found in GetPlayersByElo results")
+
+	playersWithCount, err := model.GetPlayersByEloWithGameCount(db)
+	require.NoError(t, err)
+	require.Greater(t, len(playersWithCount), 1)
+}
+
+func TestGetPlayersDoesNotShowInactivePlayers(t *testing.T) {
+	t.Parallel()
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	const month = time.Hour * 24 * 31
+
+	name := uuid.New().String()
+	player := model.NewPlayer(name)
+	player.Liglicko2At = liglicko2.InstantFromTime(time.Now().Add(-(month + 2*time.Hour*24)))
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	name = uuid.New().String()
+	player = model.NewPlayer(name)
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	players, err := model.GetPlayersByElo(db, false)
+	require.NoError(t, err)
+	require.Greater(t, len(players), 1)
+
+	twoMonthsAgo := liglicko2.InstantFromTime(time.Now().Add(-2 * month))
+	for _, player := range players {
+		require.GreaterOrEqual(t, player.Liglicko2At, twoMonthsAgo)
+	}
 }
 
 func TestNormalise(t *testing.T) {
@@ -170,4 +274,47 @@ func TestRenamePlayer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newName, player.Name)
 	require.Equal(t, normalisation.Normalise(newName), player.NameNormalised)
+}
+
+func TestPlayerEloChartNewJoiner(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	player := model.NewPlayer("Adam" + uuid.NewString())
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	img, err := model.PlayerEloChart(db, player.Id)
+	require.NoError(t, err)
+	require.NotNil(t, img)
+}
+
+func TestPlayerEloChart(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	player := model.NewPlayer("Adam" + uuid.NewString())
+	require.NoError(t, model.InsertPlayer(db, player))
+
+	for range 10 {
+		player2 := model.NewPlayer("Greg" + uuid.NewString())
+		require.NoError(t, model.InsertPlayer(db, player2))
+
+		ikey, err := model.NextIKey(db)
+		require.NoError(t, err)
+
+		require.NoError(t, db.DoTx(func(tx *sqlx.Tx) error {
+			r := httptest.NewRequest(http.MethodGet, "/mocked-url", nil)
+			_, _, _, err := model.CreateGame(tx, &player, &player2, true, ikey, model.Score_Draw, r)
+			require.NoError(t, err)
+			return nil
+		}))
+	}
+
+	img, err := model.PlayerEloChart(db, player.Id)
+	require.NoError(t, err)
+	require.NotNil(t, img)
 }
