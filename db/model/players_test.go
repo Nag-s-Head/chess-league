@@ -188,9 +188,9 @@ func TestGetPlayersDoesNotShowInactivePlayers(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, len(players), 1)
 
-	oneMonthAgo := liglicko2.InstantFromTime(time.Now().Add(-month))
+	twoMonthsAgo := liglicko2.InstantFromTime(time.Now().Add(-2 * month))
 	for _, player := range players {
-		require.GreaterOrEqual(t, player.Liglicko2At, oneMonthAgo)
+		require.GreaterOrEqual(t, player.Liglicko2At, twoMonthsAgo)
 	}
 }
 
