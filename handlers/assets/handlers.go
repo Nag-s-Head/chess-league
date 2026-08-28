@@ -32,10 +32,9 @@ var htmxWsBytes []byte = readFile("ws.min.js") // This is aliases to htmx-ws.js 
 var tailwindBytes []byte = readFile("tailwind.css")
 var faviconBytes []byte = readFile("favicon.ico")
 
-func Register(mux *http.ServeMux, themeCss []byte) {
-	mux.HandleFunc("/assets/htmx.js", ServeAsset(htmxBytes, "application/javascript"))
-	mux.HandleFunc("/assets/htmx-ws.js", ServeAsset(htmxWsBytes, "application/javascript"))
-	mux.HandleFunc("/assets/tailwind.css", ServeAsset(tailwindBytes, "text/css"))
-	mux.HandleFunc("/favicon.ico", ServeAsset(faviconBytes, "image/x-icon"))
-	mux.HandleFunc("/assets/theme.css", ServeAsset(themeCss, "text/css"))
+func Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /assets/htmx.js", ServeAsset(htmxBytes, "application/javascript"))
+	mux.HandleFunc("GET /assets/htmx-ws.js", ServeAsset(htmxWsBytes, "application/javascript"))
+	mux.HandleFunc("GET /assets/tailwind.css", ServeAsset(tailwindBytes, "text/css"))
+	mux.HandleFunc("GET /favicon.ico", ServeAsset(faviconBytes, "image/x-icon"))
 }

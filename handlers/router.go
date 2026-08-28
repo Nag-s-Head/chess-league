@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"embed"
 	"errors"
 	"fmt"
@@ -22,27 +21,16 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:embed index.html layout.html theme.css
+//go:embed index.html layout.html
 var f embed.FS
 var indexTmpl *template.Template = utils.GetTemplate(f, "index.html")
 var layoutTmpl *template.Template = utils.GetTemplate(f, "layout.html")
-var themeCssTmpl *template.Template = utils.GetTemplate(f, "theme.css")
 
 type Layout struct {
 	Body    template.HTML
 	IsAdmin bool
 	Theme   theme.Theme
 	AppIcon template.HTML
-}
-
-func generateThemeCss(theme theme.Theme) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	err := themeCssTmpl.Execute(buf, theme)
-	if err != nil {
-		return nil, errors.Join(errors.New("Cannot execute theme.css template"), err)
-	}
-
-	return buf.Bytes(), nil
 }
 
 // WithLayout wraps the provided body HTML in the global layout and writes it to w.
@@ -117,11 +105,6 @@ func League(db db.Db, WithLayout LayoutFn) func(w http.ResponseWriter, r *http.R
 
 // NewHandler returns a router that handles all site routes.
 func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
-	themeCss, err := generateThemeCss(t)
-	if err != nil {
-		return nil, errors.Join(errors.New("Cannot generate theme css"), err)
-	}
-
 	mux := http.NewServeMux()
 	layoutFn := WithLayout(t)
 	// {$} matches exactly "/"
@@ -133,11 +116,14 @@ func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
 	mux.HandleFunc("GET /league", League(db, layoutFn))
 	mux.HandleFunc("GET /rules", Rules(layoutFn))
 	mux.HandleFunc("GET /rules/agree", RulesAgree)
-	mux.HandleFunc(fmt.Sprintf("GET %s", theme.AppIconPath), t.AppIconImageHandler())
 	mux.HandleFunc(fmt.Sprintf("GET %s", submitgame.BasePath), SubmitGame(db, layoutFn))
 	submitgame.Register(mux, db)
 	admin.Register(mux, db, WithLayoutAdmin(t))
-	assets.Register(mux, themeCss)
+	assets.Register(mux)
+	err := t.Register(mux)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot register theme"), err)
+	}
 
 	slog.Info(fmt.Sprintf("To submit a game use %s/%s?%s=%s",
 		os.Getenv("APP_BASE_URL"),

@@ -1,21 +1,28 @@
 package theme
 
 import (
+	"bytes"
+	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 
 	"github.com/Nag-s-Head/chess-league/handlers/assets"
+	"github.com/Nag-s-Head/chess-league/handlers/utils"
 )
+
+//go:embed theme.css
+var fs embed.FS
 
 type ColourHex string // hex code (with hash) i.e: #ffffff, #a000ff
 
-type AppIconType int
+type ImageType int
 
 const (
-	AppIconType_Png AppIconType = iota
-	AppIconType_Jpg
-	AppIconType_Svg
+	ImageType_Png ImageType = iota
+	ImageType_Jpg
+	ImageType_Svg
 )
 
 type Theme struct {
@@ -25,7 +32,9 @@ type Theme struct {
 	SecondaryColour    ColourHex
 	TitleBarTextColour string
 	AppIcon            []byte
-	AppIconType        AppIconType
+	AppIconType        ImageType
+	SplashImage        []byte
+	SplashImageType    ImageType
 }
 
 func DefaultTheme() Theme {
@@ -42,7 +51,7 @@ func DefaultTheme() Theme {
 	}
 }
 
-func DefaultIcon() ([]byte, AppIconType) {
+func DefaultIcon() ([]byte, ImageType) {
 	return []byte(`<svg
   xmlns:dc="http://purl.org/dc/elements/1.1/"
   xmlns:cc="http://creativecommons.org/ns#"
@@ -65,30 +74,57 @@ func DefaultIcon() ([]byte, AppIconType) {
       stroke="none"
     />
   </g>
-</svg>`), AppIconType_Svg
+</svg>`), ImageType_Svg
 }
 
 // This has no file extension as content-type headers are used instead
-const AppIconPath = "/assets/icon"
+const (
+	AppIconPath = "/assets/icon"
+	SplashPath  = "/assets/splash"
+)
 
 func (t *Theme) AppIconImageHTML() template.HTML {
 	return template.HTML(fmt.Sprintf(`<img src="%s" alt="App icon" />`, AppIconPath))
 }
 
-func (t *Theme) AppIconImageHandler() func(http.ResponseWriter, *http.Request) {
+func imageHandler(image []byte, imageType ImageType) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var mimeType string
-		switch t.AppIconType {
-		case AppIconType_Svg:
+		switch imageType {
+		case ImageType_Svg:
 			mimeType = "image/svg+xml"
-		case AppIconType_Jpg:
+		case ImageType_Jpg:
 			mimeType = "image/jpeg"
-		case AppIconType_Png:
+		case ImageType_Png:
 			mimeType = "image/png"
 		default:
-			panic(fmt.Errorf("Invalid app icon type %d", t.AppIconType))
+			panic(fmt.Errorf("Invalid image type %d", imageType))
 		}
 
-		assets.ServeAsset(t.AppIcon, mimeType)(w, r)
+		assets.ServeAsset(image, mimeType)(w, r)
 	}
+}
+
+var themeCssTmpl *template.Template = utils.GetTemplate(fs, "theme.css")
+
+func (t *Theme) generateThemeCss() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	err := themeCssTmpl.Execute(buf, t)
+	if err != nil {
+		return nil, errors.Join(errors.New("Cannot execute theme.css template"), err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (t *Theme) Register(mux *http.ServeMux) error {
+	themeCss, err := t.generateThemeCss()
+	if err != nil {
+		return errors.Join(errors.New("Cannot generate theme css"), err)
+	}
+
+	mux.HandleFunc("GET /assets/theme.css", assets.ServeAsset(themeCss, "text/css"))
+	mux.HandleFunc(fmt.Sprintf("GET %s", AppIconPath), imageHandler(t.AppIcon, t.AppIconType))
+	mux.HandleFunc(fmt.Sprintf("GET %s", SplashPath), imageHandler(t.SplashImage, t.SplashImageType))
+	return nil
 }

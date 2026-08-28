@@ -18,7 +18,7 @@ func PrivacyPolicy(WithLayout LayoutFn) func(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		utils.WithCacheControl(w)
+		utils.WithCacheControl(w, utils.AgeWeek)
 		WithLayout(w, body)
 	}
 }
@@ -33,7 +33,7 @@ func Rules(WithLayout LayoutFn) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		utils.WithCacheControl(w)
+		utils.WithCacheControl(w, utils.AgeHour)
 		WithLayout(w, body)
 	}
 }

@@ -27,3 +27,15 @@ func GetTemplate(f embed.FS, name string) *template.Template {
 
 	return tpl
 }
+
+func GetRaw(f embed.FS, name string) []byte {
+	data, err := f.ReadFile(name)
+	if err != nil {
+		_, file, line, _ := runtime.Caller(1)
+		caller := fmt.Sprintf("%s:%d", file, line)
+		slog.Error("Cannot read embedded file", "name", name, "caller", caller)
+		panic("Cannot read embedded file")
+	}
+
+	return data
+}
