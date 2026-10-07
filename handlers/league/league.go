@@ -62,7 +62,7 @@ func Render(db db.Db) (template.HTML, error) {
 				GroupName: "G",
 				Players:   make([]model.Player, 0),
 			},
-		}
+		}}
 
 		for i, player := range players {
 			index := i / 3
