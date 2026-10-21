@@ -39,10 +39,10 @@
     </div>
     <div class="p-4 bg-gray-100 rounded-lg">
       <label for="score-vs-player" class="block text-sm text-gray-500">Score vs</label>
-      <select id="score-vs-player" class="mt-2 w-full p-2 rounded-lg bg-white text-lg font-bold" onchange="if (this.value) window.location.href = this.value">
+      <select id="score-vs-player" class="mt-2 w-full p-2 rounded-lg bg-white text-lg font-bold" onchange="if (this.value) window.location.href = '/players/{{.Player.Id}}/score-vs/' + encodeURIComponent(this.value)">
         <option value="" selected>Choose a player</option>
         {{range .Opponents}}
-        <option value="/players/{{$.Player.Id}}/score-vs/{{.Id}}">{{.Name}}</option>
+        <option value="{{.Id}}">{{.Name}}</option>
         {{else}}
         <option value="" disabled>No opponents yet</option>
         {{end}}
