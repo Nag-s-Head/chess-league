@@ -22,3 +22,5 @@ jobs:
 
       - name: Test
         run: make test -j
+        env:
+          GOFLAGS: "-p=1 -parallel=1"
