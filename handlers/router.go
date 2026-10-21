@@ -17,6 +17,7 @@ import (
 	"github.com/Nag-s-Head/chess-league/handlers/assets"
 	"github.com/Nag-s-Head/chess-league/handlers/league"
 	playerdetails "github.com/Nag-s-Head/chess-league/handlers/player_details"
+	scorevs "github.com/Nag-s-Head/chess-league/handlers/score_vs"
 	submitgame "github.com/Nag-s-Head/chess-league/handlers/submit_game"
 	"github.com/Nag-s-Head/chess-league/handlers/utils"
 	"github.com/google/uuid"
@@ -128,6 +129,7 @@ func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
 	mux.HandleFunc("GET /{$}", Index(db, t))
 	mux.HandleFunc("GET /player/{id}", PlayerDetails(db, layoutFn))
 	mux.HandleFunc("GET /player/{id}/elo-chart", playerdetails.ServeChart(db))
+	mux.HandleFunc("GET /players/{id}/score-vs/{opponentID}", ScoreVs(db, layoutFn))
 	mux.HandleFunc("GET /test", Test(layoutFn))
 	mux.HandleFunc("GET /privacy-policy", PrivacyPolicy(layoutFn))
 	mux.HandleFunc("GET /league", League(db, layoutFn))
@@ -146,4 +148,27 @@ func NewHandler(db db.Db, t theme.Theme) (http.Handler, error) {
 		magicNumber))
 
 	return mux, nil
+}
+
+func ScoreVs(db db.Db, withLayout LayoutFn) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		playerID, err := uuid.Parse(r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "Invalid player ID", http.StatusBadRequest)
+			return
+		}
+		opponentID, err := uuid.Parse(r.PathValue("opponentID"))
+		if err != nil {
+			http.Error(w, "Invalid opponent ID", http.StatusBadRequest)
+			return
+		}
+
+		body, err := scorevs.RenderScoreVs(db, playerID, opponentID)
+		if err != nil {
+			slog.Error("Cannot render score-vs page", "err", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		withLayout(w, body)
+	}
 }

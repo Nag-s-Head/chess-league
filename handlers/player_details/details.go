@@ -20,8 +20,9 @@ var f embed.FS
 var tpl *template.Template = utils.GetTemplate(f, "details.html")
 
 type PlayerDetails struct {
-	Player  model.Player
-	Details model.GamesUiFriendly
+	Player    model.Player
+	Details   model.GamesUiFriendly
+	Opponents []model.Player
 }
 
 func Render(dbCon db.Db, id uuid.UUID) (template.HTML, error) {
@@ -34,10 +35,34 @@ func Render(dbCon db.Db, id uuid.UUID) (template.HTML, error) {
 	if err != nil {
 		return "", err
 	}
+	players, err := model.GetPlayers(dbCon)
+	if err != nil {
+		return "", err
+	}
+
+	playedAgainst := make(map[uuid.UUID]bool)
+	for _, game := range games {
+		if game.Deleted {
+			continue
+		}
+		opponentID := game.PlayerWhite
+		if opponentID == id {
+			opponentID = game.PlayerBlack
+		}
+		playedAgainst[opponentID] = true
+	}
+
+	opponents := make([]model.Player, 0, len(playedAgainst))
+	for _, opponent := range players {
+		if opponent.Id != id && !opponent.Deleted && playedAgainst[opponent.Id] {
+			opponents = append(opponents, opponent)
+		}
+	}
 
 	details := PlayerDetails{
-		Player:  player,
-		Details: model.MapGamesToUserFriendly(id, games),
+		Player:    player,
+		Details:   model.MapGamesToUserFriendly(id, games),
+		Opponents: opponents,
 	}
 
 	var buf bytes.Buffer
