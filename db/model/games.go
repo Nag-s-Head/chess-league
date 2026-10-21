@@ -455,7 +455,7 @@ func UnDeleteGame(db db.Db, adminId uuid.UUID, ikey int64) error {
 		return errors.Join(errors.New("Cannot set the game as not deleted"), err)
 	}
 
-	err = replayGames(tx, adminId, ikey, "Game Deletion", fmt.Sprintf("Undeleted game %d", ikey))
+	err = replayGames(tx, adminId, ikey, "Game Undeletion", fmt.Sprintf("Undeleted game %d", ikey))
 	if err != nil {
 		return errors.Join(errors.New("Cannot replay games"), err)
 	}
