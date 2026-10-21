@@ -16,4 +16,4 @@ runs:
         node-version: "20"
     - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
       with:
-        version: 9
+        version: 11.27.0
