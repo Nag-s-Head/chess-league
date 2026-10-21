@@ -54,6 +54,14 @@ func Render(db db.Db) (template.HTML, error) {
 				GroupName: "E",
 				Players:   make([]model.Player, 0),
 			},
+			{
+				GroupName: "F",
+				Players:   make([]model.Player, 0),
+			},
+			{
+				GroupName: "G",
+				Players:   make([]model.Player, 0),
+			},
 		}}
 
 		for i, player := range players {
