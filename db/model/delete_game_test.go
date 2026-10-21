@@ -203,3 +203,43 @@ func TestDeleteNonExistentGameFails(t *testing.T) {
 	err := model.DeleteGame(db, adminId, 999999)
 	require.Error(t, err)
 }
+
+func TestDeleteADeletedGameFails(t *testing.T) {
+	t.Parallel()
+
+	db := testutils.GetDb(t)
+	defer db.Close()
+
+	// 1. Setup
+	admin := model.NewAdminUser("Admin-Latest", uuid.New().String(), "127.0.0.1", "Go-Test")
+	txAdmin, _ := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	model.InsertAdminUser(txAdmin, *admin)
+	txAdmin.Commit()
+
+	p1 := model.NewPlayer(uuid.New().String())
+	model.InsertPlayer(db, p1)
+	p2 := model.NewPlayer(uuid.New().String())
+	model.InsertPlayer(db, p2)
+
+	r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
+	r.RemoteAddr = "127.0.0.1"
+
+	// 2. Create first game and capture state
+	tx, _ := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	ikey1, _ := model.NextIKey(db)
+	model.CreateGame(tx, &p1, &p2, true, ikey1, model.Score_Win, r)
+	tx.Commit()
+
+	// 3. Create second game (the latest)
+	tx2, _ := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	ikey2, _ := model.NextIKey(db)
+	model.CreateGame(tx2, &p1, &p2, true, ikey2, model.Score_Loss, r)
+	tx2.Commit()
+
+	// 4. Delete Game 2 (the latest)
+	err := model.DeleteGame(db, admin.Id, ikey2)
+	require.NoError(t, err)
+
+	err = model.DeleteGame(db, admin.Id, ikey2)
+	require.Error(t, err)
+}

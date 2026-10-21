@@ -21,4 +21,5 @@ jobs:
         shell: bash
         env:
           FUZZTIME: 5m
+          GOFLAGS: "-p=1 -parallel=1"
         run: make fuzz -j
