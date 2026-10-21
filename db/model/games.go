@@ -404,12 +404,58 @@ func DeleteGame(db db.Db, adminId uuid.UUID, ikey int64) error {
 
 	defer tx.Rollback()
 
+	var deleted bool
+	err = tx.Get(&deleted, "SELECT deleted FROM games WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get games deleted state"), err)
+	}
+
+	if deleted {
+		return errors.New("Cannot deleted a game that is already deleted")
+	}
+
 	_, err = tx.Exec("UPDATE games SET deleted=TRUE WHERE ikey=$1;", ikey)
 	if err != nil {
 		return errors.Join(errors.New("Cannot set the game as deleted"), err)
 	}
 
 	err = replayGames(tx, adminId, ikey, "Game Deletion", fmt.Sprintf("Deleted game %d", ikey))
+	if err != nil {
+		return errors.Join(errors.New("Cannot replay games"), err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Join(errors.New("Cannot commit transaction"), err)
+	}
+
+	return nil
+}
+
+func UnDeleteGame(db db.Db, adminId uuid.UUID, ikey int64) error {
+	tx, err := db.GetSqlxDb().BeginTxx(context.Background(), nil)
+	if err != nil {
+		return errors.Join(errors.New("Cannot start transaction"), err)
+	}
+
+	defer tx.Rollback()
+
+	var deleted bool
+	err = tx.Get(&deleted, "SELECT deleted FROM games WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot get games deleted state"), err)
+	}
+
+	if !deleted {
+		return errors.New("Cannot undeleted a game that is not deleted")
+	}
+
+	_, err = tx.Exec("UPDATE games SET deleted=FALSE WHERE ikey=$1;", ikey)
+	if err != nil {
+		return errors.Join(errors.New("Cannot set the game as not deleted"), err)
+	}
+
+	err = replayGames(tx, adminId, ikey, "Game Deletion", fmt.Sprintf("Undeleted game %d", ikey))
 	if err != nil {
 		return errors.Join(errors.New("Cannot replay games"), err)
 	}

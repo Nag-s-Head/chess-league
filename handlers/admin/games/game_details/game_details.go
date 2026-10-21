@@ -61,9 +61,10 @@ func Render(db db.Db) func(http.ResponseWriter, *http.Request, *model.AdminUser)
 }
 
 const (
-	swapWinner = "swap-winner"
-	setDraw    = "set-draw"
-	deleted    = "delete"
+	swapWinner  = "swap-winner"
+	setDraw     = "set-draw"
+	deleted     = "delete"
+	undoDeleted = "undo-delete"
 )
 
 func PostGameDetails(db db.Db) func(*model.AdminUser) func(http.ResponseWriter, *http.Request) {
@@ -91,6 +92,9 @@ func PostGameDetails(db db.Db) func(*model.AdminUser) func(http.ResponseWriter, 
 					actionName = "Set The Game To A Draw"
 				case deleted:
 					actionName = "Delete The Game"
+				case undoDeleted:
+					actionName = "Undeleted The Game"
+
 				default:
 					adminutils.RenderError(w, fmt.Errorf("%s is not a valid submit type", submitType))
 					return
@@ -120,6 +124,12 @@ func PostGameDetails(db db.Db) func(*model.AdminUser) func(http.ResponseWriter, 
 				err = model.DeleteGame(db, au.Id, ikey)
 				if err != nil {
 					adminutils.RenderError(w, errors.Join(errors.New("Cannot delete game"), err))
+					return
+				}
+			case undoDeleted:
+				err = model.UnDeleteGame(db, au.Id, ikey)
+				if err != nil {
+					adminutils.RenderError(w, errors.Join(errors.New("Cannot undelete game"), err))
 					return
 				}
 			default:
