@@ -46,7 +46,8 @@ func TestPlayerDetails(t *testing.T) {
 		handlers.PlayerDetails(db, withLayout)(w, r)
 
 		require.Equal(t, http.StatusOK, w.Code)
-		require.Contains(t, w.Body.String(), "Test Player")
+		require.Contains(t, w.Body.String(), player.Name)
+		require.Contains(t, w.Body.String(), "Choose a player")
 	})
 
 	t.Run("Invalid player ID", func(t *testing.T) {
