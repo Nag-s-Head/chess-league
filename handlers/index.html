@@ -7,13 +7,18 @@
 </div>
 
 <h1 class="text-2xl font-bold mt-5">Leaderboard</h1>
-{{range $Res := .Players}}
+{{range $i, $Res := .Players}}
 <a
   href="/player/{{$Res.Id}}"
-  class="flex flex-row items-center gap-3 p-3 border-2 border-gray-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+  class="flex flex-row items-center gap-3 p-3 border-2 {{if
+  eq $i 0}}border-yellow-400{{else if eq $i 1}}border-gray-400{{else if eq $i 2}}border-amber-700{{else}}border-gray-500{{end}}
+  rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
 >
   <div class="flex flex-row justify-between w-full">
-    <h4 class="text-lg font-bold">{{$Res.Name}}</h4>
+    <h4 class="text-lg font-bold">
+      {{if eq $i 0}}🥇 {{end}}{{if eq $i 1}}🥈 {{end}}{{if eq $i 2}}🥉
+      {{end}}{{$Res.Name}}
+    </h4>
     <p>
       {{printf "%.0f" $Res.Liglicko2Rating}} ELO {{if (ge
       $Res.Liglicko2Deviation $.MinimumStableRatingDeviation)}}
