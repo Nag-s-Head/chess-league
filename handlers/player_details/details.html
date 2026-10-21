@@ -1,7 +1,9 @@
 <div class="flex flex-col gap-5">
-<div class="flex flex-row justify-between items-center">
+  <div class="flex flex-row justify-between items-center">
     <h1 class="text-2xl font-bold">{{.Player.Name}}</h1>
-    <a href="/" class="text-blue-600 hover:underline">Back</a>
+    <div class="flex flex-row items-center gap-4">
+      <a href="/" class="text-blue-600 hover:underline">Back</a>
+    </div>
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -34,6 +36,17 @@
     <div class="p-4 bg-gray-100 rounded-lg">
       <p class="text-sm text-gray-500">Black Win Rate</p>
       <p class="text-2xl font-bold">{{printf "%.1f" .Details.BlackWinRate}}%</p>
+    </div>
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <label for="score-vs-player" class="block text-sm text-gray-500">Score vs</label>
+      <select id="score-vs-player" class="mt-2 w-full p-2 rounded-lg bg-white text-lg font-bold" onchange="if (this.value) window.location.href = this.value">
+        <option value="" selected>Choose a player</option>
+        {{range .Opponents}}
+        <option value="/players/{{$.Player.Id}}/score-vs/{{.Id}}">{{.Name}}</option>
+        {{else}}
+        <option value="" disabled>No opponents yet</option>
+        {{end}}
+      </select>
     </div>
   </div>
   <div class="flex flex-col gap-2">
