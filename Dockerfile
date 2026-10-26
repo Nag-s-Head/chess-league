@@ -1,4 +1,4 @@
-FROM golang:1.27.2-trixie AS initial
+FROM golang:1.27.3-trixie AS initial
 
 FROM initial AS with_go_mod
 COPY ./go.mod ./go.sum ./
